@@ -136,9 +136,9 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/vda5050_connector_node.cpp)
-add_executable(daemon src/passthrough_daemon.cpp)
 add_executable(supervisor src/supervisor.cpp)
 add_executable(test_msg_order src/passthrough_tests/order_msg.cpp)
+add_executable(state_daemon src/state_daemon.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,13 +150,12 @@ add_executable(test_msg_order src/passthrough_tests/order_msg.cpp)
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(daemon ${catkin_LIBRARIES})
 add_dependencies(supervisor ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 target_link_libraries(test_msg_order ${catkin_LIBRARIES})
-target_link_libraries(daemon ${catkin_LIBRARIES})
+target_link_libraries(state_daemon ${catkin_LIBRARIES})
 target_link_libraries(supervisor ${catkin_LIBRARIES})
 
 #   ${catkin_LIBRARIES}

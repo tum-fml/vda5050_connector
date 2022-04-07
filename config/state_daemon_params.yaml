@@ -1,0 +1,22 @@
+state_daemon:
+  topics_publish:
+    state: "/state"
+  topics_subscribe:
+    header: "/TBD1"
+    orderID: "/TBD2"
+    orderUpdateID: "/TBD3"
+    zoneSetId: "/TBD4"
+    lastNodeId: "/TBD5"   
+    lastNodeSequenceId: "/TBD6"
+        
+
+
+topic_error: /error_1
+
+AGV_Data:
+    version: 1.1.03
+    manufacturer: "template_1"
+    serialNumber: "AGV721"
+
+
+
