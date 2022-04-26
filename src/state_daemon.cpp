@@ -3,9 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
-
-using namespace std;
+#include <std_msgs/Int32.h>
 
 /**
  * TODO: publish to topicPub, if following requirements are met:
@@ -20,81 +18,53 @@ using namespace std;
  * - every 30 seconds if nothing changed
  *  */
  
-StateDaemon::StateDaemon(ros::NodeHandle *nh)
+StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
-		CreateHeaderInfo();
-		LinkTopics(nh);
+	LinkPublishTopics(nh);
+	updateInterval=ros::Duration(30,0);
+	lastUpdateTimestamp=ros::Time::now();
 }
 
-string StateDaemon::GetParameter(std::string paramName)
- {	
-	string paramValue="";
-	if (ros::param::has(paramName))
-	{
-		ros::param::get(paramName,paramValue);
-	}
-	else
-	{
-		ROS_WARN_STREAM("ParamName "<< paramName <<" not found in YAML file. Replaced with empty string");
-	}
-	return paramValue;
-		
-	
-}
-
-void StateDaemon::CreateHeaderInfo()
+bool StateDaemon::CheckPassedTime()
 {
-		stateMessage.header.headerId=1;
-		stateMessage.header.version=GetParameter("~AGV_Data/version");
-		stateMessage.header.manufacturer=GetParameter("~AGV_Data/manufacturer");
-		stateMessage.header.serialNumber=GetParameter("~AGV_Data/serialNumber");
-}
-
-void StateDaemon::LinkTopics(ros::NodeHandle *nh)
-{	
-	LinkErrorTopic(nh);
-	
-}
-
-void StateDaemon::LinkErrorTopic(ros::NodeHandle *nh)
-{
-	string errorTopic;
-	ros::param::param<std::string>("~topic_error", errorTopic, DEFAULT_ERROR_TOPIC);
-	errorPublisher=nh->advertise<std_msgs::String>(errorTopic, 1000);
-	ROS_INFO_STREAM("Using "<< errorTopic << " as error topic");
+	ros::Duration passedTime=ros::Time::now()-lastUpdateTimestamp;
+	ROS_INFO_STREAM("passed time:" <<passedTime);
+	return(passedTime >= updateInterval? true:false);
 }
 
 void StateDaemon::PublishState()
 {
-	stateMessage.header.timestamp=CreateTimestamp();
-	publisher.publish(stateMessage);
-	stateMessage.header.headerId+=1;
+	stateMessage.header=GetHeader();
+	messagePublisher["state"].publish(stateMessage);
+	lastUpdateTimestamp=ros::Time::now();
 }
 
-std::string StateDaemon::CreateTimestamp()
+void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
-	boost::posix_time::ptime posixTime = ros::Time::now().toBoost();
-	std::string isoTimeStr = boost::posix_time::to_iso_extended_string(posixTime);
-	return(isoTimeStr);
-}
-
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "state_daemon");
-	ros::NodeHandle nh;
-	std::map<std::string,std::string> keys;
-	ros::param::get("~state_daemon/topics_subscribe",keys);
-	cout <<"READ VALUES"<<"\r\n";
-	for(const auto& elem : keys)
+	std::map<std::string,std::string>topicList=GetTopicPublisherList();
+	for(const auto& elem : topicList)
 	{
-	   std::cout << elem.first << " " << elem.second << "\n";
-	}
-	string topicPublish="test";
-	string topicSubscribe="test2";
-	string topicError="error";
-	StateDaemon stateDaemon(&nh);
-	//ros::spin();
-		cout <<"DONE"<<"\r\n";
-	return 0;
-	
-};
+		if (elem.first.compare("state") ==0)
+		{
+			messagePublisher[elem.first]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
+		}
+	}	
+}
+
+void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
+{
+	std::map<std::string,std::string>topicList=GetTopicPublisherList();
+	for(const auto& elem : topicList)
+	{
+		if (elem.first.compare("state") ==0)
+		{
+			messagePublisher[elem.first]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
+		}
+	}	
+
+}
+
+
+
+
+

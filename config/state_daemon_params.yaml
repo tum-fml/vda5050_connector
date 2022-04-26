@@ -8,6 +8,8 @@ state_daemon:
     zoneSetId: "/TBD4"
     lastNodeId: "/TBD5"   
     lastNodeSequenceId: "/TBD6"
+    nodeState: "/TBD7"
+    edgeState: "/TBD8"
         
 
 
@@ -17,6 +19,7 @@ AGV_Data:
     version: 1.1.03
     manufacturer: "template_1"
     serialNumber: "AGV721"
+
 
 
 
