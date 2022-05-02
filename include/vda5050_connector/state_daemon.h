@@ -1,12 +1,22 @@
 #ifndef ORDER_DAEMON_H
 #define ORDER_DAEMON_H
 #include <ros/ros.h>
-#include "vda5050_msgs/State.h"
 #include <string>
-#include "boost/date_time/posix_time/posix_time.hpp"
 #include <ros/console.h>
-#include "std_msgs/String.h"
+#include <std_msgs/UInt32.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/Bool.h>
+#include <nav_msgs/Odometry.h>
 #include "daemon.h"
+#include "std_msgs/String.h"
+#include "boost/date_time/posix_time/posix_time.hpp"
+
+#include "vda5050_msgs/State.h"
+#include "vda5050_msgs/NodeStates.h"
+#include "vda5050_msgs/NodeState.h"
+#include "vda5050_msgs/EdgeStates.h"
+#include "vda5050_msgs/EdgeState.h"
+#include "vda5050_msgs/AGVPosition.h"
 
 
 class StateDaemon: public Daemon
@@ -44,6 +54,24 @@ class StateDaemon: public Daemon
 	 * updates timestamp since last publishing
 	 * */
 	void PublishState();
+	/**
+	 * checks all the logic within the state daemon, e.g. if 30 seconds without update has passed
+	 * */
+	void UpdateState();
+	
+	
+	//ALL THE CALLBACKS
+	void OrderIdCallback(const std_msgs::String::ConstPtr& msg);
+	void OrderUpdateIdCallback(const std_msgs::UInt32::ConstPtr& msg);
+	void ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg);
+	void LastNodeIdCallback(const std_msgs::String::ConstPtr& msg);
+	void LastNodeSequenceIdCallback(const std_msgs::UInt32::ConstPtr& msg);
+	void NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPtr& msg);
+	void EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg);
+	void AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg);
+	void AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg);
+	void AGVPositionDeviationRangeCallback(const std_msgs::Float64::ConstPtr& msg);
+	void AGVPositionPoseCallback(const nav_msgs::Odometry::ConstPtr& msg);
 };
 
 #endif

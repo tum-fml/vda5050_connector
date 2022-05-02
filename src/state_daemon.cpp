@@ -1,9 +1,6 @@
 #include "vda5050_connector/state_daemon.h"
-#include "std_msgs/String.h"
 #include <iostream>
 #include <vector>
-#include <string>
-#include <std_msgs/Int32.h>
 
 /**
  * TODO: publish to topicPub, if following requirements are met:
@@ -51,8 +48,21 @@ void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 	}	
 }
 
+void StateDaemon::UpdateState()
+{
+	if (CheckPassedTime() == true)
+	{
+		PublishState();
+	}
+}
+
 void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 {
+	
+	/* Fixed Callbacks. Do not change them, as they are linked to ROS-Topics
+	 * 
+	 * 
+	 * */
 	std::map<std::string,std::string>topicList=GetTopicPublisherList();
 	for(const auto& elem : topicList)
 	{
@@ -61,8 +71,63 @@ void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 			messagePublisher[elem.first]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
 		}
 	}	
-
 }
+
+//ROS specific callbacks
+void StateDaemon::AGVPositionPoseCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+	// TODO: include x,y,theta pose (position)
+	// TODO: include vx,vy,omega twist (velocity)
+}
+
+
+// VDA 5050 specific callbacks
+void StateDaemon::OrderIdCallback(const std_msgs::String::ConstPtr& msg)
+{
+  stateMessage.orderId=msg->data;
+}
+void StateDaemon::OrderUpdateIdCallback(const std_msgs::UInt32::ConstPtr& msg)
+{
+  stateMessage.orderUpdateId=msg->data;
+}
+void StateDaemon::ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg)
+{
+  stateMessage.zoneSetId=msg->data;
+}
+void StateDaemon::LastNodeIdCallback(const std_msgs::String::ConstPtr& msg)
+{
+  stateMessage.lastNodeId=msg->data;
+}
+void StateDaemon::LastNodeSequenceIdCallback(const std_msgs::UInt32::ConstPtr& msg)
+{
+  stateMessage.lastNodeSequenceId=msg->data;
+}
+void StateDaemon::NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPtr& msg)
+{
+	stateMessage.nodeStates=msg->nodeStates;
+}
+void StateDaemon::EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg)
+{
+	stateMessage.edgeStates=msg->edgeStates;
+}
+void StateDaemon::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+	stateMessage.agvPosition.positionInitialized=msg->data;
+}
+void StateDaemon::AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg)
+{
+	stateMessage.agvPosition.localizationScore=msg->data;
+}
+void StateDaemon::AGVPositionDeviationRangeCallback(const std_msgs::Float64::ConstPtr& msg)
+{
+	stateMessage.agvPosition.deviationRange=msg->data;
+}
+
+
+
+
+
+
 
 
 
