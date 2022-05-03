@@ -22,8 +22,8 @@ Daemon::Daemon(ros::NodeHandle *nh,std::string daemonName)
 {
 		InitHeaderInfo();
 		LinkErrorTopics(nh);
-		topicPublisherList=ReadTopicParams("~"+daemonName +"/topics_publish");
-		topicSubscriberList=ReadTopicParams("~"+daemonName +"/topics_subscribe");
+		topicPublisherList=ReadTopicParams(nh,daemonName +"/topics_publish");
+		topicSubscriberList=ReadTopicParams(nh,daemonName +"/topics_subscribe");
 }
 
 
@@ -80,17 +80,40 @@ vda5050_msgs::Header Daemon::GetHeader()
 	return(messageHeader);
 }
 
-std::map<std::string,std::string> Daemon::ReadTopicParams(std::string paramName)
+bool Daemon::CompareStrings(std::string str1,std::string str2)
+{
+	return(str1.find(str2) != std::string::npos ? true:false);
+}
+
+std::map<std::string,std::string> Daemon::ReadTopicParams(ros::NodeHandle *nh,std::string paramName)
 {
 	std::map<std::string,std::string> paramResults;
-	if (ros::param::has(paramName))
+	std::vector<std::string> keys;
+	//receiving all parameters
+	nh->getParamNames(keys);
+	for(std::size_t i = 0; i < keys.size(); ++i) 
 	{
-		ros::param::get(paramName ,paramResults);
-		ROS_INFO_STREAM("for "<< paramName << " use:");
-		for(const auto& elem : paramResults)
+		if (CompareStrings(keys[i],paramName))
 		{
-			ROS_INFO_STREAM("    - parameter: "<<elem.first << " value: " << elem.second);
+			if (ros::param::has(keys[i]))
+			{
+				std::string returnValue;
+				ros::param::get(keys[i],returnValue);
+				if (!returnValue.empty())
+				{
+					paramResults[keys[i]]=returnValue;
+				}	
+			}
+			else
+			{
+				ROS_INFO_STREAM(paramName <<" has no parameter, please check the config YAML");
+			}
 		}
+	}
+	ROS_INFO_STREAM("for "<< paramName << " use:");
+	for(const auto& elem : paramResults)
+	{
+		ROS_INFO_STREAM("    - parameter: "<<elem.first << " value: " << elem.second);
 	}
 	return(paramResults);
 }

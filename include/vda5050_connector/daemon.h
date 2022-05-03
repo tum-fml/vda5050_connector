@@ -31,10 +31,11 @@ class Daemon
 	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);
 	std::string GetParameter(std::string param);
 	std::string CreateTimestamp();
+	bool CompareStrings(std::string str1,std::string str2);
 	void InitHeaderInfo();
 	void LinkErrorTopics(ros::NodeHandle *nh);
 	void UpdateHeader();
-	std::map<std::string,std::string> ReadTopicParams(std::string paramTopicName);
+	std::map<std::string,std::string> ReadTopicParams(ros::NodeHandle *nh,std::string paramTopicName);
 	vda5050_msgs::Header GetHeader();
 };
 
