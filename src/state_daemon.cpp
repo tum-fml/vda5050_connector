@@ -57,13 +57,10 @@ void StateDaemon::UpdateState()
 	}
 }
 
+
+
 void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 {
-	
-	/* Fixed Callbacks. Do not change them, as they are linked to ROS-Topics
-	 * 
-	 * 
-	 * */
 	std::map<std::string,std::string>topicList=GetTopicPublisherList();
 	for(const auto& elem : topicList)
 	{
@@ -75,16 +72,17 @@ void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 }
 
 //ROS specific callbacks
-void StateDaemon::ROSPositionVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
+void StateDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	stateMessage.agvPosition.x=msg->pose.pose.position.x;
 	stateMessage.agvPosition.y=msg->pose.pose.position.y;
 	//TODO: INCLUDE THETA, means conversion from quaternion to 2D rad
-	
+}
+void StateDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{	
 	stateMessage.velocity.vx=msg->twist.twist.linear.x;
 	stateMessage.velocity.vy=msg->twist.twist.linear.y;
 	// TODO: include omega by calculating from quaterion to 2D rad
-
 }
 
 void StateDaemon::ROSBatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg)
@@ -92,8 +90,6 @@ void StateDaemon::ROSBatteryStateCallback(const sensor_msgs::BatteryState::Const
 	stateMessage.batteryState.batteryCharge=msg->percentage*100.0;
 	stateMessage.batteryState.batteryVoltage=msg->voltage;
 }
-
-
 // VDA 5050 specific callbacks, just passing messages
 void StateDaemon::OrderIdCallback(const std_msgs::String::ConstPtr& msg)
 {
@@ -123,27 +119,24 @@ void StateDaemon::EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& m
 {
 	stateMessage.edgeStates=msg->edgeStates;
 }
+void StateDaemon::AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg)
+{
+	stateMessage.agvPosition.positionInitialized=msg->positionInitialized;
+	stateMessage.agvPosition.localizationScore=msg->localizationScore;
+	stateMessage.agvPosition.deviationRange=msg->deviationRange;
+	stateMessage.agvPosition.x=msg->x;
+	stateMessage.agvPosition.y=msg->y;
+	stateMessage.agvPosition.theta=msg->theta;
+	stateMessage.agvPosition.mapId=msg->mapId;
+	stateMessage.agvPosition.mapDescription=msg->mapDescription;
+}
 void StateDaemon::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg)
 {
 	stateMessage.agvPosition.positionInitialized=msg->data;
 }
 void StateDaemon::AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg)
 {	
-	if (msg->data < 0.0 || msg->data > 1.0)
-	{
-		std_msgs::String errorMsg;
-		if (msg->data < 0.0)
-		{
-			errorMsg.data="msg exceeds range: State->AGVPosition->localizationScore < 0.0";
-		}
-		else if (msg->data > 1.0)
-		{
-			errorMsg.data="msg exceeds range: State->AGVPosition->localizationScore > 1.0";
-		}
-		errorPublisher.publish(errorMsg);
-		ROS_WARN_STREAM(errorMsg.data);
-	}
-	else
+	if (CheckRange(0.0,1.0,msg->data,"AGV Position Localization Score"))
 	{
 		stateMessage.agvPosition.localizationScore=msg->data;
 	}
@@ -184,6 +177,14 @@ void StateDaemon::ActionStatesCallback(const vda5050_msgs::ActionStates::ConstPt
 {
 	stateMessage.actionStates=msg->actionStates;
 }
+void StateDaemon::BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg)
+{
+	stateMessage.batteryState.batteryHealth=msg->batteryHealth;
+	stateMessage.batteryState.batteryCharge=msg->batteryCharge;
+	stateMessage.batteryState.batteryVoltage=msg->batteryVoltage;
+	stateMessage.batteryState.charging=msg->charging;
+	stateMessage.batteryState.reach=msg->reach;
+}
 void StateDaemon::BatteryStateBattryHealthCallback(const std_msgs::Int8::ConstPtr& msg)
 {
 	stateMessage.batteryState.batteryHealth=msg->data;
@@ -199,6 +200,27 @@ void StateDaemon::BatteryStateReachCallback(const std_msgs::UInt32::ConstPtr& ms
 void StateDaemon::OperatingModeCallback(const std_msgs::String::ConstPtr& msg)
 {
 	stateMessage.operatingMode=msg->data;
+}
+void StateDaemon::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg)
+{
+	stateMessage.errors=msg->errors;
+}
+void StateDaemon::InformationCallback(const vda5050_msgs::Information::ConstPtr& msg)
+{
+	stateMessage.informations=msg->informations;
+}
+void StateDaemon::SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg)
+{
+	stateMessage.safetyState.eStop=msg->eStop;
+	stateMessage.safetyState.fieldViolation=msg->fieldViolation;
+}
+void StateDaemon::SafetyStateEstopCallback(const std_msgs::String::ConstPtr& msg)
+{
+	stateMessage.safetyState.eStop=msg->data;
+}
+void StateDaemon::SafetyStateFieldViolationCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+	stateMessage.safetyState.fieldViolation=msg->data;
 }
 
 

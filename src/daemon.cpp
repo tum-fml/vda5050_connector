@@ -85,6 +85,33 @@ bool Daemon::CompareStrings(std::string str1,std::string str2)
 	return(str1.find(str2) != std::string::npos ? true:false);
 }
 
+bool Daemon::CheckRange(double lowerRange, double upperRange, double value, std::string msg_name)
+{
+	bool withinRange=false;
+	if (value < lowerRange || value > upperRange)
+	{
+		std_msgs::String errorMsg;
+		std::ostringstream ss;
+		if (value < lowerRange)
+		{
+			ss << msg_name << " msg undercut lower range. value: " << value << " < " << lowerRange;
+		}
+		else if (value > upperRange)
+		{
+			ss << msg_name << " msg exceeds upper range. value: " << value << " > " << upperRange;
+		}
+		errorMsg.data=ss.str();
+		errorPublisher.publish(errorMsg);
+		ROS_WARN_STREAM(errorMsg.data);
+	}
+	else
+	{
+		withinRange=true;
+	}
+	return withinRange;
+}
+
+
 std::map<std::string,std::string> Daemon::ReadTopicParams(ros::NodeHandle *nh,std::string paramName)
 {
 	std::map<std::string,std::string> paramResults;

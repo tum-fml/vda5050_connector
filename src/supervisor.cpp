@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 
 	
 	StateDaemon daemon(&nh,daemonName);
+	daemon.CheckRange(0.0,1.0,-1.0, "AGV Position Localization Score");
 	/*
 	std::map<std::string,std::string> paramResults;
 	ros::param::get(daemonName ,paramResults);
