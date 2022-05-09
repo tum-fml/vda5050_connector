@@ -17,7 +17,9 @@
  
 StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
+	
 	LinkPublishTopics(nh);
+	LinkSubscirptionTopics(nh);
 	updateInterval=ros::Duration(30,0);
 	lastUpdateTimestamp=ros::Time::now();
 }
@@ -61,13 +63,42 @@ void StateDaemon::UpdateState()
 
 void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 {
-	std::map<std::string,std::string>topicList=GetTopicPublisherList();
+
+	std::map<std::string,std::string>topicList=GetTopicSubscriberList();
 	for(const auto& elem : topicList)
 	{
-		if (elem.first.compare("state") ==0)
-		{
-			messagePublisher[elem.first]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
-		}
+		if (CompareStrings(elem.first,"orderId"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::OrderIdCallback, this);
+		else if (CompareStrings(elem.first,"orderUpdateId"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::OrderUpdateIdCallback, this);
+		else if (CompareStrings(elem.first,"zoneSetId"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ZoneSetIdCallback, this);
+		else if (CompareStrings(elem.first,"lastNodeId"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::LastNodeIdCallback, this);
+		else if (CompareStrings(elem.first,"lastNodeSequenceId"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::LastNodeSequenceIdCallback, this);
+		else if (CompareStrings(elem.first,"nodeState"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::NodeStatesCallback, this);			
+		else if (CompareStrings(elem.first,"edgeState"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::EdgeStatesCallback, this);
+		else if (CompareStrings(elem.first,"agvPosition"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionCallback, this);
+		else if (CompareStrings(elem.first,"positionInitialized"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionInitializedCallback, this);
+		else if (CompareStrings(elem.first,"localizationScore"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionLocalizationScoreCallback, this);
+		else if (CompareStrings(elem.first,"deviationRange"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionDeviationRangeCallback, this);	
+		else if (CompareStrings(elem.first,"rosPose"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSAGVPositionCallback, this);	
+		else if (CompareStrings(elem.first,"mapId"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionMapIdCallback, this);	
+		else if (CompareStrings(elem.first,"mapDescription"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionMapDescriptionCallback, this);	
+		//else if (CompareStrings(elem.first,"velocity"))
+		//	subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::VelocityCallback, this);	
+		else if (CompareStrings(elem.first,"rosVelocity"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSVelocityCallback, this);	
 	}	
 }
 

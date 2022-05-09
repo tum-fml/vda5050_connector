@@ -35,12 +35,14 @@ state_daemon:
             positionInitialized: "/TBD10"       #VDA5050 specific, boolean
             localizationScore: "/TBD11"         #VDA5050 specific, float64 (Range 0.0-1.0)
             deviationRange: "/TBD12"            #VDA5050 specific, float64
+            rosPose: "/TBD1234"                 #non VDA5050 Topic to gain access to Odometry topic
 #            x: "/TBD13"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.x, float64
 #            y: "/TBD14"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.y, float64
 #            theta: "/TBD15"
-            mapID: "/TBD16"                     #VDA5050 specific, string
+            mapId: "/TBD16"                     #VDA5050 specific, string
             mapDescription: "/TBD17"            #VDA5050 specific, string
-        velocity: "/ROS_topic_odo"              #ROS msg -> nav_msgs/Odometry Message.twist, aggregarted by ROS msg
+        velocity:                               #ROS msg -> nav_msgs/Odometry Message.twist, aggregarted by ROS msg
+            rosVelocity: "/TBD19"               #non VDA5050 Topic to gain access to Odometry topic
 #            vx: "/TBD19"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.x, float64
 #            vy: "/TBD20"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.y, float64
 #            omega: "/TBD21"
@@ -66,6 +68,12 @@ state_daemon:
         safetyState:                            #VDA5050 specific, JSON
             eStop: "/TBD999"                    #VDA5050 specific, String
             fieldViolation: "/TBD999"           #VDA5050 specific, bool
+
+order_daemon:
+    topics_publish:
+        order: /order_to_agv 
+    topics_subscribe:
+        order: /order_from_mc
 
 topic_error: /error_1
 

@@ -34,7 +34,7 @@ std::map<std::string,std::string> Daemon::GetTopicPublisherList()
 
 std::map<std::string,std::string> Daemon::GetTopicSubscriberList()
 {
-	return topicPublisherList;
+	return topicSubscriberList;
 }
 
 std::vector<std::string> Daemon::GetMsgList(std::map<std::string,std::string> topicList)

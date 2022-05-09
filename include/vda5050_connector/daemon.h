@@ -22,7 +22,7 @@ class Daemon
 	
 	protected:
 	std::map<std::string,ros::Publisher> messagePublisher;
-	std::map<std::string,ros::Subscriber> subscriber;
+	std::map<std::string,ros::Subscriber> subscribers;
 	ros::Publisher errorPublisher;
 	
 	public:

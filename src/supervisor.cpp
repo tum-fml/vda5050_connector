@@ -12,9 +12,9 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh;
 	std::string daemonName="state_daemon";
 
-	
 	StateDaemon daemon(&nh,daemonName);
-	daemon.CheckRange(0.0,1.0,-1.0, "AGV Position Localization Score");
+	bool result=daemon.CompareStrings("/supervisor/state_daemon/topics_subscribe/orderId","orderId");
+	ROS_INFO_STREAM("compare returs: "<<result);
 	/*
 	std::map<std::string,std::string> paramResults;
 	ros::param::get(daemonName ,paramResults);
