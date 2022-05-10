@@ -18,7 +18,7 @@ class Daemon
 	vda5050_msgs::Header messageHeader;
 	std::map<std::string,std::string> topicPublisherList;
 	std::map<std::string,std::string> topicSubscriberList;
-
+	bool testMode;
 	
 	protected:
 	std::map<std::string,ros::Publisher> messagePublisher;
@@ -26,12 +26,14 @@ class Daemon
 	ros::Publisher errorPublisher;
 	
 	public:
+	Daemon();
 	Daemon(ros::NodeHandle *nh, std::string daemonName);
 	std::map<std::string,std::string> GetTopicPublisherList();
 	std::map<std::string,std::string> GetTopicSubscriberList();
 	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);
 	std::string GetParameter(std::string param);
 	std::string CreateTimestamp();
+	bool CheckTopic(std::string str1,std::string str2);
 	bool CompareStrings(std::string str1,std::string str2);
 	void InitHeaderInfo();
 	void LinkErrorTopics(ros::NodeHandle *nh);

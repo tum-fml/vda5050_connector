@@ -82,7 +82,6 @@ class StateDaemon: public Daemon
 		void ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg);
 		void AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg);
 		void AGVPositionMapDescriptionCallback(const std_msgs::String::ConstPtr& msg);
-	void VelocityCallback(const nav_msgs::Odometry::ConstPtr& msg);
 	void ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg);
 	void LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg);
 	void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
@@ -95,7 +94,7 @@ class StateDaemon: public Daemon
 		void BatteryStateBattryHealthCallback(const std_msgs::Int8::ConstPtr& msg);
 		void BatteryStateChargingCallback(const std_msgs::Bool::ConstPtr& msg);
 		void BatteryStateReachCallback(const std_msgs::UInt32::ConstPtr& msg);
-		void ROSBatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
+		void ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
 	void OperatingModeCallback(const std_msgs::String::ConstPtr& msg);
 	void ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg);
 	void InformationCallback(const vda5050_msgs::Information::ConstPtr& msg);

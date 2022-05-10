@@ -13,8 +13,6 @@ int main(int argc, char **argv)
 	std::string daemonName="state_daemon";
 
 	StateDaemon daemon(&nh,daemonName);
-	bool result=daemon.CompareStrings("/supervisor/state_daemon/topics_subscribe/orderId","orderId");
-	ROS_INFO_STREAM("compare returs: "<<result);
 	/*
 	std::map<std::string,std::string> paramResults;
 	ros::param::get(daemonName ,paramResults);

@@ -18,12 +18,18 @@
  * - every 30 seconds if nothing changed
  *  */
  
+Daemon::Daemon()
+{
+	testMode=true;
+}
+ 
 Daemon::Daemon(ros::NodeHandle *nh,std::string daemonName)
 {
-		InitHeaderInfo();
-		LinkErrorTopics(nh);
-		topicPublisherList=ReadTopicParams(nh,daemonName +"/topics_publish");
-		topicSubscriberList=ReadTopicParams(nh,daemonName +"/topics_subscribe");
+	testMode=false;
+	InitHeaderInfo();
+	LinkErrorTopics(nh);
+	topicPublisherList=ReadTopicParams(nh,daemonName +"/topics_publish");
+	topicSubscriberList=ReadTopicParams(nh,daemonName +"/topics_subscribe");
 }
 
 
@@ -53,7 +59,7 @@ std::string Daemon::GetParameter(std::string paramName)
 		ros::param::get(paramName,paramValue);
 		ROS_INFO_STREAM("Using "<< paramValue << " for parameter " <<paramName);
 	}
-	else
+	else if (!testMode)
 	{
 		ROS_WARN_STREAM("ParamName "<< paramName <<" not found in YAML file. Replaced with empty string");
 	}
@@ -62,10 +68,10 @@ std::string Daemon::GetParameter(std::string paramName)
 
 void Daemon::InitHeaderInfo()
 {
-		messageHeader.headerId=0;
-		messageHeader.version=GetParameter("~AGV_Data/version");
-		messageHeader.manufacturer=GetParameter("~AGV_Data/manufacturer");
-		messageHeader.serialNumber=GetParameter("~AGV_Data/serialNumber");
+	messageHeader.headerId=0;
+	messageHeader.version=GetParameter("~AGV_Data/version");
+	messageHeader.manufacturer=GetParameter("~AGV_Data/manufacturer");
+	messageHeader.serialNumber=GetParameter("~AGV_Data/serialNumber");
 }
 
 void Daemon::UpdateHeader()
@@ -85,24 +91,38 @@ bool Daemon::CompareStrings(std::string str1,std::string str2)
 	return(str1.find(str2) != std::string::npos ? true:false);
 }
 
+bool Daemon::CheckTopic(std::string str1,std::string str2)
+{
+	bool hasTopic=false;
+	if (!CompareStrings(str1,str2+"/"))
+	{
+		hasTopic=CompareStrings(str1,str2);
+	}
+	return (hasTopic);
+	
+}
+
 bool Daemon::CheckRange(double lowerRange, double upperRange, double value, std::string msg_name)
 {
 	bool withinRange=false;
-	if (value < lowerRange || value > upperRange)
+	if (value < lowerRange || value > upperRange) 
 	{
-		std_msgs::String errorMsg;
-		std::ostringstream ss;
-		if (value < lowerRange)
+		if (!testMode)
 		{
-			ss << msg_name << " msg undercut lower range. value: " << value << " < " << lowerRange;
+			std_msgs::String errorMsg;
+			std::ostringstream ss;
+			if (value < lowerRange)
+			{
+				ss << msg_name << " msg undercut lower range. value: " << value << " < " << lowerRange;
+			}
+			else if (value > upperRange)
+			{
+				ss << msg_name << " msg exceeds upper range. value: " << value << " > " << upperRange;
+			}
+			errorMsg.data=ss.str();
+			errorPublisher.publish(errorMsg);
+			ROS_WARN_STREAM(errorMsg.data);
 		}
-		else if (value > upperRange)
-		{
-			ss << msg_name << " msg exceeds upper range. value: " << value << " > " << upperRange;
-		}
-		errorMsg.data=ss.str();
-		errorPublisher.publish(errorMsg);
-		ROS_WARN_STREAM(errorMsg.data);
 	}
 	else
 	{

@@ -22,52 +22,51 @@ state_daemon:
     topics_publish:
         state: /state 
     topics_subscribe:
-        orderId: "/TBD2"
-        orderUpdateId: "/TBD3"                  #VDA5050 specific, Uint32
-        zoneSetId: "/TBD4"                      #VDA5050 specific, string
-        lastNodeId: "/TBD5"                     #VDA5050 specific, string
-        lastNodeSequenceId: "/TBD6"             #VDA5050 specific, Uint32
-        nodeState: "/TBD7"                      #VDA5050 specific, array
+        orderId: "/orderId"
+        orderUpdateId: "/orderUpdateId"                  #VDA5050 specific, Uint32
+        zoneSetId: "/zoneSetId"                      #VDA5050 specific, string
+        lastNodeId: "/lastNodeId"                     #VDA5050 specific, string
+        lastNodeSequenceId: "/lastNodeSequenceId"             #VDA5050 specific, Uint32
+        nodeStates: "/nodeState"                      #VDA5050 specific, array
             # ADD nodeState	
-        edgeState: "/TBD8"                      #VDA5050 specific, array
+        edgeStates: "/edgeState"                      #VDA5050 specific, array
             # ADD edgeState
         agvPosition:                            #VDA5050 specific + partially covered by ROS common msg, JSON
-            positionInitialized: "/TBD10"       #VDA5050 specific, boolean
-            localizationScore: "/TBD11"         #VDA5050 specific, float64 (Range 0.0-1.0)
-            deviationRange: "/TBD12"            #VDA5050 specific, float64
-            rosPose: "/TBD1234"                 #non VDA5050 Topic to gain access to Odometry topic
+            positionInitialized: "/positionInitialized"       #VDA5050 specific, boolean
+            localizationScore: "/localizationScore"         #VDA5050 specific, float64 (Range 0.0-1.0)
+            deviationRange: "/deviationRange"            #VDA5050 specific, float64
+            rosPose: "/rosPose"                 #non VDA5050 Topic to gain access to Odometry topic
 #            x: "/TBD13"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.x, float64
 #            y: "/TBD14"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.y, float64
 #            theta: "/TBD15"
-            mapId: "/TBD16"                     #VDA5050 specific, string
-            mapDescription: "/TBD17"            #VDA5050 specific, string
-        velocity:                               #ROS msg -> nav_msgs/Odometry Message.twist, aggregarted by ROS msg
-            rosVelocity: "/TBD19"               #non VDA5050 Topic to gain access to Odometry topic
+            mapId: "/mapId"                     #VDA5050 specific, string
+            mapDescription: "/mapDescription"            #VDA5050 specific, string
+        velocity: "/rosVelocity"                            #ROS msg -> nav_msgs/Odometry Message.twist, covered by ROS msg
 #            vx: "/TBD19"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.x, float64
 #            vy: "/TBD20"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.y, float64
 #            omega: "/TBD21"
-        loads: "/TBD22"                         #VDA5050 specific, array
+        loads: "/loads"                         #VDA5050 specific, array
             # ADD loads
-        driving: "/TBD23"                       #VDA5050 specific, boolean
-        paused: "/TBD10"                        #VDA5050 specific, boolean
-        newBaseRequest: "/TBD10"                #VDA5050 specific, boolean
-        distanceSinceLastNode: "/TBD10"         #VDA5050 specific, float64
-        actionStates: "/TBD10"                  #VDA5050 specific, array
+        driving: "/driving"                       #VDA5050 specific, boolean
+        paused: "/paused"                        #VDA5050 specific, boolean
+        newBaseRequest: "/newBaseRequest"                #VDA5050 specific, boolean
+        distanceSinceLastNode: "/distanceSinceLastNode"         #VDA5050 specific, float64
+        actionStates: "/actionStates"                  #VDA5050 specific, array
             # ADD actionStates
         batteryState:                           #VDA5050 specific + partially covered by ROS common msg, JSON
-            batteryCharge: "/TBD10"             #ROS msg -> sensor_msgs/Batterystate Message.percentage
-            batteryVoltage: "/TBD10"            #ROS msg -> sensor_msgs/Batterystate Message.voltage
-            batteryHealth: "/TBD10"             #VDA5050 specific, int8
-            charging: "/TBD10"                  #VDA5050 specific, bool
-            reach: "/TBD10"                     #VDA5050 specific, uint32
-        operatingMode: "/TBD999"                #VDA5050 specific, string
-        errors: "/ERROR4389"                    #VDA5050 specific, array
+            batteryCharge: "/batteryCharge"             #ROS msg -> sensor_msgs/Batterystate Message.percentage
+            batteryVoltage: "/batteryVoltage"            #ROS msg -> sensor_msgs/Batterystate Message.voltage
+            batteryHealth: "/batteryHealth"             #VDA5050 specific, int8
+            charging: "/charging"                  #VDA5050 specific, bool
+            reach: "/reach"                     #VDA5050 specific, uint32
+        operatingMode: "/operatingMode"                #VDA5050 specific, string
+        errors: "/errors"                    #VDA5050 specific, array
             # ADD error
-        information: "/TBD10"                   #VDA5050 specific, array
+        information: "/information"                   #VDA5050 specific, array
             # ADD info
         safetyState:                            #VDA5050 specific, JSON
-            eStop: "/TBD999"                    #VDA5050 specific, String
-            fieldViolation: "/TBD999"           #VDA5050 specific, bool
+            eStop: "/eStop"                    #VDA5050 specific, String
+            fieldViolation: "/fieldViolation"           #VDA5050 specific, bool
 
 order_daemon:
     topics_publish:

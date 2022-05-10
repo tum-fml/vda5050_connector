@@ -44,7 +44,7 @@ void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 	std::map<std::string,std::string>topicList=GetTopicPublisherList();
 	for(const auto& elem : topicList)
 	{
-		if (CompareStrings(elem.first,"state"))
+		if (CheckTopic(elem.first,"state"))
 		{
 			messagePublisher[elem.first]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
 		}
@@ -67,38 +67,70 @@ void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 	std::map<std::string,std::string>topicList=GetTopicSubscriberList();
 	for(const auto& elem : topicList)
 	{
-		if (CompareStrings(elem.first,"orderId"))
+		if (CheckTopic(elem.first,"orderId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::OrderIdCallback, this);
-		else if (CompareStrings(elem.first,"orderUpdateId"))
+		else if (CheckTopic(elem.first,"orderUpdateId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::OrderUpdateIdCallback, this);
-		else if (CompareStrings(elem.first,"zoneSetId"))
+		else if (CheckTopic(elem.first,"zoneSetId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ZoneSetIdCallback, this);
-		else if (CompareStrings(elem.first,"lastNodeId"))
+		else if (CheckTopic(elem.first,"lastNodeId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::LastNodeIdCallback, this);
-		else if (CompareStrings(elem.first,"lastNodeSequenceId"))
+		else if (CheckTopic(elem.first,"lastNodeSequenceId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::LastNodeSequenceIdCallback, this);
-		else if (CompareStrings(elem.first,"nodeState"))
+		else if (CheckTopic(elem.first,"nodeStates"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::NodeStatesCallback, this);			
-		else if (CompareStrings(elem.first,"edgeState"))
+		else if (CheckTopic(elem.first,"edgeStates"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::EdgeStatesCallback, this);
-		else if (CompareStrings(elem.first,"agvPosition"))
+		else if (CheckTopic(elem.first,"agvPosition"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionCallback, this);
-		else if (CompareStrings(elem.first,"positionInitialized"))
+		else if (CheckTopic(elem.first,"positionInitialized"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionInitializedCallback, this);
-		else if (CompareStrings(elem.first,"localizationScore"))
+		else if (CheckTopic(elem.first,"localizationScore"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionLocalizationScoreCallback, this);
-		else if (CompareStrings(elem.first,"deviationRange"))
+		else if (CheckTopic(elem.first,"deviationRange"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionDeviationRangeCallback, this);	
-		else if (CompareStrings(elem.first,"rosPose"))
+		else if (CheckTopic(elem.first,"rosPose"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSAGVPositionCallback, this);	
-		else if (CompareStrings(elem.first,"mapId"))
+		else if (CheckTopic(elem.first,"mapId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionMapIdCallback, this);	
-		else if (CompareStrings(elem.first,"mapDescription"))
+		else if (CheckTopic(elem.first,"mapDescription"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionMapDescriptionCallback, this);	
-		//else if (CompareStrings(elem.first,"velocity"))
-		//	subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::VelocityCallback, this);	
-		else if (CompareStrings(elem.first,"rosVelocity"))
-			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSVelocityCallback, this);	
+		else if (CheckTopic(elem.first,"velocity"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSVelocityCallback, this);
+		else if (CheckTopic(elem.first,"loads"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::LoadsCallback, this);		
+		else if (CheckTopic(elem.first,"driving"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::DrivingCallback, this);
+		else if (CheckTopic(elem.first,"paused"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::PausedCallback, this);
+		else if (CheckTopic(elem.first,"newBaseRequest"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::NewBaseRequestCallback, this);
+		else if (CheckTopic(elem.first,"distanceSinceLastNode"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::DistanceSinceLastNodeCallback, this);
+		else if (CheckTopic(elem.first,"actionStates"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ActionStatesCallback, this);
+		else if (CheckTopic(elem.first,"batteryState"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateCallback, this);
+		else if (CheckTopic(elem.first,"batteryCharge"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSBatteryInfoCallback, this);
+		else if (CheckTopic(elem.first,"batteryHealth"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateBattryHealthCallback, this);
+		else if (CheckTopic(elem.first,"charging"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateChargingCallback, this);
+		else if (CheckTopic(elem.first,"reach"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateReachCallback, this);
+		else if (CheckTopic(elem.first,"operatingMode"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::OperatingModeCallback, this);
+		else if (CheckTopic(elem.first,"errors"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ErrorsCallback, this);
+		else if (CheckTopic(elem.first,"information"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::InformationCallback, this);
+		else if (CheckTopic(elem.first,"safetyState"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::SafetyStateCallback, this);
+		else if (CheckTopic(elem.first,"eStop"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::SafetyStateEstopCallback, this);
+		else if (CheckTopic(elem.first,"fieldViolation"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::SafetyStateFieldViolationCallback, this);
 	}	
 }
 
@@ -116,12 +148,13 @@ void StateDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
 	// TODO: include omega by calculating from quaterion to 2D rad
 }
 
-void StateDaemon::ROSBatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg)
+void StateDaemon::ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg)
 {
 	stateMessage.batteryState.batteryCharge=msg->percentage*100.0;
 	stateMessage.batteryState.batteryVoltage=msg->voltage;
 }
-// VDA 5050 specific callbacks, just passing messages
+
+// VDA 5050 specific callbacks
 void StateDaemon::OrderIdCallback(const std_msgs::String::ConstPtr& msg)
 {
   stateMessage.orderId=msg->data;
@@ -184,6 +217,7 @@ void StateDaemon::AGVPositionMapDescriptionCallback(const std_msgs::String::Cons
 {
 	stateMessage.agvPosition.mapDescription=msg->data;
 }
+
 void StateDaemon::LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg)
 {
 	stateMessage.loads=msg->loads;
