@@ -46,7 +46,11 @@ TEST(Daemon, CheckRange)
 	 std::string name="testRange";
 	 EXPECT_TRUE(daemon.CheckRange(lowerRange,upperRange,(upperRange+lowerRange)/2.0,name));
 	 EXPECT_FALSE(daemon.CheckRange(lowerRange,upperRange,upperRange+0.2,name));
-	 //EXPECT_FALSE(daemon.CheckRange(lowerRange,upperRange,lowerRange-0.2,name));
+	 EXPECT_FALSE(daemon.CheckRange(lowerRange,upperRange,lowerRange-0.2,name));
+}
+TEST(Daemon, ReadTopicParams)
+{
+
 }
 
 // Run all the tests that were declared with TEST()

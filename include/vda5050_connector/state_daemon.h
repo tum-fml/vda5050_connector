@@ -66,6 +66,8 @@ class StateDaemon: public Daemon
 	 * */
 	void UpdateState();
 	
+	double CalculateAgvOrientation(const nav_msgs::Odometry::ConstPtr& msg);
+	
 	
 	//ALL THE CALLBACKS
 	void OrderIdCallback(const std_msgs::String::ConstPtr& msg);

@@ -7,6 +7,7 @@
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Header.h"
 #include <sstream>
+#include <tf/tf.h>
 
 
 #define DEFAULT_ERROR_TOPIC "/internal_errors"

@@ -20,7 +20,7 @@ StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(n
 	
 	LinkPublishTopics(nh);
 	LinkSubscirptionTopics(nh);
-	updateInterval=ros::Duration(30,0);
+	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
 }
 
@@ -134,18 +134,31 @@ void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 	}	
 }
 
+double StateDaemon::CalculateAgvOrientation(const nav_msgs::Odometry::ConstPtr& msg)
+{
+	tf::Quaternion q(
+	msg->pose.pose.orientation.x,
+	msg->pose.pose.orientation.y,
+	msg->pose.pose.orientation.z,
+	msg->pose.pose.orientation.w);
+	tf::Matrix3x3 m(q);
+	double roll, pitch, yaw;
+	m.getRPY(roll,pitch,yaw);
+	return (yaw);
+}
+
 //ROS specific callbacks
 void StateDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
 	stateMessage.agvPosition.x=msg->pose.pose.position.x;
 	stateMessage.agvPosition.y=msg->pose.pose.position.y;
-	//TODO: INCLUDE THETA, means conversion from quaternion to 2D rad
+	stateMessage.agvPosition.theta=CalculateAgvOrientation(msg);
 }
 void StateDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {	
 	stateMessage.velocity.vx=msg->twist.twist.linear.x;
 	stateMessage.velocity.vy=msg->twist.twist.linear.y;
-	// TODO: include omega by calculating from quaterion to 2D rad
+	stateMessage.velocity.omega=msg->twist.twist.angular.z;
 }
 
 void StateDaemon::ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg)
