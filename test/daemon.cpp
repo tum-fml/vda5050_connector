@@ -25,6 +25,7 @@ TEST(Daemon, CompareStrings)
 }
 TEST(Daemon, UpdateHeader)
 {
+	
      ros::NodeHandle nh;
      std::string name="daemon";
 	 Daemon daemon(&nh,name);
@@ -49,7 +50,15 @@ TEST(Daemon, CheckRange)
 }
 TEST(Daemon, ReadTopicParams)
 {
-
+	std::string name="test_daemon";
+	std::string value="publisher_topic";
+	ros::NodeHandle nh;
+	Daemon daemon(&nh,name);
+	std::map<std::string,std::string> params=daemon.ReadTopicParams(&nh, name);
+	EXPECT_EQ(3,params.size());
+	ASSERT_EQ(params[name].append("/topics_publish/test_pub"), value);
+	
+	
 }
 
 int main(int argc, char **argv){

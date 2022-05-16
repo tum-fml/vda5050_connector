@@ -170,9 +170,9 @@ target_link_libraries(supervisor ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
- catkin_add_gtest(${PROJECT_NAME}-daemon-test test/daemon.cpp src/daemon.cpp)
- if(TARGET ${PROJECT_NAME}-daemon-test)
-   target_link_libraries(${PROJECT_NAME}-daemon-test ${catkin_LIBRARIES})
+ catkin_add_gtest(${PROJECT_NAME}_daemon_test test/daemon.cpp src/daemon.cpp)
+ if(TARGET ${PROJECT_NAME}_daemon_test)
+   target_link_libraries(${PROJECT_NAME}_daemon_test ${catkin_LIBRARIES})
  endif()
 
 ## Add folders to be run by python nosetests

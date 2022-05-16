@@ -1,0 +1,18 @@
+
+test_daemon:
+    topics_publish:
+        test_pub: /publisher_topic 
+    topics_subscribe:
+        test_sub: "/subscriber_topic"
+        test_sub_2: "/sub_topic_2"
+
+topic_error: /error_1
+
+AGV_Data:
+    version: 1.1.03
+    manufacturer: "template_1"
+    serialNumber: "AGV721"
+
+
+
+
