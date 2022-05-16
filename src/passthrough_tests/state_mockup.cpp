@@ -36,7 +36,12 @@ vda5050_msgs::State createMessage()
 	msg.zoneSetId="fml hall of fame";
 	msg.agvPosition.x=0;
 	msg.agvPosition.y=0;
-	msg.agvPosition.theta=0;                                                                                                                           
+	msg.agvPosition.theta=0;
+	msg.agvPosition.positionInitialized=true;
+	msg.agvPosition.mapId="ae9748b3-8996-4a67-8709-cbbd40d95ea5";
+	msg.batteryState.batteryCharge=70.0;
+	msg.driving=true;
+	
 	return (msg);
 	
 }
