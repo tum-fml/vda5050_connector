@@ -136,7 +136,6 @@ std::map<std::string,std::string> Daemon::ReadTopicParams(ros::NodeHandle *nh,st
 {
 	std::map<std::string,std::string> paramResults;
 	std::vector<std::string> keys;
-	//receiving all parameters
 	nh->getParamNames(keys);
 	for(std::size_t i = 0; i < keys.size(); ++i) 
 	{

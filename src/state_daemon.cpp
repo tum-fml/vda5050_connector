@@ -150,15 +150,31 @@ double StateDaemon::CalculateAgvOrientation(const nav_msgs::Odometry::ConstPtr& 
 //ROS specific callbacks
 void StateDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+	/* TODO: check if transformation is correct, e.g. missing rotation
+	* to transform ros to vda 5050 this might help:
+	* vda5050.x=ros.y*(-1)
+	* vda5050.y=ros.x
+	* z stays the same
+	*/
+	double theta;
 	stateMessage.agvPosition.x=msg->pose.pose.position.x;
 	stateMessage.agvPosition.y=msg->pose.pose.position.y;
-	stateMessage.agvPosition.theta=CalculateAgvOrientation(msg);
+	theta=CalculateAgvOrientation(msg);
+	if (CheckRange(-M_PI,M_PI,theta,"theta"))
+	{
+		stateMessage.agvPosition.theta=theta;
+	}
 }
 void StateDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {	
+	// local AGV based coordinate system ist the same as ros coordindat system, no transformation required
+	double omega;
 	stateMessage.velocity.vx=msg->twist.twist.linear.x;
 	stateMessage.velocity.vy=msg->twist.twist.linear.y;
-	stateMessage.velocity.omega=msg->twist.twist.angular.z;
+	if (CheckRange(-M_PI,M_PI,omega,"omega"))
+	{
+		stateMessage.velocity.omega=msg->twist.twist.angular.z;
+	}
 }
 
 void StateDaemon::ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg)
