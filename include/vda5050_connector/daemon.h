@@ -29,6 +29,21 @@ class Daemon
 	public:
 	Daemon();
 	Daemon(ros::NodeHandle *nh, std::string daemonName);
+		/**
+	 * fetch the header message and publishes the state message.
+	 * updates timestamp since last publishing
+	 * */
+	void PublishState();
+	/**
+	 * checks all the logic within the state daemon, e.g. if 30 seconds without update has passed
+	 * */
+	void UpdateState();
+	/**
+	 * calculates the passed time between last update interval and now
+	 * @return returns true, if passed time since last publish is greater than 30 seconds, else return false 
+	 * */
+	bool CheckPassedTime();
+	
 	std::map<std::string,std::string> GetTopicPublisherList();
 	std::map<std::string,std::string> GetTopicSubscriberList();
 	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);

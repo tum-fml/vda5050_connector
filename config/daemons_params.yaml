@@ -74,6 +74,11 @@ order_daemon:
     topics_subscribe:
         order: /order_from_mc
 
+connection_daemon:
+    #publish topic is defined by vda 5050
+    topics_subscribe:
+        connectionState: /connected
+
 topic_error: /error_1
 
 AGV_Data:

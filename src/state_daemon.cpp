@@ -27,7 +27,6 @@ StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(n
 bool StateDaemon::CheckPassedTime()
 {
 	ros::Duration passedTime=ros::Time::now()-lastUpdateTimestamp;
-	ROS_INFO_STREAM("passed time:" <<passedTime);
 	return(passedTime >= updateInterval ? true:false);
 }
 
@@ -37,7 +36,13 @@ void StateDaemon::PublishState()
 	messagePublisher["state"].publish(stateMessage);
 	lastUpdateTimestamp=ros::Time::now();
 }
-
+void StateDaemon::UpdateState()
+{
+	if (CheckPassedTime() == true)
+	{
+		PublishState();
+	}
+}
 void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
 	
@@ -50,16 +55,6 @@ void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 		}
 	}	
 }
-
-void StateDaemon::UpdateState()
-{
-	if (CheckPassedTime() == true)
-	{
-		PublishState();
-	}
-}
-
-
 
 void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 {
@@ -154,7 +149,6 @@ void StateDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg
 	* to transform ros to vda 5050 this might help:
 	* vda5050.x=ros.y*(-1)
 	* vda5050.y=ros.x
-	* z stays the same
 	*/
 	double theta;
 	stateMessage.agvPosition.x=msg->pose.pose.position.x;

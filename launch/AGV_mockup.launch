@@ -1,6 +1,6 @@
 <launch>
   <arg name="state_daemon" default="false" />
   <node name="supervisor" pkg="vda5050_connector" type="supervisor" output="screen">
-    <rosparam command="load" file="$(find vda5050_connector)/config/state_daemon_params.yaml" />
+    <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
   </node>
 </launch>

@@ -19,7 +19,11 @@ string getTimestamp()
 }
 
 /**
- * This is a simple example program to send a state mockup file to anyfleet
+ * This is an AGV mockup to send messages to the supervisor and check if the translation works
+ * It includes the following messages:
+ * 		MapId
+ * 		Position (x, y and theta)
+ * 		BatteryCharge
  * */
 
 //creates the order msg

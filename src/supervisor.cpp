@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "vda5050_connector/state_daemon.h"
+#include "vda5050_connector/connection_daemon.h"
 #include <string>
 
 using namespace std;
@@ -10,9 +11,9 @@ int main(int argc, char **argv)
 {	
 	ros::init(argc, argv, "supervisor");
 	ros::NodeHandle nh;
-	std::string daemonName="state_daemon";
 
-	StateDaemon daemon(&nh,daemonName);
+	//StateDaemon daemon(&nh,daemonName);
+	ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
 	/*
 	std::map<std::string,std::string> paramResults;
 	ros::param::get(daemonName ,paramResults);
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
 	while(ros::ok())
 	{
 		usleep(1000*1000);
-		
+		connectionDaemon.UpdateConnection();
 		ros::spinOnce();
 	}
 	return 0;
