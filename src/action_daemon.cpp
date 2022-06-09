@@ -12,31 +12,43 @@ using namespace std;
  
 ActionDaemon::ActionDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
-
 	LinkPublishTopics(nh);
 	LinkSubscirptionTopics(nh);
 }
  
 void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
-	std::map<std::string,std::string>topicList=GetTopicPublisherList();
+	std::map<std::string,std::string>topicList = GetTopicPublisherList();
 	for(const auto& elem : topicList)
 	{
-		if (CheckTopic(elem.first,"order"))
+		if (CheckTopic(elem.first,"action"))
 		{
-			messagePublisher[elem.second]=nh->advertise<vda5050_msgs::InstantActions>(elem.second,1000);
+			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::InstantActions>(elem.second,1000);
 		}
 	}	
 }
 
 void ActionDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
 {
-	std::map<std::string,std::string>topicList=GetTopicPublisherList();
+	std::map<std::string,std::string>topicList = GetTopicSubscriberList();
 	for(const auto& elem : topicList)
 	{
-		if (CheckTopic(elem.first,"order"))
-		{
-			messagePublisher[elem.second]=nh->advertise<vda5050_msgs::InstantActions>(elem.second,1000);
-		}
+		if (CheckTopic(elem.first,"action"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&ActionDaemon::InstantActionsCallback, this);
 	}	
+}
+
+void ActionDaemon::PublishActions()
+{	
+	messagePublisher["/action"].publish(iActionMessage);	
+}
+
+void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg)
+{
+	iActionMessage.headerId=msg->headerId;
+	iActionMessage.timestamp=msg->timestamp;
+	iActionMessage.version=msg->version;
+	iActionMessage.manufacturer=msg->manufacturer;
+	iActionMessage.serialNumber=msg->serialNumber;	
+	iActionMessage.instantActions=msg->instantActions;
 }

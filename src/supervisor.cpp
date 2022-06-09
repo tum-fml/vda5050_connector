@@ -13,14 +13,14 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "supervisor");
 	ros::NodeHandle nh;
 
-	ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
-	StateDaemon stateDaemon(&nh,"state_daemon");
+	//ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
+	//StateDaemon stateDaemon(&nh,"state_daemon");
 	ActionDaemon actionDaemon(&nh, "action_daemon");
 
 	while(ros::ok())
 	{
-		connectionDaemon.UpdateConnection();
-		stateDaemon.UpdateState();
+		//connectionDaemon.UpdateConnection();
+		//stateDaemon.UpdateState();
 		ros::spinOnce();
 	}
 	return 0;

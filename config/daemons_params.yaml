@@ -76,9 +76,9 @@ order_daemon:
 
 action_daemon:
     topics_publish:
-        action: /order_to_agv 
+        action: /action_to_agv 
     topics_subscribe:
-        action: /order_from_mc
+        action: /action_from_mc
 
 connection_daemon:
     #publish topic is defined by vda 5050
