@@ -33,7 +33,7 @@ bool StateDaemon::CheckPassedTime()
 void StateDaemon::PublishState()
 {
 	stateMessage.header=GetHeader();
-	messagePublisher["state"].publish(stateMessage);
+	messagePublisher["/state"].publish(stateMessage);
 	lastUpdateTimestamp=ros::Time::now();
 }
 void StateDaemon::UpdateState()
@@ -45,13 +45,12 @@ void StateDaemon::UpdateState()
 }
 void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
-	
 	std::map<std::string,std::string>topicList=GetTopicPublisherList();
 	for(const auto& elem : topicList)
 	{
 		if (CheckTopic(elem.first,"state"))
 		{
-			messagePublisher[elem.first]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
+			messagePublisher[elem.second]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
 		}
 	}	
 }

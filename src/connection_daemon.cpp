@@ -47,14 +47,13 @@ void ConnectionDaemon::PublishConnection()
 	connectionMessage.version=header.version;
 	connectionMessage.manufacturer=header.manufacturer;
 	connectionMessage.serialNumber=header.serialNumber;
-	
 	connectionPublisher.publish(connectionMessage);
 	lastUpdateTimestamp=ros::Time::now();
 }
 
 void ConnectionDaemon::UpdateConnection()
 {
-	if (CheckPassedTime() == true)
+	if (CheckPassedTime() == true and ! connectionMessage.connectionState.empty())
 	{
 		PublishConnection();
 	}

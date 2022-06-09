@@ -12,8 +12,8 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "supervisor");
 	ros::NodeHandle nh;
 
-	//StateDaemon daemon(&nh,daemonName);
-	ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
+	//ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
+	StateDaemon stateDaemon(&nh,"state_daemon");
 	/*
 	std::map<std::string,std::string> paramResults;
 	ros::param::get(daemonName ,paramResults);
@@ -34,8 +34,8 @@ int main(int argc, char **argv)
 	* */
 	while(ros::ok())
 	{
-		usleep(1000*1000);
-		connectionDaemon.UpdateConnection();
+		//connectionDaemon.UpdateConnection();
+		stateDaemon.UpdateState();
 		ros::spinOnce();
 	}
 	return 0;

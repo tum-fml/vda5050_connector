@@ -49,7 +49,15 @@ class Daemon
 	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);
 	std::string GetParameter(std::string param);
 	std::string CreateTimestamp();
+	/**
+	 * Checks if topic str2 is within topic str1
+	 * 
+	 * */
 	bool CheckTopic(std::string str1,std::string str2);
+	/**
+	 * checks if str2 is in str1 
+	 * 
+	 * */
 	bool CompareStrings(std::string str1,std::string str2);
 	void InitHeaderInfo();
 	void LinkErrorTopics(ros::NodeHandle *nh);
