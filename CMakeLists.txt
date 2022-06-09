@@ -136,7 +136,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/vda5050_connector_node.cpp)
-add_executable(supervisor src/supervisor.cpp src/state_daemon.cpp src/daemon.cpp src/connection_daemon.cpp)
+add_executable(supervisor src/supervisor.cpp src/state_daemon.cpp src/daemon.cpp src/connection_daemon.cpp src/action_daemon.cpp)
 add_executable(state_msg_mockup src/passthrough_tests/state_mockup.cpp)
 #add_executable(state_daemon src/state_daemon.cpp src/daemon.cpp)
 

@@ -3,16 +3,8 @@
 #include <vector>
 
 /**
- * TODO: publish to topicPub, if following requirements are met:
- * - received order
- * - received order update
- * - change of load status
- * - error
- * - driving over an node
- * - change in operationMode
- * - change in "driving" field of the state
- * - change in nodeStates, edgeStates or actionStates
- * - every 30 seconds if nothing changed
+ * TODO: update documentation
+
  *  */
  
 ConnectionDaemon::ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName,float heartbeat) : Daemon(nh,daemonName)
