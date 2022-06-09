@@ -30,6 +30,7 @@ Daemon::Daemon(ros::NodeHandle *nh,std::string daemonName)
 	LinkErrorTopics(nh);
 	topicPublisherList=ReadTopicParams(nh,daemonName +"/topics_publish");
 	topicSubscriberList=ReadTopicParams(nh,daemonName +"/topics_subscribe");
+	createTopicStructurePrefix();
 }
 
 
@@ -68,16 +69,29 @@ std::string Daemon::GetParameter(std::string paramName)
 
 void Daemon::InitHeaderInfo()
 {
-	messageHeader.headerId=0;
-	messageHeader.version=GetParameter("~AGV_Data/version");
-	messageHeader.manufacturer=GetParameter("~AGV_Data/manufacturer");
-	messageHeader.serialNumber=GetParameter("~AGV_Data/serialNumber");
+	messageHeader.headerId = 0;
+	messageHeader.version = GetParameter("~AGV_Data/version");
+	messageHeader.manufacturer = GetParameter("~AGV_Data/manufacturer");
+	messageHeader.serialNumber = GetParameter("~AGV_Data/serialNumber");
+}
+
+void Daemon::createTopicStructurePrefix()
+{
+	vda5050_msgs::Header header = GetHeader();
+	std::stringstream ss;
+	ss << GetParameter("~AGV_Data/interfaceName") << "/" << GetParameter("~AGV_Data/majorVersion")<< "/" << messageHeader.manufacturer << "/" << messageHeader.serialNumber;
+	mqttTopicStructurePrefix = ss.str();
+}
+
+std::string Daemon::getTopicStructurePrefix()
+{
+	return (mqttTopicStructurePrefix);
 }
 
 void Daemon::UpdateHeader()
 {
-	messageHeader.timestamp=CreateTimestamp();
-	messageHeader.headerId+=1;
+	messageHeader.timestamp = CreateTimestamp();
+	messageHeader.headerId += 1;
 }
 
 vda5050_msgs::Header Daemon::GetHeader()

@@ -27,9 +27,8 @@ ConnectionDaemon::ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName,f
 
 std::string ConnectionDaemon::createPublishTopic()
 {
-	vda5050_msgs::Header header=GetHeader();
 	std::stringstream ss;
-	ss << "uagv/v2/" << header.manufacturer << "/" << header.serialNumber << "/connection";
+	ss << getTopicStructurePrefix() << "/connection";
 	return (ss.str());
 }
 

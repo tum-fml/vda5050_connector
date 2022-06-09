@@ -19,6 +19,7 @@ class Daemon
 	vda5050_msgs::Header messageHeader;
 	std::map<std::string,std::string> topicPublisherList;
 	std::map<std::string,std::string> topicSubscriberList;
+	std::string mqttTopicStructurePrefix;
 	bool testMode;
 	
 	protected:
@@ -49,6 +50,8 @@ class Daemon
 	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);
 	std::string GetParameter(std::string param);
 	std::string CreateTimestamp();
+	void createTopicStructurePrefix();
+	std::string getTopicStructurePrefix();
 	/**
 	 * Checks if topic str2 is within topic str1
 	 * 

@@ -74,6 +74,12 @@ order_daemon:
     topics_subscribe:
         order: /order_from_mc
 
+action_daemon:
+    topics_publish:
+        action: /order_to_agv 
+    topics_subscribe:
+        action: /order_from_mc
+
 connection_daemon:
     #publish topic is defined by vda 5050
     topics_subscribe:
@@ -82,6 +88,8 @@ connection_daemon:
 topic_error: /error_1
 
 AGV_Data:
+    interfaceName: uagv
+    majorVersion: v2
     version: 1.1.03
     manufacturer: "template_1"
     serialNumber: "AGV721"

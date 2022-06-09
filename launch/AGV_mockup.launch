@@ -1,6 +1,6 @@
 <launch>
   <arg name="state_daemon" default="false" />
-  <node name="supervisor" pkg="vda5050_connector" type="supervisor" output="screen">
+  <node name="agv_mockup" pkg="vda5050_connector" type="agv_mockup" output="screen">
     <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
   </node>
 </launch>
