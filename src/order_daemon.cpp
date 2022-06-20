@@ -6,7 +6,7 @@
 
 using namespace std;
 
-/**
+/*
  * TODO: write good comments
  */
  

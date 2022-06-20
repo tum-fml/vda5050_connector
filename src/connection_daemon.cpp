@@ -2,10 +2,10 @@
 #include <iostream>
 #include <vector>
 
-/**
+/*
  * TODO: update documentation
-
- *  */
+ *
+ */
  
 ConnectionDaemon::ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName,float heartbeat) : Daemon(nh,daemonName)
 {

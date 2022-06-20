@@ -18,9 +18,9 @@ string getTimestamp()
     return(buf);
 }
 
-/**
+/*
  * This is a simple example program to send a state mockup file to anyfleet
- * */
+ */
 
 //creates the order msg
 vda5050_msgs::State createMessage()

@@ -23,12 +23,12 @@ string getTimestamp()
     return(buf);
 }
 
-/**
+/*
  * This is a simple example program to demonstrate how to create a VDA 5050 msg in ROS
  * This example creates the order message and implements all sub messages like Nodes, Edges and Actions
  * In addition we show how Arrays in ROS messages can be implemented
  * 
- * */
+ */
  
  
  // creates the NodePosition msg
