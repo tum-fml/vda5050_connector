@@ -1,0 +1,3 @@
+# ignore compiled documentation (output of Doxygen)
+doc/html/
+doc/latex/
