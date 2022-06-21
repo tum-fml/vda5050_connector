@@ -12,7 +12,11 @@
 
 #define DEFAULT_ERROR_TOPIC "/internal_errors"
 
-
+/**
+ * Model for all daemons. Every daemon provides some functionality to translate
+ * messages between the robot's internal communication and the VDA-5050-based
+ * client-server communication.
+ */
 class Daemon
 {
 	private:
@@ -23,40 +27,84 @@ class Daemon
 	bool testMode;
 	
 	protected:
-	std::map<std::string,ros::Publisher> messagePublisher;
-	std::map<std::string,ros::Subscriber> subscribers;
-	ros::Publisher errorPublisher;
+	std::map<std::string,ros::Publisher> messagePublisher; /**< Dummy
+								 comment. */
+	std::map<std::string,ros::Subscriber> subscribers; /**< Dummy
+							     comment. */
+	ros::Publisher errorPublisher; /**< Dummy comment. */
 	
 	public:
 	Daemon();
 	Daemon(ros::NodeHandle *nh, std::string daemonName);
-		/**
-	 * fetch the header message and publishes the state message.
-	 * updates timestamp since last publishing
-	 * */
+
+	/**
+	 * Fetches the header message and publishes the state message.
+	 * Updates timestamp since last publishing.
+	 */
 	void PublishState();
+
 	/**
-	 * checks all the logic within the state daemon, e.g. if 30 seconds without update has passed
-	 * */
+	 * Checks all the logic within the state daemon. For example, it checks
+	 * if 30 seconds have passed without update.
+	 */
 	void UpdateState();
+
 	/**
-	 * calculates the passed time between last update interval and now
-	 * @return returns true, if passed time since last publish is greater than 30 seconds, else return false 
-	 * */
+         * Calculates the passed time between last update interval and now.
+         * @return      Returns true if passed time since last publish is
+         *              greater than 30 seconds, else returns false.
+         */
 	bool CheckPassedTime();
 	
+	/**
+	 * Empty comment.
+	 * @return	Empty return comment.
+	 */
 	std::map<std::string,std::string> GetTopicPublisherList();
+	
+	/**
+	 * Empty comment.
+	 * @return	Empty return comment.
+	 */
 	std::map<std::string,std::string> GetTopicSubscriberList();
+	
+	/**
+	 * Empty comment.
+	 * @param param	Empty param comment.
+	 * @return	Empty return comment.
+	 */
 	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);
+	
+	/**
+	 * Empty comment.
+	 * @param param	Empty param comment.
+	 * @return	Empty return comment.
+	 */
 	std::string GetParameter(std::string param);
+	
+	/**
+	 * Empty comment.
+	 * @return	Empty return comment.
+	 */
 	std::string CreateTimestamp();
+	
+	/**
+	 * Empty comment.
+	 */
 	void createTopicStructurePrefix();
+	
+	/**
+	 * Empty comment.
+	 * @return	Empty return comment.
+	 */
 	std::string getTopicStructurePrefix();
+
 	/**
 	 * Checks if topic str2 is within topic str1
 	 * 
 	 * */
 	bool CheckTopic(std::string str1,std::string str2);
+
 	/**
 	 * checks if str2 is in str1 
 	 * 

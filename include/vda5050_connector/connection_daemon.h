@@ -11,7 +11,9 @@
 #include "vda5050_msgs/Connection.h"
 
 
-
+/**
+ * Daemon for processing VDA 5050 connection messages.
+ */
 class ConnectionDaemon: public Daemon
 {
 	private:
@@ -22,28 +24,39 @@ class ConnectionDaemon: public Daemon
 	ros::Time lastUpdateTimestamp;
 	
 	public:
-	 /**
-	  * StateDaemon Constructor
-	  * @param *nh, pointer to nodehandler; daemonName, name of the daemon
-	  * */
-	ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName, float heartbeat);
 	/**
-	 * calculates the passed time between last update interval and now
-	 * @return returns true, if passed time since last publish is greater than 30 seconds, else return false 
-	 * */
+	 * StateDaemon Constructor
+	 * @param *nh, pointer to nodehandler; daemonName, name of the daemon
+	 */
+	ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName, float heartbeat);
+
+	/**
+	 * Calculates the passed time between last update interval and now.
+	 * @return	Returns true if passed time since last publish is
+	 * 		greater than 30 seconds, else returns false.
+	 */
 	bool CheckPassedTime();
 
 	/**
-	 * fetch the header message and publishes the state message.
-	 * updates timestamp since last publishing
-	 * */
+	 * Fetches the header message and publishes the state message.
+	 * Updates timestamp since last publishing.
+	 */
 	void PublishConnection();
+
 	/**
-	 * checks all the logic within the state daemon, e.g. if 30 seconds without update has passed
-	 * */
+	 * Checks all the logic within the state daemon. For example, it checks
+	 * if 30 seconds have passed without update.
+	 */
 	void UpdateConnection();
+
+	/**
+	 * Empty comment.
+	 */
 	std::string createPublishTopic();
 	
+	/**
+	 * Empty comment.
+	 */
 	void ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr& msg);
 
 };
