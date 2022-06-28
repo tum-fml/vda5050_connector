@@ -69,7 +69,7 @@ class StateDaemon: public Daemon
 	 * file.
 	 * @param nh	Pointer to node handler.
 	 */
-	void LinkSubscirptionTopics(ros::NodeHandle *nh);
+	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
 	 * Fetches the header message and publishes the state message.

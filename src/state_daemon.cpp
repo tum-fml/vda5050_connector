@@ -60,7 +60,7 @@ void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 	}	
 }
 
-void StateDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
+void StateDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 {
 	std::map<std::string,std::string>topicList=GetTopicSubscriberList();
 	for(const auto& elem : topicList)
