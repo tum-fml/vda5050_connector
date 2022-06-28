@@ -21,7 +21,7 @@ StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(n
 	LinkSubscirptionTopics(nh);
 	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
-	newPublishTrigger=false;
+	newPublishTrigger=true;
 }
 
 bool StateDaemon::CheckPassedTime()
@@ -87,7 +87,7 @@ void StateDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionLocalizationScoreCallback, this);
 		else if (CheckTopic(elem.first,"deviationRange"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionDeviationRangeCallback, this);	
-		else if (CheckTopic(elem.first,"rosPose"))
+		else if (CheckTopic(elem.first,"pose"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSAGVPositionCallback, this);	
 		else if (CheckTopic(elem.first,"mapId"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::AGVPositionMapIdCallback, this);	
