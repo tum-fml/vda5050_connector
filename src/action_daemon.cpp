@@ -6,10 +6,9 @@
 
 using namespace std;
 
-/**
+/*
  * Currently, the action daemon is only used for passing messages from mqtt topic to ros topic
  */
- 
 ActionDaemon::ActionDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
 	LinkPublishTopics(nh);

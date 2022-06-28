@@ -5,7 +5,7 @@
 #include <string>
 
 using namespace std;
-/**
+/*
  * TODO: write good comments
  */
 int main(int argc, char **argv)

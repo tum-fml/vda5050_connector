@@ -18,13 +18,13 @@ string getTimestamp()
     return(buf);
 }
 
-/**
+/*
  * This is an AGV mockup to send messages to the supervisor and check if the translation works
  * It includes the following messages:
  * 		MapId
  * 		Position (x, y and theta)
  * 		BatteryCharge
- * */
+ */
 
 //creates the order msg
 vda5050_msgs::State createMessage()

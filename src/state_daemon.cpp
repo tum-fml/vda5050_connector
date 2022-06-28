@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-/**
+/*
  * TODO: publish to topicPub, if following requirements are met:
  * - received order
  * - received order update
@@ -13,7 +13,7 @@
  * - change in "driving" field of the state						Done in Callback
  * - change in nodeStates, edgeStates or actionStates
  * - every 30 seconds if nothing changed
- *  */
+ */
  
 StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {

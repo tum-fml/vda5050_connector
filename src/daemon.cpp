@@ -5,7 +5,7 @@
 
 
 
-/**
+/*
  * TODO: publish to topicPub, if following requirements are met:
  * - received order
  * - received order update
@@ -16,7 +16,7 @@
  * - change in "driving" field of the state
  * - change in nodeStates, edgeStates or actionStates
  * - every 30 seconds if nothing changed
- *  */
+ */
  
 Daemon::Daemon()
 {
