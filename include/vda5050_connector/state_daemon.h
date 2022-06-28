@@ -33,6 +33,7 @@ class StateDaemon: public Daemon
 	ros::Publisher pub;
 	ros::Duration updateInterval;
 	ros::Time lastUpdateTimestamp;
+	bool newPublishTrigger;
 	
 	public:
 	 /**

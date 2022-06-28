@@ -6,22 +6,22 @@
  * TODO: publish to topicPub, if following requirements are met:
  * - received order
  * - received order update
- * - change of load status
- * - error
+ * - change of load status										Done in Callback
+ * - error														Done in Callback
  * - driving over an node
- * - change in operationMode
- * - change in "driving" field of the state
+ * - change in operationMode									Done in Callback
+ * - change in "driving" field of the state						Done in Callback
  * - change in nodeStates, edgeStates or actionStates
  * - every 30 seconds if nothing changed
  *  */
  
 StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
-	
 	LinkPublishTopics(nh);
 	LinkSubscirptionTopics(nh);
 	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
+	newPublishTrigger=false;
 }
 
 bool StateDaemon::CheckPassedTime()
@@ -35,10 +35,11 @@ void StateDaemon::PublishState()
 	stateMessage.header=GetHeader();
 	messagePublisher["/state"].publish(stateMessage);
 	lastUpdateTimestamp=ros::Time::now();
+	newPublishTrigger=false;
 }
 void StateDaemon::UpdateState()
 {
-	if (CheckPassedTime() == true)
+	if (CheckPassedTime() or newPublishTrigger)
 	{
 		PublishState();
 	}
@@ -246,10 +247,12 @@ void StateDaemon::AGVPositionMapDescriptionCallback(const std_msgs::String::Cons
 void StateDaemon::LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg)
 {
 	stateMessage.loads=msg->loads;
+	newPublishTrigger=true;
 }
 void StateDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr& msg)
 {
 	stateMessage.driving=msg->data;
+	newPublishTrigger=true;
 }
 void StateDaemon::PausedCallback(const std_msgs::Bool::ConstPtr& msg)
 {
@@ -290,10 +293,12 @@ void StateDaemon::BatteryStateReachCallback(const std_msgs::UInt32::ConstPtr& ms
 void StateDaemon::OperatingModeCallback(const std_msgs::String::ConstPtr& msg)
 {
 	stateMessage.operatingMode=msg->data;
+	newPublishTrigger=true;
 }
 void StateDaemon::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg)
 {
 	stateMessage.errors=msg->errors;
+	newPublishTrigger=true;
 }
 void StateDaemon::InformationCallback(const vda5050_msgs::Information::ConstPtr& msg)
 {
