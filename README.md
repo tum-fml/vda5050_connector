@@ -9,7 +9,8 @@
 
 ## Steps to Install the Connector
 
-* git clone
+* git clone https://github.com/idealworks/VDA-5050-Connector.git
+* git clone vda-msgs
 * cd asdf
 * catkin_make
 * source...
