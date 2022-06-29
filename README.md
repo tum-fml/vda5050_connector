@@ -30,7 +30,7 @@ source devel/setup.bash
 * Have a look at the config and change parameters for your needs
   * Change endpoint parameters, add certificates etc.
 * start the supervisor
-* ```console
+```console
 roslaunch vda_5050_connector supervisor.launch
 ```
 
