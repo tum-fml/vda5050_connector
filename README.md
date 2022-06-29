@@ -16,11 +16,11 @@ cd src
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
 * Clone the vda_5050 ros msg repository https://github.com/ipa320/vda5050_msgs (currently not in use, since needed msg are part of this repo, we will commit this to the msg repo)
-* ```console
+```console
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
-*build and source the workspace 
-```
+* build and source the workspace 
+```console
 cd ..
 catkin_make
 source devel/setup.bash
@@ -29,7 +29,10 @@ source devel/setup.bash
 ## How to Start the Connector
 * Have a look at the config and change parameters for your needs
   * Change endpoint parameters, add certificates etc.
-* roslaunch ...
+* start the supervisor
+* ```console
+roslaunch vda_5050_connector supervisor.launch
+```
 
 ## Configuration Options
 * Connection
