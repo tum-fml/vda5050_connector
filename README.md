@@ -1,15 +1,15 @@
 # How to Use the VDA-5050-Connector
 
 ## Prerequisites
+* This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic
+* We assume that you have installed and configured ROS as well created your first workspace (e. g. catkin_ws)
 * install rosbridge: http://wiki.ros.org/mqtt_bridge
 
-* developed for and tested under Ubuntu 18.04 LTS and ROS Melodic
-
-* existing catkin_ws
-
 ## Steps to Install the Connector
-
-* git clone https://github.com/idealworks/VDA-5050-Connector.git
+* Clone the repsonitory
+```bash
+git clone https://github.com/idealworks/VDA-5050-Connector.git
+```
 * git clone vda-msgs
 * cd asdf
 * catkin_make
