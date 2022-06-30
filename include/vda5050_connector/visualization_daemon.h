@@ -24,6 +24,7 @@
 #include "vda5050_msgs/Errors.h"
 #include "vda5050_msgs/Information.h"
 #include "vda5050_msgs/SafetyState.h"
+#include "vda5050_msgs/Visualization.h"
 
 /**
  * Daemon for processing VDA 5050 state messages. This daemon gathers relevant
@@ -36,7 +37,7 @@
 class VisDaemon: public Daemon
 {
 	private:
-	vda5050_msgs::State visMessage;
+	vda5050_msgs::Visualization visMessage;
 	ros::Publisher pub;
 	ros::Duration updateInterval;
 	ros::Time lastUpdateTimestamp;
@@ -89,13 +90,6 @@ class VisDaemon: public Daemon
 	
 	// ---- ALL THE CALLBACKS ----
 	
-	void OrderIdCallback(const std_msgs::String::ConstPtr& msg);
-	void OrderUpdateIdCallback(const std_msgs::UInt32::ConstPtr& msg);
-	void ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg);
-	void LastNodeIdCallback(const std_msgs::String::ConstPtr& msg);
-	void LastNodeSequenceIdCallback(const std_msgs::UInt32::ConstPtr& msg);
-	void NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPtr& msg);
-	void EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg);
 	void AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
 	void AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg);
 	void AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg);
@@ -104,25 +98,6 @@ class VisDaemon: public Daemon
 	void AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg);
 	void AGVPositionMapDescriptionCallback(const std_msgs::String::ConstPtr& msg);
 	void ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg);
-	void LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg);
-	void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
-	void PausedCallback(const std_msgs::Bool::ConstPtr& msg);
-	void NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg);
-	void DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg);
-	void ActionStatesCallback(const vda5050_msgs::ActionStates::ConstPtr& msg);
-	
-	void BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg);
-	void BatteryStateBattryHealthCallback(const std_msgs::Int8::ConstPtr& msg);
-	void BatteryStateChargingCallback(const std_msgs::Bool::ConstPtr& msg);
-	void BatteryStateReachCallback(const std_msgs::UInt32::ConstPtr& msg);
-	void ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
-	void OperatingModeCallback(const std_msgs::String::ConstPtr& msg);
-	void ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg);
-	void InformationCallback(const vda5050_msgs::Information::ConstPtr& msg);
-	
-	void SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg);
-	void SafetyStateEstopCallback(const std_msgs::String::ConstPtr& msg);
-	void SafetyStateFieldViolationCallback(const std_msgs::Bool::ConstPtr& msg);
 };
 #endif
 
