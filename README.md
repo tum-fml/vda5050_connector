@@ -34,6 +34,7 @@ source devel/setup.bash
 ## How to Start the Connector
 * Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs
 The config file is used to change the ROS topics you want to subscribe and publish.
+- ![#f03c15]Do not change the key, only the value (see YAML Docu of you are not sure) `#f03c15`
 * start the supervisor
 ```console
 roslaunch vda_5050_connector supervisor.launch
@@ -92,11 +93,16 @@ Now you should see some output on the terminal which should looks like this:
 [ INFO] [1656490735.894266591]: Using v2 for parameter ~AGV_Data/majorVersion
 ```
 The output gives you an overview over all parameters read from the config file, so you can check if everything is as you want it.
+Is some parameters are not readable or not found in the parameter server, there is a warning output. Please check if you have a typo in your config file
 
 ## Configuration Options
 * Connection
 * Topic mapping
 * ...
 
+## Known Bugs
+* Currently, the console ouput is done twice for some parameters due to the architecture  
+
 ## About
 The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
+
