@@ -18,7 +18,7 @@
 StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
 	LinkPublishTopics(nh);
-	LinkSubscirptionTopics(nh);
+	LinkSubscriptionTopics(nh);
 	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
 	newPublishTrigger=true;
