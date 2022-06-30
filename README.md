@@ -34,7 +34,9 @@ source devel/setup.bash
 ## How to Start the Connector
 * Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs
 The config file is used to change the ROS topics you want to subscribe and publish.
-- ![#f03c15]Do not change the key, only the value (see YAML Docu of you are not sure) `#f03c15`
+```diff
+- Do not change the key, only the value (see YAML Docu of you are not sure)
+```
 * start the supervisor
 ```console
 roslaunch vda_5050_connector supervisor.launch
