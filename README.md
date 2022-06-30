@@ -37,6 +37,7 @@ The config file is used to change the ROS topics you want to subscribe and publi
 ```diff
 - Do not change the key, only the value (see YAML Docu of you are not sure)
 ```
+* start the mqtt_bridge (or equivalent if you use another tool)
 * start the supervisor
 ```console
 roslaunch vda_5050_connector supervisor.launch
