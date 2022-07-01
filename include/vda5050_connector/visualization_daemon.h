@@ -1,5 +1,5 @@
-#ifndef ORDER_DAEMON_H
-#define ORDER_DAEMON_H
+#ifndef VIS_DAEMON_H
+#define VIS_DAEMON_H
 #include <ros/ros.h>
 #include <string>
 #include <ros/console.h>
@@ -27,7 +27,7 @@
 #include "vda5050_msgs/Visualization.h"
 
 /**
- * Daemon for processing VDA 5050 state messages. This daemon gathers relevant
+ * Daemon for processing VDA 5050 visualziation messages. This daemon gathers relevant
  * information from different sources of the robot's communication system, i. e.
  * different ROS topics. The collected information is then compiled into the
  * form which the VDA 5050 expects. State messages are repeatedly sent to the
@@ -69,7 +69,7 @@ class VisDaemon: public Daemon
 	 * file.
 	 * @param nh	Pointer to node handler.
 	 */
-	void LinkSubscirptionTopics(ros::NodeHandle *nh);
+	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
 	 * Fetches the header message and publishes the state message.

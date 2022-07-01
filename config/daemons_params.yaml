@@ -80,6 +80,12 @@ action_daemon:
     topics_subscribe:
         action: /action_from_mc
 
+visualization_daemon:
+    topics_publish:
+        visualization: /viz_to_mc 
+    topics_subscribe:
+        visualization: /viz_from_agv
+
 connection_daemon:
     #publish topic is defined by vda 5050
     topics_subscribe:

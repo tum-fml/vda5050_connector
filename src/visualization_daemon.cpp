@@ -12,7 +12,7 @@ VisDaemon::VisDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,
 	
 	LinkPublishTopics(nh);
 	LinkSubscriptionTopics(nh);
-	updateInterval=ros::Duration(30.0);
+	updateInterval=ros::Duration(1.0);
 	lastUpdateTimestamp=ros::Time::now();
 }
 
@@ -24,7 +24,11 @@ bool VisDaemon::CheckPassedTime()
 
 void VisDaemon::PublishVisualization()
 {
-	visMessage.header=GetHeader();
+	visMessage.headerId=GetHeader().headerId;
+	visMessage.timestamp=GetHeader().timestamp;
+	visMessage.version=GetHeader().version;
+	visMessage.manufacturer=GetHeader().manufacturer;
+	visMessage.serialNumber=GetHeader().serialNumber;
 	messagePublisher["/visualization"].publish(visMessage);
 	lastUpdateTimestamp=ros::Time::now();
 }
