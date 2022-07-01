@@ -32,7 +32,7 @@ source devel/setup.bash
 ```
 
 ## How to Start the Connector
-* Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs
+* Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs.
 The config file is used to change the ROS topics you want to subscribe and publish.
 ```diff
 - Do not change the key, only the value (see YAML Docu of you are not sure)
@@ -43,7 +43,7 @@ The config file is used to change the ROS topics you want to subscribe and publi
 roslaunch vda_5050_connector supervisor.launch
 ```
 
-Now you should see some output on the terminal which should looks like this:
+Now you should see some output on the terminal which should look like this:
 ```console
 [ INFO] [1656490735.862272168]: Using 1.1.03 for parameter ~AGV_Data/version
 [ INFO] [1656490735.863479005]: Using template_1 for parameter ~AGV_Data/manufacturer
@@ -96,7 +96,7 @@ Now you should see some output on the terminal which should looks like this:
 [ INFO] [1656490735.894266591]: Using v2 for parameter ~AGV_Data/majorVersion
 ```
 The output gives you an overview over all parameters read from the config file, so you can check if everything is as you want it.
-Is some parameters are not readable or not found in the parameter server, there is a warning output. Please check if you have a typo in your config file
+If any parameters are not readable or not found in the parameter server, there is a warning output. Please check if you have a typo in your config file.
 
 ## Configuration Options
 * Connection
