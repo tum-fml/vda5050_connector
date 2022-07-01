@@ -16,7 +16,7 @@ go to your catkin_ws and switch to the src folder
 ```console
 cd src
 ```
-Clone the repsonitory
+Clone the repository
 ```console
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
