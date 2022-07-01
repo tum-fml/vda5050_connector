@@ -8,8 +8,8 @@ The only thing that needs to be customized for use is a configuration file in wh
 ## Prerequisites
 * This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic
 * We assume that you have installed and configured ROS as well created your first workspace (e. g. catkin_ws)
-* install rosbridge: http://wiki.ros.org/mqtt_bridge
-* configure rosbridge, e. g. change config endpoints, certificate storage location and topics.
+* install the ROS MQTT bridge: http://wiki.ros.org/mqtt_bridge
+* configure the MQTT Bridge, e. g. change config endpoints, certificate storage location and topics.
 
 ## Steps to Install the Connector
 go to your catkin_ws and switch to the src folder
