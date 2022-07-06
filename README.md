@@ -26,7 +26,11 @@ Clone the `vda5050_msgs` repository (currently not in use, since needed msg are 
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
 **Note**
-Currently, we did not send a merge request to the vda5050_msgs repository and some additional msgs are part of our repository. In order to use our msgs, do the following:
+Currently, we did not send a merge request to the vda5050_msgs repository and some additional msgs are part of our repository. In order to use our msgs, do the following after cloning the vda5050_msgs repository:
+* copy the .msg files found in /msg from VDA-5050-Connector (this repo) into the msg files of the vda5050_msgs
+* replace the CmakeLists.txt in the vda5050_msgs repository with the one within the /msg/CmakeLists of the VDA-5050-Connector.
+
+
 
 Build and source the workspace:
 ```console
