@@ -27,7 +27,7 @@ install the additional requirements if needed to run the bridge (see https://git
 Now we have to modify several files to make the mqtt bridge run with AWS.
 in aws-io-bridge-example module:
 create a new config file (in our case "aws_iot_params.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed tls configuration:
-'''
+```
 tls:
   ca_certs: <path_to_your_root_certificate>
   certfile: <path_to_your_key_certificate>
@@ -41,9 +41,9 @@ connection:
 client:
   protocol: 4
   client_id: <your_client_id>
-'''
+```
 create an additional config file (in our case "bridge.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed mqtt-bridge configuration:
-'''
+```
 - factory: mqtt_bridge.bridge:RosToMqttBridge
   msg_type: <your_msg_type>
   topic_from: <your_topic>
@@ -53,10 +53,10 @@ create an additional config file (in our case "bridge.yaml") within the aws_iot_
   topic_from: <your_topic>
   topic_to: <your_topic>
   ...
-'''
+```
 
 finally, define your own launch file within the aws-io-bridge-example module and add the following
-'''
+```
 <launch>
   <arg name="bridge_params" />
   <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen">
@@ -64,7 +64,7 @@ finally, define your own launch file within the aws-io-bridge-example module and
     <rosparam command="load" ns="bridge" file="$(find aws_iot_mqtt_bridge)/config/bridge.yaml" />
   </node>
 </launch>
-'''
+```
 
 
 
