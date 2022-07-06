@@ -6,25 +6,26 @@ Unlike some other repos, we do not offer an abstract implementation, but allow a
 The only thing that needs to be customized for use is a configuration file in which the respective ROS Topics can be individualized. 
 
 ## Prerequisites
-* This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic
-* We assume that you have installed and configured ROS as well created your first workspace (e. g. catkin_ws)
+* This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic.
+* We assume that you have installed and configured ROS and created your first workspace (e.g. `catkin_ws`).
+* The communication needs to be bridged between ROS and MQTT, so you need a ROS node 
 * install the ROS MQTT bridge: http://wiki.ros.org/mqtt_bridge
 * configure the MQTT Bridge, e. g. change config endpoints, certificate storage location and topics.
 
 ## Steps to Install the Connector
-go to your catkin_ws and switch to the src folder
+Go to your `catkin_ws` and switch to the src folder:
 ```console
 cd src
 ```
-Clone the repository
+Clone the repository:
 ```console
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
-Clone the vda_5050 ros msg repository https://github.com/ipa320/vda5050_msgs (currently not in use, since needed msg are part of this repo, we will commit this to the msg repo)
+Clone the `vda5050_msgs` repository (currently not in use, since needed msg are part of this repo, we will commit this to the msg repo):
 ```console
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
-Build and source the workspace 
+Build and source the workspace:
 ```console
 cd ..
 catkin_make
@@ -32,13 +33,13 @@ source devel/setup.bash
 ```
 
 ## How to Start the Connector
-* Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs.
+1. Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs.
 The config file is used to change the ROS topics you want to subscribe and publish.
 ```diff
-- Do not change the key, only the value (see YAML Docu of you are not sure)
+- Do not change the key, only the value (see YAML specification if you are not sure)
 ```
-* start the mqtt_bridge (or equivalent if you use another tool)
-* start the supervisor
+2. Start the mqtt_bridge (or equivalent if you use another tool)
+3. Start the supervisor
 ```console
 roslaunch vda_5050_connector supervisor.launch
 ```
