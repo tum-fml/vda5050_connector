@@ -78,7 +78,7 @@ cd ..
 catkin_make
 roslaunch aws_iot_mqtt_bridge aws_iot_bridge.launch
 ```
-The output of you command promt should now be something like that:
+The output of you terminal should be something like this:
 ```console
 
 started roslaunch server http://<your_server>
@@ -115,7 +115,7 @@ started core service [/rosout]
 process[mqtt_bridge-2]: started with pid [23098]
 [INFO] [1657111653.836246]: MQTT connected
 ```
-
+After you successfully installed and configured your mqtt bridge, lets head over to the VDA5050-Connector.
 
 ## Steps to Install the Connector
 Go to your `catkin_ws` and switch to the src folder:
