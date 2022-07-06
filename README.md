@@ -12,19 +12,129 @@ The only thing that needs to be customized for use is a configuration file in wh
 * install the ROS MQTT bridge: http://wiki.ros.org/mqtt_bridge
 * configure the MQTT Bridge, e. g. change config endpoints, certificate storage location and topics.
 
+As an example, we describe how to configurate the mqtt bridge to work with AWS.
+
+Clone the Aws IoT Bridge Example into your catkin_ws:
+```console
+cd src
+git clone https://gitlab.lrz.de/vda5050-connector/aws-iot-bridge-example.git
+```
+Clone the mqtt-bridge (check, if you need the python 2.7 branch, depending of your ROS Distro)
+```console
+git clone https://gitlab.lrz.de/vda5050-connector/aws-iot-bridge-example.git
+```
+install the additional requirements if needed to run the bridge (see https://github.com/groove-x/mqtt_bridge#prerequisites).  
+Now we have to modify several files to make the mqtt bridge run with AWS.  
+In aws-io-bridge-example module:  
+create a new config file (in our case "aws_iot_params.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed tls configuration:
+```
+tls:
+  ca_certs: <path_to_your_root_certificate>
+  certfile: <path_to_your_key_certificate>
+  keyfile: <your_path_to_private_key"
+  tls_version: 5
+  tls_insecure: false
+connection:
+  host: <your_hostname>
+  port: 8883
+  keepalive: 60
+client:
+  protocol: 4
+  client_id: <your_client_id>
+```
+create an additional config file (in our case "bridge.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed mqtt-bridge configuration:
+```
+- factory: mqtt_bridge.bridge:RosToMqttBridge
+  msg_type: <your_msg_type>
+  topic_from: <your_topic>
+  topic_to: <your_topic>
+- factory: mqtt_bridge.bridge:MqttToRosBridge
+  msg_type: <your_msg_type>
+  topic_from: <your_topic>
+  topic_to: <your_topic>
+  ...
+```
+Your folder aws_iot_mqtt_bridge/config should contain two files:
+* aws_iot_params.yaml
+* bridge.yaml
+
+
+Finally, define your own launch file within the aws-io-bridge-example module and add the following
+```
+<launch>
+  <arg name="bridge_params" />
+  <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen">
+    <rosparam command="load" ns="mqtt" file="$(find aws_iot_mqtt_bridge)/config/aws_iot_params.yaml" />
+    <rosparam command="load" ns="bridge" file="$(find aws_iot_mqtt_bridge)/config/bridge.yaml" />
+  </node>
+</launch>
+```
+In your folder aws_iot_mqtt_bridge/launch shoud be one launch file:
+* aws_iot_bridge.launch
+
+Make and test the connection:
+```console
+cd ..
+catkin_make
+roslaunch aws_iot_mqtt_bridge aws_iot_bridge.launch
+```
+The output of you terminal should be something like this:
+```console
+
+started roslaunch server http://<your_server>
+
+SUMMARY
+========
+
+PARAMETERS
+ * /mqtt_bridge/bridge: [{'topic_from': '...
+ * /mqtt_bridge/mqtt/client/client_id: <your_ID>
+ * /mqtt_bridge/mqtt/client/protocol: 4
+ * /mqtt_bridge/mqtt/connection/host: <your_hostname>
+ * /mqtt_bridge/mqtt/connection/keepalive: 60
+ * /mqtt_bridge/mqtt/connection/port: 8883
+ * /mqtt_bridge/mqtt/tls/ca_certs: <your_root_path>
+ * /mqtt_bridge/mqtt/tls/certfile: <your_cert_path>
+ * /mqtt_bridge/mqtt/tls/keyfile: <your_private_keyfile_path>
+ * /mqtt_bridge/mqtt/tls/tls_insecure: False
+ * /mqtt_bridge/mqtt/tls/tls_version: 5
+ * /rosdistro: melodic
+ * /rosversion: 1.14.12
+
+NODES
+  /
+    mqtt_bridge (mqtt_bridge/mqtt_bridge_node.py)
+
+auto-starting new master
+process[master]: started with pid [23084]
+ROS_MASTER_URI=http://localhost:11311
+
+setting /run_id to cd2855b8-fd29-11ec-bfbb-080027dacaf0
+process[rosout-1]: started with pid [23095]
+started core service [/rosout]
+process[mqtt_bridge-2]: started with pid [23098]
+[INFO] [1657111653.836246]: MQTT connected
+```
+After you successfully installed and configured your mqtt bridge, lets head over to the VDA5050-Connector.
+
 ## Steps to Install the Connector
 Go to your `catkin_ws` and switch to the src folder:
 ```console
 cd src
 ```
-Clone the repository:
+Clone this repository:
 ```console
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
-Clone the `vda5050_msgs` repository (currently not in use, since needed msg are part of this repo, we will commit this to the msg repo):
+Clone the `vda5050_msgs`repository:
 ```console
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
+**Note**
+Currently, we did not send a merge request to the vda5050_msgs repository and some additional msgs are part of our repository. In order to use our msgs, do the following after cloning the vda5050_msgs repository:
+* copy the .msg files found in /msg from VDA-5050-Connector (this repo) into the /msg folder of the vda5050_msgs repository
+* replace the CmakeLists.txt in the vda5050_msgs repository with the one within the /msg/CmakeLists of the VDA-5050-Connector.
+
 Build and source the workspace:
 ```console
 cd ..
