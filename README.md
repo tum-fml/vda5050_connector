@@ -17,7 +17,7 @@ Go to your `catkin_ws` and switch to the src folder:
 ```console
 cd src
 ```
-Clone the repository:
+Clone this repository:
 ```console
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
@@ -25,6 +25,9 @@ Clone the `vda5050_msgs` repository (currently not in use, since needed msg are 
 ```console
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
+**Note**
+Currently, we did not send a merge request to the vda5050_msgs repository and some additional msgs are part of our repository. In order to use our msgs, do the following:
+
 Build and source the workspace:
 ```console
 cd ..
