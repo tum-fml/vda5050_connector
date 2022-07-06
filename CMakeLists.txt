@@ -137,6 +137,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/vda5050_connector_node.cpp)
 add_executable(supervisor src/supervisor.cpp src/state_daemon.cpp src/daemon.cpp src/connection_daemon.cpp src/action_daemon.cpp src/visualization_daemon.cpp)
+add_executable(vis_mockup src/mock_ups/vis_mockup.cpp)
 #add_executable(state_msg_mockup src/passthrough_tests/state_mockup.cpp)
 #add_executable(state_daemon src/state_daemon.cpp src/daemon.cpp)
 
@@ -151,12 +152,14 @@ add_executable(supervisor src/supervisor.cpp src/state_daemon.cpp src/daemon.cpp
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(supervisor ${catkin_EXPORTED_TARGETS})
+add_dependencies(vis_mockup ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #target_link_libraries(state_msg_mockup ${catkin_LIBRARIES})
 #target_link_libraries(state_daemon ${catkin_LIBRARIES})
 target_link_libraries(supervisor ${catkin_LIBRARIES})
+target_link_libraries(vis_mockup ${catkin_LIBRARIES})
 
 #   ${catkin_LIBRARIES}
 # )
