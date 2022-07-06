@@ -25,7 +25,7 @@ git clone https://gitlab.lrz.de/vda5050-connector/aws-iot-bridge-example.git
 ```
 install the additional requirements if needed to run the bridge (see https://github.com/groove-x/mqtt_bridge#prerequisites).
 Now we have to modify several files to make the mqtt bridge run with AWS.
-in aws-io-bridge-example module:
+In aws-io-bridge-example module:
 create a new config file (in our case "aws_iot_params.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed tls configuration:
 ```
 tls:
