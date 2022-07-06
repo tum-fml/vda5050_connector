@@ -12,6 +12,9 @@ The only thing that needs to be customized for use is a configuration file in wh
 * install the ROS MQTT bridge: http://wiki.ros.org/mqtt_bridge
 * configure the MQTT Bridge, e. g. change config endpoints, certificate storage location and topics.
 
+As an example, we describe how to configurate the mqtt bridge to work with AWS.
+
+
 ## Steps to Install the Connector
 Go to your `catkin_ws` and switch to the src folder:
 ```console
@@ -21,16 +24,14 @@ Clone this repository:
 ```console
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
-Clone the `vda5050_msgs` repository (currently not in use, since needed msg are part of this repo, we will commit this to the msg repo):
+Clone the `vda5050_msgs`repository:
 ```console
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
 **Note**
 Currently, we did not send a merge request to the vda5050_msgs repository and some additional msgs are part of our repository. In order to use our msgs, do the following after cloning the vda5050_msgs repository:
-* copy the .msg files found in /msg from VDA-5050-Connector (this repo) into the msg files of the vda5050_msgs
+* copy the .msg files found in /msg from VDA-5050-Connector (this repo) into the /msg folder of the vda5050_msgs repository
 * replace the CmakeLists.txt in the vda5050_msgs repository with the one within the /msg/CmakeLists of the VDA-5050-Connector.
-
-
 
 Build and source the workspace:
 ```console
