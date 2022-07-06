@@ -54,8 +54,12 @@ create an additional config file (in our case "bridge.yaml") within the aws_iot_
   topic_to: <your_topic>
   ...
 ```
+Your folder aws_iot_mqtt_bridge/config should contain two files:
+* aws_iot_params.yaml
+* bridge.yaml
 
-finally, define your own launch file within the aws-io-bridge-example module and add the following
+
+Finally, define your own launch file within the aws-io-bridge-example module and add the following
 ```
 <launch>
   <arg name="bridge_params" />
@@ -65,7 +69,52 @@ finally, define your own launch file within the aws-io-bridge-example module and
   </node>
 </launch>
 ```
+In your folder aws_iot_mqtt_bridge/launch shoud be one launch file:
+* aws_iot_bridge.launch
 
+Make and test the connection:
+```console
+cd ..
+catkin_make
+roslaunch aws_iot_mqtt_bridge aws_iot_bridge.launch
+```
+The output of you command promt should now be something like that:
+```console
+
+started roslaunch server http://<your_server>
+
+SUMMARY
+========
+
+PARAMETERS
+ * /mqtt_bridge/bridge: [{'topic_from': '...
+ * /mqtt_bridge/mqtt/client/client_id: <your_ID>
+ * /mqtt_bridge/mqtt/client/protocol: 4
+ * /mqtt_bridge/mqtt/connection/host: <your_hostname>
+ * /mqtt_bridge/mqtt/connection/keepalive: 60
+ * /mqtt_bridge/mqtt/connection/port: 8883
+ * /mqtt_bridge/mqtt/tls/ca_certs: <your_root_path>
+ * /mqtt_bridge/mqtt/tls/certfile: <your_cert_path>
+ * /mqtt_bridge/mqtt/tls/keyfile: <your_private_keyfile_path>
+ * /mqtt_bridge/mqtt/tls/tls_insecure: False
+ * /mqtt_bridge/mqtt/tls/tls_version: 5
+ * /rosdistro: melodic
+ * /rosversion: 1.14.12
+
+NODES
+  /
+    mqtt_bridge (mqtt_bridge/mqtt_bridge_node.py)
+
+auto-starting new master
+process[master]: started with pid [23084]
+ROS_MASTER_URI=http://localhost:11311
+
+setting /run_id to cd2855b8-fd29-11ec-bfbb-080027dacaf0
+process[rosout-1]: started with pid [23095]
+started core service [/rosout]
+process[mqtt_bridge-2]: started with pid [23098]
+[INFO] [1657111653.836246]: MQTT connected
+```
 
 
 ## Steps to Install the Connector
