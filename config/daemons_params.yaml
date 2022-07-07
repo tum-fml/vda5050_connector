@@ -16,7 +16,12 @@
 #		!!! NOTE: You can't use key and value pairs for parents and childs at the same time, since the YAML-parser will throw an exception
 #       !!! e. g. defining a topic for safetystate and the two childs is not possible
 
-
+AGV_Data:
+    interfaceName: uagv
+    majorVersion: v2
+    version: 1.1.03
+    manufacturer: "template_1"
+    serialNumber: "AGV721"
 
 state_daemon:
     topics_publish:
@@ -92,13 +97,6 @@ connection_daemon:
         connectionState: /connected
 
 topic_error: /error_1
-
-AGV_Data:
-    interfaceName: uagv
-    majorVersion: v2
-    version: 1.1.03
-    manufacturer: "template_1"
-    serialNumber: "AGV721"
 
 
 
