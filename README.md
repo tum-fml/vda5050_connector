@@ -9,11 +9,12 @@ The only thing that needs to be customized for use is a configuration file in wh
 ## Prerequisites
 * This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic.
 * We assume that you have installed and configured ROS and created your first workspace (e.g. `catkin_ws`).
-* The communication needs to be bridged between ROS and MQTT, so you need a ROS node 
-* install the ROS MQTT bridge: http://wiki.ros.org/mqtt_bridge
-* configure the MQTT Bridge, e. g. change config endpoints, certificate storage location and topics.
+The communication needs to be bridged between ROS and MQTT, so you need a ROS node which passes on the messages in both directions. We suggest using the [ROS MQTT bridge](http://wiki.ros.org/mqtt_bridge) package for this, and provide a configuration (see below for details).
 
-As an example, we describe how to configurate the mqtt bridge to work with AWS.
+<details>
+  <summary>Example installation of the ROS MQTT bridge</summary>
+
+As an example, we describe how to configurate the MQTT bridge to work with AWS.
 
 Clone the Aws IoT Bridge Example into your catkin_ws:
 ```console
@@ -117,7 +118,8 @@ started core service [/rosout]
 process[mqtt_bridge-2]: started with pid [23098]
 [INFO] [1657111653.836246]: MQTT connected
 ```
-After you successfully installed and configured your mqtt bridge, lets head over to the VDA5050-Connector.
+</details>
+After you successfully installed and configured your MQTT bridge, lets head over to the VDA5050-Connector.
 
 ## Steps to Install the Connector
 Go to your `catkin_ws` and switch to the src folder:
