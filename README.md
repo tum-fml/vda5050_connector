@@ -77,6 +77,7 @@ Make and test the connection:
 ```console
 cd ..
 catkin_make
+source devel/setup.bash
 roslaunch aws_iot_mqtt_bridge aws_iot_bridge.launch
 ```
 The output of you terminal should be something like this:
@@ -127,7 +128,7 @@ Clone this repository:
 ```console
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
-Clone the `vda5050_msgs`repository:
+Clone the `vda5050_msgs` repository:
 ```console
 git clone https://github.com/ipa320/vda5050_msgs.git
 ```
@@ -144,13 +145,13 @@ source devel/setup.bash
 ```
 
 ## How to Start the Connector
-1. Have a look at the config file (config/daemons_params.yaml) and change parameters for your needs.
+1. Have a look at the config file `config/daemons_params.yaml` and change parameters for your needs.
 The config file is used to change the ROS topics you want to subscribe and publish.
 ```diff
 - Do not change the key, only the value (see YAML specification if you are not sure)
 ```
-2. Start the mqtt_bridge (or equivalent if you use another tool)
-3. Start the supervisor
+2. Start the mqtt_bridge (or equivalent if you use another tool).
+3. Start the supervisor:
 ```console
 roslaunch vda_5050_connector supervisor.launch
 ```
@@ -211,12 +212,10 @@ The output gives you an overview over all parameters read from the config file, 
 If any parameters are not readable or not found in the parameter server, there is a warning output. Please check if you have a typo in your config file.
 
 ## Configuration Options
-* Connection
-* Topic mapping
-* ...
+Please see the contents of `config\daemons_params.yaml` for configuration options.
 
 ## Known Bugs
-* Currently, the console ouput is done twice for some parameters due to the architecture  
+* Currently, the console ouput is done twice for some parameters due to the architecture.
 
 ## About
 The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
