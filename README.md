@@ -4,6 +4,7 @@
 The idea of the repository is to ensure an easy connection of the VDA 5050 with ROS. 
 Unlike some other repos, we do not offer an abstract implementation, but allow an immediate integration into ROS.
 The only thing that needs to be customized for use is a configuration file in which the respective ROS Topics can be individualized. 
+![grafik](https://user-images.githubusercontent.com/36477083/177792573-6563f79d-95aa-4625-bcf2-bbb27b105b54.png)
 
 ## Prerequisites
 * This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic.
