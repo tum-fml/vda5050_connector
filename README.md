@@ -216,8 +216,15 @@ If any parameters are not readable or not found in the parameter server, there i
 ## Configuration Options
 Please see the contents of `config\daemons_params.yaml` for configuration options.
 
-## Known Bugs
+## Known Issues
 * Currently, the console ouput is done twice for some parameters due to the architecture.
+* Sometimes the MQTT-Bridge has troubles to connect. The output is like this:
+´´´console
+   [INFO] [1657111653.836246]: MQTT disconnected
+   [INFO] [1657111653.836246]: MQTT connected
+´´´
+Even there should be a connection, due to an internal bug the bridge is not working properly if the first connection is disconnected and connected afterwards.
+The solution is to restart the MQTT bridge until there is noch disconnected before connected
 
 ## About
 The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
