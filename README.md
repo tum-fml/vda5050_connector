@@ -19,11 +19,11 @@ As an example, we describe how to configurate the MQTT bridge to work with AWS.
 Clone the Aws IoT Bridge Example into your catkin_ws:
 ```console
 cd src
-git clone https://gitlab.lrz.de/vda5050-connector/aws-iot-bridge-example.git
+git clone https://github.com/aws-robotics/aws-iot-bridge-example.git
 ```
 Clone the mqtt-bridge (check, if you need the python 2.7 branch, depending of your ROS Distro)
 ```console
-git clone https://gitlab.lrz.de/vda5050-connector/aws-iot-bridge-example.git
+git clone https://github.com/groove-x/mqtt_bridge.git
 ```
 install the additional requirements if needed to run the bridge (see https://github.com/groove-x/mqtt_bridge#prerequisites).  
 Now we have to modify several files to make the mqtt bridge run with AWS.  
