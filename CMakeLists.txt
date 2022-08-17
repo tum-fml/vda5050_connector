@@ -108,7 +108,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES vda5050_connector
   CATKIN_DEPENDS roscpp rospy std_msgs
-  DEPENDS system_lib
+  # DEPENDS system_lib
 )
 
 ###########
