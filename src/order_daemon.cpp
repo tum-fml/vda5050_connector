@@ -1,72 +1,79 @@
-#include "vda5050_connector/passthrough_daemon.h"
+#include "vda5050_connector/order_daemon.h"
 #include "std_msgs/String.h"
 #include <iostream>
 #include <vector>
 #include <string>
+#include "vda5050_msgs/Order.h"
+#include "vda5050_msgs/Action.h"
 
 using namespace std;
 
 /*
- * TODO: write good comments
+ * Help
  */
- 
-PassthroughDeamon::PassthroughDeamon(Daemons daemon,ros::NodeHandle *nh, string topicPublish, string topicSubscribe, string topicError)
+OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 {
-	DaemonType=daemon;
-	topicPub=topicPublish;
-	topicSub=topicSubscribe;
-	topicErr=topicError;
-	LinkTopics(nh);
-}
- 
-void PassthroughDeamon::callbackOrder(const vda5050_msgs::Order& msg)
-{
-	publisher.publish(msg);
-}
-void PassthroughDeamon::callbackIAction(const vda5050_msgs::InstantActions& msg)
-{
-	publisher.publish(msg);
-}
-void PassthroughDeamon::callbackVisualization(const vda5050_msgs::Visualization& msg)
-{
-	publisher.publish(msg);
-}
-void PassthroughDeamon::callbackConnection(const vda5050_msgs::Connection& msg)
-{
-	publisher.publish(msg);
+	LinkPublishTopics(&(this->nh));
+	LinkSubscriptionTopics(&(this->nh));
+
+	// Initialize internal topics
+	orderCancelSub = nh.subscribe("orderCancel", 1000, &OrderDaemon::OrderCancelCallback, this);
+	orderActionPub = nh.advertise<vda5050_msgs::Action>("orderAction", 1000);
 }
 
-void PassthroughDeamon::LinkTopics(ros::NodeHandle *nh)
-{	
-	switch (DaemonType) 
+
+void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
+{
+	std::map<std::string,std::string>topicList = GetTopicPublisherList();
+	std::stringstream ss;
+
+	for(const auto& elem : topicList)
 	{
-		case Daemons::order: 
-			publisher=nh->advertise<vda5050_msgs::Order>(topicPub, 3000);
-			subscriber = nh->subscribe(topicSub, 1000, &PassthroughDeamon::callbackOrder, this);
-			break;
-		case Daemons::i_action: 
-			publisher=nh->advertise<vda5050_msgs::InstantActions>(topicPub, 3000);
-			subscriber = nh->subscribe(topicSub, 1000, &PassthroughDeamon::callbackIAction, this);
-			break;	
-		case Daemons::connection: 
-			publisher=nh->advertise<vda5050_msgs::Connection>(topicPub, 3000);
-			subscriber = nh->subscribe(topicSub, 1000, &PassthroughDeamon::callbackConnection, this);
-			break;	
-		case Daemons::viz: 
-			publisher=nh->advertise<vda5050_msgs::Visualization>(topicPub, 3000);
-			subscriber = nh->subscribe(topicSub, 1000, &PassthroughDeamon::callbackVisualization, this);
-			break;			
-	}
+		ss<< "/" << elem.second;
+		if (CheckTopic(elem.first,"order"))
+		{
+			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::Order>(ss.str(),1000);
+		}
+	}	
 }
 
+void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
+{
+	std::map<std::string,std::string>topicList = GetTopicSubscriberList();
+	for(const auto& elem : topicList)
+	{
+		if (CheckTopic(elem.first,"order"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::OrderCallback, this);
+	}	
+}
+
+
+void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg)
+{
+	// where the magic happens
+}
+
+void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
+{
+	// where the magic happens
+}
+
+void OrderDaemon::UpdateOrders()
+{
+	// where the magic happens
+}
 
 int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "daemon");
+{	
+	ros::init(argc, argv, "order_deamon");
 	ros::NodeHandle nh;
-	string topicPublish="test";
-	string topicSubscribe="test2";
-	string topicError="error";
-	PassthroughDeamon orderDaemon(Daemons::order,&nh,topicPublish,topicSubscribe,topicError);
-	ros::spin();
-};
+
+	OrderDaemon orderDaemon;
+
+	while(ros::ok())
+	{
+		orderDaemon.UpdateOrders();
+		ros::spinOnce();
+	}
+	return 0;
+}

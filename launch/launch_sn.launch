@@ -4,4 +4,5 @@
   <node name="state_daemon" pkg="vda5050_connector" type="state_daemon" output="screen">  </node>
   <node name="connection_daemon" pkg="vda5050_connector" type="connection_daemon" output="screen">  </node>
   <node name="visualization_daemon" pkg="vda5050_connector" type="visualization_daemon" output="screen">  </node>
+  <node name="order_daemon" pkg="vda5050_connector" type="order_daemon" output="screen">  </node>
 </launch>

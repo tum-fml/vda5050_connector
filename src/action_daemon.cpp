@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "vda5050_msgs/ActionStates.h"
+#include "vda5050_msgs/Action.h"
 
 using namespace std;
 
@@ -64,7 +65,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 	iActionMessage.instantActions=msg->instantActions;
 }
 
-void ActionDaemon::OrderActionCallback(const std_msgs::String::ConstPtr& msg)
+void ActionDaemon::OrderActionCallback(const vda5050_msgs::Action::ConstPtr& msg)
 {
   //queue new Action (FIFO)
   ;

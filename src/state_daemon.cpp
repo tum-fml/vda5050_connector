@@ -21,7 +21,7 @@ StateDaemon::StateDaemon() : Daemon(&(this->nh), "state_daemon")
 	LinkSubscriptionTopics(&(this->nh));
 
 	// Initialize internal topics
-	actionStatesSub = nh.subscribe("orderAction", 1000, &StateDaemon::ActionStatesCallback, this);
+	actionStatesSub = nh.subscribe("actionStates", 1000, &StateDaemon::ActionStatesCallback, this);
 
 	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
