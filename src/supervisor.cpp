@@ -15,15 +15,15 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh;
 
 	ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
-	StateDaemon stateDaemon(&nh,"state_daemon");
+	// StateDaemon stateDaemon(&nh,"state_daemon");
 	VisDaemon visDameon(&nh,"visualization_daemon");
-	//ActionDaemon actionDaemon(&nh, "action_daemon");
+	// ActionDaemon actionDaemon(&nh, "action_daemon");
 
 	while(ros::ok())
 	{
 		connectionDaemon.UpdateConnection();
-		stateDaemon.UpdateState();
-		//visDaemon.UpdateVisualization();
+		// stateDaemon.UpdateState();
+		// visDaemon.UpdateVisualization();
 		ros::spinOnce();
 	}
 	return 0;

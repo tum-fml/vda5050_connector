@@ -17,22 +17,22 @@ ActionDaemon::ActionDaemon() : Daemon(&(this->nh), "action_daemon")
 
 	// Initialize internal topics
 	orderActionSub = nh.subscribe("orderAction", 1000, &ActionDaemon::OrderActionCallback, this);
-	instantActionSub = nh.subscribe("instantAction", 1000, &ActionDaemon::InstantActionsCallback, this);
-
 	actionStatesPub = nh.advertise<vda5050_msgs::ActionStates>("actionStates", 1000);
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancel", 1000);
-	actionToAgvPub = nh.advertise<std_msgs::String>("action_to_agv", 1000);
 }
 
 
 void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
 	std::map<std::string,std::string>topicList = GetTopicPublisherList();
+	std::stringstream ss;
+
 	for(const auto& elem : topicList)
 	{
-		if (CheckTopic(elem.first,"action"))
+		ss<< "/" << elem.second;
+		if (CheckTopic(elem.first,"actionToAgv"))
 		{
-			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::InstantActions>(elem.second,1000);
+			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::InstantActions>(ss.str(),1000);
 		}
 	}	
 }
@@ -42,7 +42,9 @@ void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 	std::map<std::string,std::string>topicList = GetTopicSubscriberList();
 	for(const auto& elem : topicList)
 	{
-		if (CheckTopic(elem.first,"action"))
+		if (CheckTopic(elem.first,"actionFromMc"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&ActionDaemon::InstantActionsCallback, this);
+		if (CheckTopic(elem.first,"instantAction"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&ActionDaemon::InstantActionsCallback, this);
 	}	
 }

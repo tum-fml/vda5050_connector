@@ -18,10 +18,8 @@ class ActionDaemon: public Daemon
 	
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderActionSub; 	/** ordinary order actions from order_daemon to action_daemon*/
-	ros::Subscriber instantActionSub; 	/** instant actions from MC to action_daemon*/
 	ros::Publisher actionStatesPub; 	/** states of actions from action_daemon to state_daemon*/
 	ros::Publisher orderCancelPub; 		/** cancelled actions from action_daemon to order_daemon*/
-	ros::Publisher actionToAgvPub; 		/** queued actions from action_daemon to AGV*/
 	
 	public:
 	/**
