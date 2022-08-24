@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 
 	// ConnectionDaemon connectionDaemon(&nh,"connection_daemon",15.0);
 	// StateDaemon stateDaemon(&nh,"state_daemon");
-	VisDaemon visDameon(&nh,"visualization_daemon");
+	// VisDaemon visDaemon(&nh,"visualization_daemon");
 	// ActionDaemon actionDaemon(&nh, "action_daemon");
 
 	while(ros::ok())

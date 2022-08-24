@@ -6,12 +6,11 @@
  * TODO: publish to topicPub, if requirements are met
  */
  
-VisDaemon::VisDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,
-		daemonName)
+VisDaemon::VisDaemon() : Daemon(&(this->nh), "visualization_daemon")
 {
 	
-	LinkPublishTopics(nh);
-	LinkSubscriptionTopics(nh);
+	LinkPublishTopics(&(this->nh));
+	LinkSubscriptionTopics(&(this->nh));
 	updateInterval=ros::Duration(1.0);
 	lastUpdateTimestamp=ros::Time::now();
 }
@@ -29,7 +28,7 @@ void VisDaemon::PublishVisualization()
 	visMessage.version=GetHeader().version;
 	visMessage.manufacturer=GetHeader().manufacturer;
 	visMessage.serialNumber=GetHeader().serialNumber;
-	messagePublisher["/visualization"].publish(visMessage);
+	messagePublisher["/viz_to_mc"].publish(visMessage);
 	lastUpdateTimestamp=ros::Time::now();
 }
 void VisDaemon::UpdateVisualization()
@@ -41,18 +40,17 @@ void VisDaemon::UpdateVisualization()
 }
 void VisDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
-	std::map<std::string,std::string>topicList=GetTopicPublisherList();
+	std::map<std::string,std::string>topicList = GetTopicPublisherList();
 	std::stringstream ss;
 	ss << getTopicStructurePrefix();
-	
+
 	for(const auto& elem : topicList)
 	{
 		ss<< "/" << elem.second;
 		if (CheckTopic(elem.first,"visualization"))
 		{
 			messagePublisher[elem.second] =
-				nh->advertise<vda5050_msgs::Visualization>(ss.str(),
-						1000);
+				nh->advertise<vda5050_msgs::Visualization>(ss.str(),1000);
 		}
 	}	
 }
@@ -156,4 +154,19 @@ void VisDaemon::AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg)
 void VisDaemon::AGVPositionMapDescriptionCallback(const std_msgs::String::ConstPtr& msg)
 {
 	visMessage.agvPosition.mapDescription=msg->data;
+}
+
+int main(int argc, char **argv)
+{	
+	ros::init(argc, argv, "visualization_deamon");
+	ros::NodeHandle nh;
+
+	VisDaemon visDaemon;
+
+	while(ros::ok())
+	{
+		visDaemon.UpdateVisualization();
+		ros::spinOnce();
+	}
+	return 0;
 }

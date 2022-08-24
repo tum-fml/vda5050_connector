@@ -1,10 +1,7 @@
 <launch>
-  <!-- <arg name="state_daemon" default="false" />
-  <node name="supervisor" pkg="vda5050_connector" type="supervisor" output="screen">
-    <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
-  </node> -->
   <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
   <node name="action_daemon" pkg="vda5050_connector" type="action_daemon" output="screen" >  </node>
   <node name="state_daemon" pkg="vda5050_connector" type="state_daemon" output="screen">  </node>
   <node name="connection_daemon" pkg="vda5050_connector" type="connection_daemon" output="screen">  </node>
+  <node name="visualization_daemon" pkg="vda5050_connector" type="visualization_daemon" output="screen">  </node>
 </launch>

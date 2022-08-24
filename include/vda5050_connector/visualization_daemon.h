@@ -48,7 +48,7 @@ class VisDaemon: public Daemon
 	  * @param nh	Pointer to nodehandler.
 	  * @param daemonName	Name of the daemon.
 	  * */
-	VisDaemon(ros::NodeHandle *nh, std::string daemonName);
+	VisDaemon();
 
 	/**
          * Calculates the passed time between last update interval and now.
