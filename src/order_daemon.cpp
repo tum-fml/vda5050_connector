@@ -66,7 +66,6 @@ void OrderDaemon::UpdateOrders()
 int main(int argc, char **argv)
 {	
 	ros::init(argc, argv, "order_deamon");
-	ros::NodeHandle nh;
 
 	OrderDaemon orderDaemon;
 

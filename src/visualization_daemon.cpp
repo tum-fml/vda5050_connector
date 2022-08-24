@@ -159,7 +159,6 @@ void VisDaemon::AGVPositionMapDescriptionCallback(const std_msgs::String::ConstP
 int main(int argc, char **argv)
 {	
 	ros::init(argc, argv, "visualization_deamon");
-	ros::NodeHandle nh;
 
 	VisDaemon visDaemon;
 

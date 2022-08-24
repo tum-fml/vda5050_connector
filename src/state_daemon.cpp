@@ -327,7 +327,6 @@ void StateDaemon::SafetyStateFieldViolationCallback(const std_msgs::Bool::ConstP
 int main(int argc, char **argv)
 {	
 	ros::init(argc, argv, "state_deamon");
-	ros::NodeHandle nh;
 
 	StateDaemon stateDaemon;
 

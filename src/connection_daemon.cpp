@@ -73,7 +73,6 @@ void ConnectionDaemon::ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr
 int main(int argc, char **argv)
 {	
 	ros::init(argc, argv, "action_deamon");
-	ros::NodeHandle nh;
 
 	float heartbeat = 15.0;
 
