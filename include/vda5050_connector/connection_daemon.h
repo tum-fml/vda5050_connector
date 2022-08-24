@@ -28,7 +28,14 @@ class ConnectionDaemon: public Daemon
 	 * StateDaemon Constructor
 	 * @param *nh, pointer to nodehandler; daemonName, name of the daemon
 	 */
-	ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName, float heartbeat);
+	ConnectionDaemon(float heartbeat);/**
+
+	/**
+	 * Empty description.
+	 * 
+	 * @param nh	Empty parameter description
+	 */
+	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
 	 * Calculates the passed time between last update interval and now.
