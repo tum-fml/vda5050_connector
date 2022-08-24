@@ -12,7 +12,7 @@ using namespace std;
 ActionDaemon::ActionDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
 {
 	LinkPublishTopics(nh);
-	LinkSubscirptionTopics(nh);
+	LinkSubscriptionTopics(nh);
 }
  
 void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
@@ -27,7 +27,7 @@ void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 	}	
 }
 
-void ActionDaemon::LinkSubscirptionTopics(ros::NodeHandle *nh)
+void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 {
 	std::map<std::string,std::string>topicList = GetTopicSubscriberList();
 	for(const auto& elem : topicList)

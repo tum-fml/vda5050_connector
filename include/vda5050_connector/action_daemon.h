@@ -38,7 +38,7 @@ class ActionDaemon: public Daemon
 	 * 
 	 * @param nh	Empty parameter description
 	 */
-	void LinkSubscirptionTopics(ros::NodeHandle *nh);
+	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
 	 * Empty description.
