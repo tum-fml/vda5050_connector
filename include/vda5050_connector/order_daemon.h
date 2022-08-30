@@ -1,8 +1,8 @@
-#ifndef ACTION_DAEMON_H
-#define ACTION_DAEMON_H
+#ifndef ORDER_DAEMON_H
+#define ORDER_DAEMON_H
 #include <ros/ros.h>
 #include "daemon.h"
-#include "vda5050_msgs/InstantActions.h"
+#include "vda5050_msgs/Order.h"
 #include <string>
 
 using namespace std;
@@ -11,15 +11,14 @@ using namespace std;
  * Daemon for processing of VDA 5050 action messages. Currently, the action
  * daemon is only used for passing messages from an MQTT topic to a ROS topic.
  */
-class ActionDaemon: public Daemon
+class OrderDaemon: public Daemon
 {
 	private:
-	vda5050_msgs::InstantActions iActionMessage; /**< Empty documentation stub. */
+	vda5050_msgs::Order orderMessage; /**< Empty documentation stub. */
 	
 	// Declare all ROS subscriber and publisher topics for internal communication
-	ros::Subscriber orderActionSub; 	/** ordinary order actions from order_daemon to action_daemon*/
-	ros::Publisher actionStatesPub; 	/** states of actions from action_daemon to state_daemon*/
-	ros::Publisher orderCancelPub; 		/** cancelled actions from action_daemon to order_daemon*/
+	ros::Subscriber orderCancelSub; 	/** ordinary order actions from order_daemon to action_daemon*/
+	ros::Publisher orderActionPub; 		/** cancelled actions from action_daemon to order_daemon*/
 	
 	public:
 	/**
@@ -28,7 +27,7 @@ class ActionDaemon: public Daemon
 	 * @param nh	Empty parameter description
 	 * @param daemonName	Empty parameter description
 	 */
-	ActionDaemon();
+	OrderDaemon();
 
 	/**
 	 * Empty description.
@@ -47,28 +46,22 @@ class ActionDaemon: public Daemon
 	/**
 	 * Empty description.
 	 */
-	void PublishActions();
+	void PublishOrderActions();
 
 	/**
 	 * Empty description.
 	 */
-	void InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg);
+	void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
+    
+    /**
+	 * Empty description.
+	 */
+    void OrderCancelCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
 	 * Empty description.
 	 */
 	std::string createPublishTopic();
-
-	/**
-	 * @brief callback for order topic from order_daemon
-	 * 
-	 * This callback is called when a new message arrives at the /orderAction topic.
-	 * Orders are queued into a FIFO queue.
-	 * The first element of that queue is sent to the AGV for exection.
-	 * 
-	 * @param msg message including the incoming order
-	 */
-	void OrderActionCallback(const vda5050_msgs::Action::ConstPtr& msg);
 
 	/**
 	 * @brief loop actions
@@ -81,7 +74,7 @@ class ActionDaemon: public Daemon
 	 * send action status to state_daemon
 	 * 
 	 */
-	void UpdateActions();
+	void UpdateOrders();
 
 };
 

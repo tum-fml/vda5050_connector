@@ -7,14 +7,23 @@
  *
  */
  
-ConnectionDaemon::ConnectionDaemon(ros::NodeHandle *nh, std::string daemonName,float heartbeat) : Daemon(nh,daemonName)
+ConnectionDaemon::ConnectionDaemon(float heartbeat) : Daemon(&(this->nh), "connection_daemon")
 {
-	std::stringstream paramName;
-	paramName << "~" << daemonName << "/topics_subscribe/connectionState";
-	connectionSubscriber=nh->subscribe(GetParameter(paramName.str()),1000,&ConnectionDaemon::ROSConnectionStateCallback, this);
-	connectionPublisher=nh->advertise<vda5050_msgs::Connection>(createPublishTopic(),1000);
+	LinkSubscriptionTopics(&(this->nh));
+	
+	connectionPublisher=this->nh.advertise<vda5050_msgs::Connection>(createPublishTopic(),1000);
 	updateInterval=ros::Duration(heartbeat);
 	lastUpdateTimestamp=ros::Time::now();
+}
+
+void ConnectionDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
+{
+	std::map<std::string,std::string>topicList = GetTopicSubscriberList();
+	for(const auto& elem : topicList)
+	{
+		if (CheckTopic(elem.first,"connectionState"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&ConnectionDaemon::ROSConnectionStateCallback, this);
+	}	
 }
 
 std::string ConnectionDaemon::createPublishTopic()
@@ -61,6 +70,21 @@ void ConnectionDaemon::ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr
 
 }
 
+int main(int argc, char **argv)
+{	
+	ros::init(argc, argv, "action_deamon");
+
+	float heartbeat = 15.0;
+
+	ConnectionDaemon connectionDaemon(heartbeat);
+
+	while(ros::ok())
+	{
+		connectionDaemon.UpdateConnection();
+		ros::spinOnce();
+	}
+	return 0;
+}
 
 
 

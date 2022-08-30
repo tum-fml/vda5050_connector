@@ -32,6 +32,8 @@ class Daemon
 	std::map<std::string,ros::Subscriber> subscribers; /**< Dummy
 							     comment. */
 	ros::Publisher errorPublisher; /**< Dummy comment. */
+
+	ros::NodeHandle nh; /** ROS nodehandle to create a single node for each daemon */
 	
 	public:
 	Daemon();

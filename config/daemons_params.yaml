@@ -81,15 +81,24 @@ order_daemon:
 
 action_daemon:
     topics_publish:
-        action: /action_to_agv 
+        actionToAgv: /action_to_agv 
     topics_subscribe:
-        action: /action_from_mc
+        actionFromMc: /action_from_mc
+        instantAction: /instantActions
 
 visualization_daemon:
     topics_publish:
         visualization: /viz_to_mc 
     topics_subscribe:
-        visualization: /viz_from_agv
+        agvPosition: /agvPosition
+        positionInitialized: /positionInitialized
+        localizationScore: /localizationScore
+        deviationRange: /deviationRange
+        rosPose: /rosPose
+        mapId: /mapId
+        mapDescription: /mapDescription
+        velocity: /rosVelocity
+
 
 connection_daemon:
     #publish topic is defined by vda 5050

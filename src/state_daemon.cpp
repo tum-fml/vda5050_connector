@@ -15,10 +15,14 @@
  * - every 30 seconds if nothing changed
  *  */
  
-StateDaemon::StateDaemon(ros::NodeHandle *nh, std::string daemonName) : Daemon(nh,daemonName)
+StateDaemon::StateDaemon() : Daemon(&(this->nh), "state_daemon")
 {
-	LinkPublishTopics(nh);
-	LinkSubscriptionTopics(nh);
+	LinkPublishTopics(&(this->nh));
+	LinkSubscriptionTopics(&(this->nh));
+
+	// Initialize internal topics
+	actionStatesSub = nh.subscribe("actionStates", 1000, &StateDaemon::ActionStatesCallback, this);
+
 	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
 	newPublishTrigger=true;
@@ -320,7 +324,19 @@ void StateDaemon::SafetyStateFieldViolationCallback(const std_msgs::Bool::ConstP
 
 
 
+int main(int argc, char **argv)
+{	
+	ros::init(argc, argv, "state_deamon");
 
+	StateDaemon stateDaemon;
+
+	while(ros::ok())
+	{
+		stateDaemon.UpdateState();
+		ros::spinOnce();
+	}
+	return 0;
+}
 
 
 

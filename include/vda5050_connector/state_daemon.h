@@ -38,6 +38,10 @@ class StateDaemon: public Daemon
 	private:
 	vda5050_msgs::State stateMessage;
 	ros::Publisher pub;
+
+	// Declare all ROS subscriber and publisher topics for internal communication
+	ros::Subscriber actionStatesSub; 	/** states of actions from action_daemon to state_daemon*/
+
 	ros::Duration updateInterval;
 	ros::Time lastUpdateTimestamp;
 	bool newPublishTrigger;
@@ -48,7 +52,7 @@ class StateDaemon: public Daemon
 	  * @param nh	Pointer to nodehandler.
 	  * @param daemonName	Name of the daemon.
 	  * */
-	StateDaemon(ros::NodeHandle *nh, std::string daemonName);
+	StateDaemon();
 
 	/**
          * Calculates the passed time between last update interval and now.
