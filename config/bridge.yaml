@@ -19,8 +19,8 @@
 
 - factory: mqtt_bridge.bridge:MqttToRosBridge
   msg_type: vda5050_msgs.msg:Action
-  topic_from: qa/<your_vehicle_id>/action
-  topic_to: /action_from_mc
+  topic_from: qa/<your_vehicle_id>/instantActions
+  topic_to: /instantActions
   
 - factory: mqtt_bridge.bridge:MqttToRosBridge
   msg_type: vda5050_msgs.msg:Order
