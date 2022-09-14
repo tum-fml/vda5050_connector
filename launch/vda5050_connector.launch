@@ -1,5 +1,5 @@
 <launch>
-  <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
+  <rosparam command="load" file="$(find vda5050_connector)/config/vda5050_connector_topics.yaml" />
   <node name="action_daemon" pkg="vda5050_connector" type="action_daemon" output="screen" >  </node>
   <node name="state_daemon" pkg="vda5050_connector" type="state_daemon" output="screen">  </node>
   <node name="connection_daemon" pkg="vda5050_connector" type="connection_daemon" output="screen">  </node>

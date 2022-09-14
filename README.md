@@ -1,35 +1,90 @@
 # How to Use the VDA-5050-Connector
 
 ## Aim of the Repository
-The idea of the repository is to ensure an easy connection of the VDA 5050 with ROS. 
-Unlike some other repos, we do not offer an abstract implementation, but allow an immediate integration into ROS.
-The only thing that needs to be customized for use is a configuration file in which the respective ROS Topics can be individualized. 
+
+The idea of the repository is to ensure an easy connection of the VDA 5050 with ROS.
+It is intended to ensure an immediate integration into ROS.
+For ease of use, you can customize all interfaces by adapting the configuration files in the /config folder to match your requirements.
+
+The VDA5050 connector only covers ROS communication, which means that all messages coming from the main control must be published to ROS topics. Since MQTT is widely used to communicate from the main control to AGVs, an example implementation to achieve compatibility between ROS and MQTT is shown below.
+
 ![grafik](https://user-images.githubusercontent.com/36477083/177792573-6563f79d-95aa-4625-bcf2-bbb27b105b54.png)
 
 ## Prerequisites
-* This project was developed and tested under Ubuntu 18.04 LTS and ROS Melodic.
-* We assume that you have installed and configured ROS and created your first workspace (e.g. `catkin_ws`).
-The communication needs to be bridged between ROS and MQTT, so you need a ROS node which passes on the messages in both directions. We suggest using the [ROS MQTT bridge](http://wiki.ros.org/mqtt_bridge) package for this, and provide a configuration (see below for details).
 
-<details>
-  <summary>Example installation of the ROS MQTT bridge</summary>
+* This project was tested under Ubuntu 18.04 LTS + ROS Melodic (Python 2.7) and Ubuntu 20.04 LTS + ROS Noetic (Python 3.7).
+* ROS must be installed and a workspace (e.g., `catkin_ws`) must be initialized.
 
-As an example, we describe how to configurate the MQTT bridge to work with AWS.
+Since the VDA5050 connector solely relies on ROS communication, any other communication protocol must be translated accordingly.
+VDA5050 specifies the use of MQTT as it is widely used for communication between the main control and AGVs. In the following we will describe a method for translating MQTT messages to ROS messages.
+For this, we use the [ROS MQTT bridge](http://wiki.ros.org/mqtt_bridge) to connect to a server via TLS.
+Of course, any other solution can be used as well. Names of outgoing and incoming topics can be adapted accordingly.
 
-Clone the Aws IoT Bridge Example into your catkin_ws:
-```console
-cd src
-git clone https://github.com/aws-robotics/aws-iot-bridge-example.git
-```
-Clone the mqtt-bridge (check, if you need the python 2.7 branch, depending of your ROS Distro)
+## Installation of the ROS MQTT bridge
+
+Clone the `mqtt_bridge` repository and install the additional requirements to run the bridge (see <https://github.com/groove-x/mqtt_bridge#prerequisites>).
+
 ```console
 git clone https://github.com/groove-x/mqtt_bridge.git
 ```
-install the additional requirements if needed to run the bridge (see https://github.com/groove-x/mqtt_bridge#prerequisites).  
-Now we have to modify several files to make the mqtt bridge run with AWS.  
-In aws-io-bridge-example module:  
-create a new config file (in our case "aws_iot_params.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed tls configuration:
+
+>**NOTE**\
+Be careful to choose the correct branch. If you plan to use ROS melodic, checkout the branch called "python2.7".\
+>The master branch will only work with ROS noetic.
+
+## Installation of the VDA5050 connector
+
+Go to your catkin workspace and cd into the src folder:
+
+```bash
+cd ./src
 ```
+
+Clone the `VDA-5050-Connector` repository:
+
+```bash
+git clone https://github.com/idealworks/VDA-5050-Connector.git
+```
+
+Clone the `vda5050_msgs` repository:
+
+```bash
+git clone https://github.com/ipa320/vda5050_msgs.git
+```
+
+>**NOTE**\
+Although the `vda5050_msgs` repository provides most of the required message types, some additional message types must be defined in order to provide the full functionality of VDA5050.\
+Since we have not send a merge request to the vda5050_msgs repository yet, do the following after cloning the vda5050_msgs repository:
+>
+>* copy all .msg files in /msg of the `VDA-5050-Connector` repository into the /msg folder of the `vda5050_msgs` repository
+>
+>* replace the CmakeLists.txt in the `vda5050_msgs` repository with the one within the /msg/CmakeLists of the `VDA-5050-Connector` repository
+
+After cloning all required repositories, build your catkin workspace.
+
+## Customization of the configuration
+
+There are three distinct parts of the configuration that must be customized to fulfill your connection requirements.
+
+1. ROS MQTT bridge server connection ("mqtt_bridge_tls.yaml")
+2. ROS MQTT bridge topic configuration ("mqtt_bridge_topics.yaml")
+3. VDA5050 connector topic configuration ("vda5050_connector_topics.yaml")
+
+Each of them is represented by a single configuration file in the /config folder.
+In the following sections we will go through them step by step.
+
+>**NOTE**\
+Since we wanted to use the ROS MQTT bridge out of the box with no further customization,\
+all required parameters configuration files can be found in the /config folder in the `VDA-5050-Connector` repository (and not in the `mqtt_bridge` repository).
+
+### ROS MQTT bridge server connection
+
+To make the ROS MQTT bridge work with TLS, complete the "mqtt_bridge_tls.yaml" configuration file in the /config folder.
+
+<details>
+
+<summary>TLS configuration</summary>
+```text
 tls:
   ca_certs: <path_to_your_root_certificate>
   certfile: <path_to_your_key_certificate>
@@ -44,44 +99,71 @@ client:
   protocol: 4
   client_id: <your_client_id>
 ```
-create an additional config file (in our case "bridge.yaml") within the aws_iot_mqtt_bridge/config folder and add the needed mqtt-bridge configuration:
-```
-- factory: mqtt_bridge.bridge:RosToMqttBridge
-  msg_type: <your_msg_type>
-  topic_from: <your_topic>
-  topic_to: <your_topic>
-- factory: mqtt_bridge.bridge:MqttToRosBridge
-  msg_type: <your_msg_type>
-  topic_from: <your_topic>
-  topic_to: <your_topic>
-  ...
-```
-Your folder aws_iot_mqtt_bridge/config should contain two files:
-* aws_iot_params.yaml
-* bridge.yaml
 
+</details>
 
-Finally, define your own launch file within the aws-io-bridge-example module and add the following
-```
-<launch>
-  <arg name="bridge_params" />
-  <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen">
-    <rosparam command="load" ns="mqtt" file="$(find aws_iot_mqtt_bridge)/config/aws_iot_params.yaml" />
-    <rosparam command="load" ns="bridge" file="$(find aws_iot_mqtt_bridge)/config/bridge.yaml" />
-  </node>
-</launch>
-```
-In your folder aws_iot_mqtt_bridge/launch shoud be one launch file:
-* aws_iot_bridge.launch
+Specifically, add the paths to the required certificates and the private key and enter your host address as well as your client id. Do not forget to use the correct port in your network.
 
-Make and test the connection:
-```console
-cd ..
-catkin_make
-source devel/setup.bash
-roslaunch aws_iot_mqtt_bridge aws_iot_bridge.launch
+### ROS MQTT bridge topic configuration
+
+Use the file "mqtt_bridge_topics.yaml" to adapt topic names and message types according to your needs.\
+Make sure to use ROS and MQTT topic names at the correct position in the configuration.
+
+<details>
+
+<summary>Topic example</summary>
+
+```text
+##### bridge from ROS to MQTT#####
+topic_from: <ROS topic>
+topic to: <MQTT topic>
+
+##### bridge from MQTT to ROS #####
+topic_from: <MQTT topic>
+topic to: <ROS topic>
+
 ```
-The output of you terminal should be something like this:
+
+</details>
+
+```msg_type``` always describes the ROS message type.
+
+After configuring the ROS MQTT bridge, we can go on with the VDA5050-Connector.
+
+### VDA5050 connector topic configuration
+
+Bild
+
+The VDA5050 connector consists of five different daemons each represented by a single ROS node.
+In order to allow easy access to the topics, you can change all subscribing (from master control and AGV) and publishing (to master control and AGV) topic names.
+
+To do so, open the "vda5050_connector_topics.yaml" in the /config folder and change the topic names to fit your requirements.
+
+>**NOTE**\
+>Don't change the key. Only change the value.\
+>Example:
+>```yaml
+>orderId: "/orderID"
+>```
+>```orderId``` is used for internal reference and must not be altered. To change the topic's name, change the value on the right ```"/orderId"```.
+
+## Run the connector
+
+### Launch the ROS MQTT bridge
+
+Before starting the VDA5050 connector, the ROS MQTT bridge must be up and running.
+To this end, open a terminal and launch the ROS MQTT bridge:
+
+```bash
+roslaunch vda5050_connector ros_mqtt_bridge.launch
+```
+
+The output should be similar to the following:
+
+<details>
+
+<summary>ROS MQTT bridge output</summary>
+
 ```console
 
 started roslaunch server http://<your_server>
@@ -118,47 +200,27 @@ started core service [/rosout]
 process[mqtt_bridge-2]: started with pid [23098]
 [INFO] [1657111653.836246]: MQTT connected
 ```
+
 </details>
-After you successfully installed and configured your MQTT bridge, lets head over to the VDA5050-Connector.
 
-## Steps to Install the Connector
-Go to your `catkin_ws` and switch to the src folder:
-```console
-cd src
-```
-Clone this repository:
-```console
-git clone https://github.com/idealworks/VDA-5050-Connector.git
-```
-Clone the `vda5050_msgs` repository:
-```console
-git clone https://github.com/ipa320/vda5050_msgs.git
-```
-**Note**
-Currently, we did not send a merge request to the vda5050_msgs repository and some additional msgs are part of our repository. In order to use our msgs, do the following after cloning the vda5050_msgs repository:
-* copy the .msg files found in /msg from VDA-5050-Connector (this repo) into the /msg folder of the vda5050_msgs repository
-* replace the CmakeLists.txt in the vda5050_msgs repository with the one within the /msg/CmakeLists of the VDA-5050-Connector.
+>**NOTE**\
+>The ROS MQTT bridge tells if it is connected to the server by printing ```MQTT connected``` as last line. If anything went wrong, it prints ```MQTT disconnected```
 
-Build and source the workspace:
-```console
-cd ..
-catkin_make
-source devel/setup.bash
+### Launch the VDA5050 connector
+
+As soon as the ROS MQTT bridge is connected to the server, the VDA5050 connector can be launched.
+Open a new terminal and type:
+
+```bash
+roslaunch vda_5050_connector vda5050_connector.launch
 ```
 
-## How to Start the Connector
-1. Have a look at the config file `config/daemons_params.yaml` and change parameters for your needs.
-The config file is used to change the ROS topics you want to subscribe and publish.
-```diff
-- Do not change the key, only the value (see YAML specification if you are not sure)
-```
-2. Start the mqtt_bridge (or equivalent if you use another tool).
-3. Start the supervisor:
-```console
-roslaunch vda_5050_connector supervisor.launch
-```
+If the VDA5050 connector was started properly, the output should be similar to:
 
-Now you should see some output on the terminal which should look like this:
+<details>
+
+<summary>VDA5050 connector output</summary>
+
 ```console
 [ INFO] [1656490735.862272168]: Using 1.1.03 for parameter ~AGV_Data/version
 [ INFO] [1656490735.863479005]: Using template_1 for parameter ~AGV_Data/manufacturer
@@ -210,22 +272,24 @@ Now you should see some output on the terminal which should look like this:
 [ INFO] [1656490735.893811918]: Using uagv for parameter ~AGV_Data/interfaceName
 [ INFO] [1656490735.894266591]: Using v2 for parameter ~AGV_Data/majorVersion
 ```
-The output gives you an overview over all parameters read from the config file, so you can check if everything is as you want it.
-If any parameters are not readable or not found in the parameter server, there is a warning output. Please check if you have a typo in your config file.
 
-## Configuration Options
-Please see the contents of `config\daemons_params.yaml` for configuration options.
+</details>
+
+The output gives an overview of all parameters read from the config file. Check if the topics are defined as required.
+If any parameters are not readable or not found on the parameter server, there is a warning output. Please check if there is a typo in your config file.
 
 ## Known Issues
-* Currently, the console ouput is done twice for some parameters due to the architecture.
-* Sometimes the MQTT-Bridge has troubles to connect. The output is like this:
+
+* Currently, the console output is done twice for some parameters due to the architecture.
+* Sometimes the MQTT-Bridge cannot connect properly. If the output constantly changes between connected and disconnected, there is probably an error in the network configuration.
+
 ```console
    [INFO] [1657111653.836246]: MQTT disconnected
    [INFO] [1657111653.836246]: MQTT connected
+   [INFO] [1657111653.836246]: MQTT disconnected
+   [INFO] [1657111653.836246]: MQTT connected
 ```
-Even there should be a connection, due to an internal bug the bridge is not working properly if the first connection is disconnected and connected afterwards.
-The solution is to restart the MQTT bridge until there is noch disconnected before connected
 
 ## About
-The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
 
+The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).

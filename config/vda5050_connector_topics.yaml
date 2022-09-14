@@ -81,7 +81,7 @@ order_daemon:
 
 action_daemon:
     topics_publish:
-        actionToAgv: /action_to_agv 
+        actionToAgv: /action_to_agv
     topics_subscribe:
         actionFromMc: /action_from_mc
         instantAction: /instantActions

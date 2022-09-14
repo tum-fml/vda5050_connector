@@ -15,7 +15,7 @@
   topic_from: /connection
   topic_to: qa/<your_vehicle_id>/connection
   
-  ###### bridge from ROS to MQTT ######
+###### bridge from MQTT to ROS ######
 
 - factory: mqtt_bridge.bridge:MqttToRosBridge
   msg_type: vda5050_msgs.msg:Action
