@@ -3,5 +3,7 @@
   <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen">
     <rosparam command="load" ns="mqtt" file="/config/ros_mqtt_bridge_tls.yaml" />
     <rosparam command="load" ns="bridge" file="/config/ros_mqtt_bridge_topics.yaml" />
+    <param name="serializer" value="json:dumps" />
+    <param name="deserializer" value="json:loads" />
   </node>
 </launch>
