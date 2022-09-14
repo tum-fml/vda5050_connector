@@ -51,7 +51,7 @@ vda5050_msgs::Visualization updateMessage(vda5050_msgs::Visualization msg, float
 
 int main(int argc, char **argv)
 {
-	string topicPublish = "viz";
+	string topicPublish = "viz_to_mc";
 	if (argc > 1)
 		topicPublish=argv[1];
 	ros::init(argc, argv, "vis_msg_mockup");
