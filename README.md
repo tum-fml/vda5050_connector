@@ -8,7 +8,7 @@ For ease of use, you can customize all interfaces by adapting the configuration 
 
 The VDA5050 connector only covers ROS communication, which means that all messages coming from the main control must be published to ROS topics. Since MQTT is widely used to communicate from the main control to AGVs, an example implementation to achieve compatibility between ROS and MQTT is shown below.
 
-![grafik](https://user-images.githubusercontent.com/36477083/177792573-6563f79d-95aa-4625-bcf2-bbb27b105b54.png)
+<img src="https://user-images.githubusercontent.com/44091826/190145636-37ef04e3-d28b-42da-961d-d2e8e919df73.png" width="500">
 
 ## Prerequisites
 
@@ -132,7 +132,7 @@ After configuring the ROS MQTT bridge, we can go on with the VDA5050-Connector.
 
 ### VDA5050 connector topic configuration
 
-Bild
+<img src="https://user-images.githubusercontent.com/44091826/190145851-21905821-ce19-40af-8b82-f1853193f7fe.png" width="500">
 
 The VDA5050 connector consists of five different daemons each represented by a single ROS node.
 In order to allow easy access to the topics, you can change all subscribing (from master control and AGV) and publishing (to master control and AGV) topic names.
