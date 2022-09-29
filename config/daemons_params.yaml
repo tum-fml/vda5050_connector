@@ -83,7 +83,7 @@ action_daemon:
     topics_publish:
         actionToAgv: /action_to_agv
         pauseActions: /pauseActions
-        stopDriving: /stopDriving
+        prDriving: /prDriving
     topics_subscribe:
         instantAction: /instantAction
         agvActionState: /agvActionState

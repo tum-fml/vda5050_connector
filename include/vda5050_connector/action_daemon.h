@@ -20,13 +20,16 @@ class ActionElement
 {
 	private:
 	string actionId; /** Unique ID to identify the action*/
-	string blockingType; /** Blocking type of the action, Enum {NONE, SOFT, HARD}*/
 	string actionType; /** Identifies the function of the action*/
 	string actionDescription; /** Additional information on the action*/
 	vector<vda5050_msgs::ActionParameter> actionParameters; /** Array of actionParameter objects*/
 
 	public:
 	string state; /** blocking type of the action*/
+	string blockingType; /** Blocking type of the action, Enum {NONE, SOFT, HARD}*/
+
+	bool operator == (const ActionElement& s) const { return actionId == s.actionId; }
+    bool operator != (const ActionElement& s) const { return !operator==(s); }
 	
 	/**
 	 * @brief Construct a new Action Element object
@@ -63,16 +66,16 @@ private:
 	std::list<ActionElement> activeActionList; /**List of actions to track the blocking type of all active actions*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
-	ros::Subscriber orderActionSub; /** ordinary order actions from order_daemon to action_daemon*/
-	ros::Publisher actionStatesPub; /** states of actions from action_daemon to state_daemon*/
-	ros::Publisher orderCancelPub;	/** cancelled actions from action_daemon to order_daemon*/
+	ros::Subscriber orderActionSub;  /** ordinary order actions from order_daemon to action_daemon*/
+	ros::Subscriber orderTriggerSub; /** order daemon triggers actions*/
+	ros::Publisher actionStatesPub;  /** states of actions from action_daemon to state_daemon*/
+	ros::Publisher orderCancelPub;	 /** cancelled actions from action_daemon to order_daemon*/
 
 	bool isDriving; /** True, if the vehicle is driving*/
 
 protected:
 	deque<vda5050_msgs::Action> orderActionQueue; /** queue for keeping track of order actions*/
 	deque<vda5050_msgs::Action> instantActionQueue; /** queue for keeping track of instant actions*/
-	string currentActionState;
 
 public:
 	/**
@@ -82,11 +85,6 @@ public:
 	 * @param daemonName	Empty parameter description
 	 */
 	ActionDaemon();
-
-	// Flags
-	bool order_action_flag;
-	bool instant_action_flag;
-	bool instant_action_waiting;
 
 	/**
 	 * Empty description.

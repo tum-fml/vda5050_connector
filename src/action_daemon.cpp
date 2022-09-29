@@ -1,10 +1,10 @@
-#include "vda5050_connector/action_daemon.h"
-#include "std_msgs/String.h"
-#include "std_msgs/Bool.h"
 #include <iostream>
 #include <vector>
 #include <string>
 #include <list>
+#include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
+#include "vda5050_connector/action_daemon.h"
 #include "vda5050_msgs/ActionStates.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/Action.h"
@@ -12,19 +12,15 @@
 using namespace std;
 
 ActionDaemon::ActionDaemon() : Daemon(&(this->nh), "action_daemon")
-{ 
+{
 	LinkPublishTopics(&(this->nh));
 	LinkSubscriptionTopics(&(this->nh));
 
 	// Initialize internal topics
 	orderActionSub = nh.subscribe("orderAction", 1000, &ActionDaemon::OrderActionsCallback, this);
+	orderTriggerSub = nh.subscribe("orderTrigger", 1000, &ActionDaemon::OrderTriggerCallback, this);
 	actionStatesPub = nh.advertise<vda5050_msgs::ActionState>("actionStates", 1000);
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancel", 1000);
-
-	// Initialize flags
-	order_action_flag = false;
-	instant_action_flag = false;
-	instant_action_waiting = false;
 }
 
 void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
@@ -43,7 +39,7 @@ void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 		{
 			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(ss.str(), 1000);
 		}
-		if (CheckTopic(elem.first, "stopDriving"))
+		if (CheckTopic(elem.first, "prDriving"))
 		{
 			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(ss.str(), 1000);
 		}
@@ -78,7 +74,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 		instantActionQueue.push_back(elem);
 		string actionStatus = "WAITING";
 		ActionDaemon::AddActionToList(&currAction, actionStatus);
-		
+
 		// Create and publish action state msg
 		vda5050_msgs::ActionState state_msg;
 		state_msg.header = ActionDaemon::GetHeader();
@@ -87,9 +83,6 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 		state_msg.actionStatus = actionStatus;
 		state_msg.resultDescription = ""; /*Description necessary?*/
 		actionStatesPub.publish(state_msg);
-
-		// Set instant action flag to trigger action handling 
-		instant_action_flag = true;
 	}
 }
 
@@ -99,7 +92,7 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::Action::ConstPtr &ms
 	vda5050_msgs::Action currAction = *msg;
 	string actionStatus = "WAITING";
 	ActionDaemon::AddActionToList(&currAction, actionStatus);
-	
+
 	// Create and publish action state msg
 	vda5050_msgs::ActionState state_msg;
 	state_msg.header = ActionDaemon::GetHeader();
@@ -108,35 +101,46 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::Action::ConstPtr &ms
 	state_msg.actionStatus = actionStatus;
 	state_msg.resultDescription = ""; /*Description necessary?*/
 	actionStatesPub.publish(state_msg);
-	
-	// Set order action flag to trigger action handling 
-	order_action_flag = true;
 }
 
 void ActionDaemon::OrderTriggerCallback(const std_msgs::String &msg)
 {
-	ActionElement *activeAction = findAction(msg.data);
+	ActionElement* activeAction = findAction(msg.data);
 
-	if(activeAction)
+	// Sort out duplicates?#########################################################################debug 
+
+	if (activeAction)
 	{
 		// Push action to queue
 		orderActionQueue.push_back(activeAction->packAction());
 	}
+	else
+		ROS_WARN("Action to trigger not found!");
 }
 
 void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr &msg)
 {
-	// currentActionState = msg->actionStatus;
-	// for (auto &action_it : activeActionList)
-	// {
-	// 	if (action_it.compareId(msg->actionID))
-	// 	{
-	// 		action_it.state = msg->actionStatus;
-	// 	}
-	// }
-	// vda5050_msgs::ActionStates actionStateMsgs;
-	// actionStateMsgs.actionStates.push_back(*msg);
-	// ActionDaemon::messagePublisher["/actionStates"].publish(*msg);
+	ActionElement* actionToUpdate = findAction(msg->actionID);
+	if (actionToUpdate)
+	{
+		actionStatesPub.publish(*msg);
+		if ((msg->actionStatus != "FINISHED") || (msg->actionStatus != "FAILED"))
+		{
+			actionToUpdate->state = msg->actionStatus;
+			// Send special message to order daemon if failed, to abort order? ###################
+		}
+		else
+			if (msg->actionStatus == "FINISHED" && actionToUpdate->blockingType != "NONE")
+			{
+				std_msgs::String resumeMsg;
+				resumeMsg.data = "RESUME";
+				messagePublisher["/prDriving"].publish(resumeMsg);
+			}
+			activeActionList.remove(*actionToUpdate);
+			ROS_WARN("DELETED!");
+	}
+	else
+		ROS_WARN("Action to update not found!");
 }
 
 void ActionDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
@@ -144,7 +148,7 @@ void ActionDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
 	isDriving = msg->data;
 }
 
-void ActionDaemon::AddActionToList(vda5050_msgs::Action* incomingAction, string state)
+void ActionDaemon::AddActionToList(vda5050_msgs::Action *incomingAction, string state)
 {
 	ActionElement newAction(incomingAction, state);
 	activeActionList.push_back(newAction);
@@ -154,9 +158,9 @@ bool ActionDaemon::checkDriving()
 {
 	if (isDriving)
 	{
-		std_msgs::String stopMsg;
-		stopMsg.data = "STOP";
-		messagePublisher["/stopDriving"].publish(stopMsg);
+		std_msgs::String pauseMsg;
+		pauseMsg.data = "PAUSE";
+		messagePublisher["/prDriving"].publish(pauseMsg);
 		return false;
 	}
 	return true;
@@ -165,7 +169,7 @@ bool ActionDaemon::checkDriving()
 list<ActionElement> ActionDaemon::GetActiveActions()
 {
 	list<ActionElement> activeActions;
-	for (auto const& action_it : activeActionList)
+	for (auto const &action_it : activeActionList)
 	{
 		if (action_it.state == "ACTIVE")
 		{
@@ -182,60 +186,51 @@ ActionElement* ActionDaemon::findAction(string actionId)
 		if (elem.compareId(actionId))
 			return &elem;
 	}
-	ROS_INFO_STREAM("Invalid Action triggered!");
 	return nullptr;
 }
 
 void ActionDaemon::UpdateActions()
 {
-
 	// Instant action routine
-	if(instant_action_flag)
+	if (!instantActionQueue.empty())
 	{
 		;
 	}
 
 	// Order action routine
-	else if (order_action_flag && !instant_action_waiting)
+	else if (!orderActionQueue.empty())
 	{
-		if (!orderActionQueue.empty())
+		vda5050_msgs::Action nextActionInQueue = orderActionQueue[0];
+		bool RunningActionHardBlocking = false;
+		if (!RunningActionHardBlocking)
 		{
-			vda5050_msgs::Action nextActionInQueue = orderActionQueue[0];
-			bool RunningActionHardBlocking = false;
-			if (!RunningActionHardBlocking)
+			list<ActionElement> ActiveActions = GetActiveActions();
+
+			for (auto const &action_it : ActiveActions)
 			{
-				list<ActionElement> ActiveActions = GetActiveActions();
-
-
-
-				for (auto const& action_it : ActiveActions)
+				if (action_it.state == "PAUSED")
 				{
-					if (action_it.state == "PAUSED")
+					std_msgs::String pause;
+					pause.data = "RESUME";
+					messagePublisher["/pauseAction"].publish(pause);
+				}
+				else
+				{
+					string currBlockType = ActionDaemon::orderActionQueue.front().blockingType;
+					if (currBlockType == "HARD")
 					{
-						std_msgs::String pause;
-						pause.data = "RESUME";
-						messagePublisher["/pauseAction"].publish(pause);
+						// Check running action
+						checkDriving();
 					}
-					else
+					else if (currBlockType == "SOFT")
 					{
-						string currBlockType = ActionDaemon::orderActionQueue.front().blockingType;
-						if (currBlockType == "HARD")
-						{
-							// Check running action
-							checkDriving();
-						}
-						else if (currBlockType == "SOFT")
-						{
-							checkDriving();
-						}
-						else if (currBlockType == "NONE")
-						{
-
-						}
+						checkDriving();
+					}
+					else if (currBlockType == "NONE")
+					{
 					}
 				}
 			}
-
 
 			// if (currentActionState == "RUNNING" || currentActionState == "INITIALIZING")
 			// {
@@ -289,7 +284,7 @@ vda5050_msgs::Action ActionElement::packAction()
 	msg.actionType = actionType;
 	msg.actionDescription = actionDescription;
 	msg.actionParameters = actionParameters;
-	
+
 	return msg;
 }
 
