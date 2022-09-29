@@ -47,17 +47,22 @@ namespace uuid {
     }
 }
 
-void send_order_action(ros::Publisher *pub)
+void send_order_action(ros::Publisher *pub, string ID)
 {
     vda5050_msgs::Action msg;
     vda5050_msgs::ActionParameter param;
 
-    std::string actionID = uuid::generate_uuid_v4();
+    std::string actionID;
+
+    if (ID == "0")
+        actionID = uuid::generate_uuid_v4();
+    else
+        actionID = ID;
     std::string actionType = "Hebe Gabel";
     std::string blockingType = "NONE";
     std::string actionDescription = "Hebe die Gabel der Weisheit";
 
-    msg.actionId = uuid::generate_uuid_v4();
+    msg.actionId = actionID;
     msg.actionType = "Hebe Gabel";
     msg.blockingType = "NONE";
     msg.actionDescription = "Hebe die Gabel der Weisheit";
@@ -119,12 +124,29 @@ int main(int argc, char **argv)
 
 	ros::Publisher instActionPub = nh.advertise<vda5050_msgs::InstantActions>("instantAction", 1000);
 
+	ros::Publisher triggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
+
+    int triggertrigger = -1;
+
 	while (ros::ok())
 	{
-        send_order_action(&actionPub);
+        if (triggertrigger == 0)
+            send_order_action(&actionPub, "79301da1-846d-44b0-b988-33957d157bd8");
+        else
+            send_order_action(&actionPub, "0");
 
-        send_instant_action(&instActionPub);
+        // send_instant_action(&instActionPub);
+
+        if(triggertrigger==5)
+        {
+            std_msgs::String msg;
+            msg.data = "79301da1-846d-44b0-b988-33957d157bd8";
+            triggerPub.publish(msg);
+            ROS_INFO_STREAM("Trigger sent!");
+            triggertrigger = -1;
+        }
         
+        triggertrigger++;
         ros::Rate r(0.5);
 		ros::spinOnce();
         r.sleep();
