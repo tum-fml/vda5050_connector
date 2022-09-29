@@ -141,6 +141,7 @@ add_executable(state_daemon src/state_daemon.cpp src/daemon.cpp)
 add_executable(connection_daemon src/connection_daemon.cpp src/daemon.cpp)
 add_executable(visualization_daemon src/visualization_daemon.cpp src/daemon.cpp)
 add_executable(order_daemon src/order_daemon.cpp src/daemon.cpp)
+add_executable(action_send_mockup src/mock_ups/action_send_mockup.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,6 +157,7 @@ add_dependencies(state_daemon ${catkin_EXPORTED_TARGETS})
 add_dependencies(connection_daemon ${catkin_EXPORTED_TARGETS})
 add_dependencies(visualization_daemon ${catkin_EXPORTED_TARGETS})
 add_dependencies(order_daemon ${catkin_EXPORTED_TARGETS})
+add_dependencies(action_send_mockup ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -164,6 +166,7 @@ target_link_libraries(state_daemon ${catkin_LIBRARIES})
 target_link_libraries(connection_daemon ${catkin_LIBRARIES})
 target_link_libraries(visualization_daemon ${catkin_LIBRARIES})
 target_link_libraries(order_daemon ${catkin_LIBRARIES})
+target_link_libraries(action_send_mockup ${catkin_LIBRARIES})
 
 #   ${catkin_LIBRARIES}
 # )
