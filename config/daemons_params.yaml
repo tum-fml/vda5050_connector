@@ -81,10 +81,13 @@ order_daemon:
 
 action_daemon:
     topics_publish:
-        actionToAgv: /action_to_agv 
+        actionToAgv: /action_to_agv
+        pauseActions: /pauseActions
+        stopDriving: /stopDriving
     topics_subscribe:
-        actionFromMc: /action_from_mc
-        instantAction: /instantActions
+        instantAction: /instantAction
+        agvActionState: /agvActionState
+        driving: /driving
 
 visualization_daemon:
     topics_publish:
