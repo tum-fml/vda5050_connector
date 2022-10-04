@@ -11,6 +11,13 @@
 
 using namespace std;
 
+// TODO: Send orderCancel to order daemon (2 cases: instantAction, failed action)
+// TODO: Implement instantAction routine
+// TODO: Implement orderAction routine
+// TODO: Implement difference between paused by instantAction and paused by AGV
+// TODO: Check if last action still running (new action blocking type hard)
+// TODO: Sort instant actions by blocking type (hard least)???
+
 ActionDaemon::ActionDaemon() : Daemon(&(this->nh), "action_daemon")
 {
 	LinkPublishTopics(&(this->nh));
@@ -30,12 +37,13 @@ void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 
 	for (const auto &elem : topicList)
 	{
+		ss.str("");
 		ss << "/" << elem.second;
 		if (CheckTopic(elem.first, "actionToAgv"))
 		{
 			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::Action>(ss.str(), 1000);
 		}
-		if (CheckTopic(elem.first, "pauseActions"))
+		if (CheckTopic(elem.first, "prActions"))
 		{
 			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(ss.str(), 1000);
 		}
@@ -58,11 +66,6 @@ void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 		if (CheckTopic(elem.first, "driving"))
 			subscribers[elem.first] = nh->subscribe(elem.second, 1000, &ActionDaemon::DrivingCallback, this);
 	}
-}
-
-void ActionDaemon::PublishActions()
-{
-	// messagePublisher["/action"].publish();
 }
 
 void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr &msg)
@@ -124,20 +127,37 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 	if (actionToUpdate)
 	{
 		actionStatesPub.publish(*msg);
-		if ((msg->actionStatus != "FINISHED") || (msg->actionStatus != "FAILED"))
+		if ((msg->actionStatus == "WAITING") || (msg->actionStatus == "INITIALIZING") || (msg->actionStatus == "RUNNING") || (msg->actionStatus == "PAUSED"))
 		{
 			actionToUpdate->state = msg->actionStatus;
-			// Send special message to order daemon if failed, to abort order? ###################
+			actionStatesPub.publish(msg);
 		}
-		else
-			if (msg->actionStatus == "FINISHED" && actionToUpdate->blockingType != "NONE")
+		else if (msg->actionStatus == "FINISHED")
+		{
+			if (actionToUpdate->blockingType != "NONE")
 			{
 				std_msgs::String resumeMsg;
 				resumeMsg.data = "RESUME";
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
+			actionStatesPub.publish(msg);
 			activeActionList.remove(*actionToUpdate);
-			ROS_WARN("DELETED!");
+		}
+		else if (msg->actionStatus == "FAILED")
+		{
+			if (actionToUpdate->blockingType != "NONE")
+			{
+				std_msgs::String resumeMsg;
+				resumeMsg.data = "RESUME";
+				messagePublisher["/prDriving"].publish(resumeMsg);
+			}
+			actionStatesPub.publish(msg);
+			activeActionList.remove(*actionToUpdate);
+			
+			std_msgs::String cancelMsg;
+			cancelMsg.data = "CANCEL ORDER";
+			orderCancelPub.publish(cancelMsg);
+		}
 	}
 	else
 		ROS_WARN("Action to update not found!");
@@ -163,20 +183,34 @@ bool ActionDaemon::checkDriving()
 		messagePublisher["/prDriving"].publish(pauseMsg);
 		return false;
 	}
-	return true;
+	else
+		return true;
 }
 
-list<ActionElement> ActionDaemon::GetActiveActions()
+list<ActionElement> ActionDaemon::GetRunningActions()
 {
-	list<ActionElement> activeActions;
+	list<ActionElement> runningActions;
 	for (auto const &action_it : activeActionList)
 	{
-		if (action_it.state == "ACTIVE")
+		if (action_it.state == "RUNNING")
 		{
-			activeActions.push_back(action_it);
+			runningActions.push_back(action_it);
 		}
 	}
-	return activeActions;
+	return runningActions;
+}
+
+list<ActionElement> ActionDaemon::GetRunningPausedActions()
+{
+	list<ActionElement> runningPausedActions;
+	for (auto const &action_it : activeActionList)
+	{
+		if (action_it.state == "RUNNING" || action_it.state == "PAUSED")
+		{
+			runningPausedActions.push_back(action_it);
+		}
+	}
+	return runningPausedActions;
 }
 
 ActionElement* ActionDaemon::findAction(string actionId)
@@ -194,80 +228,138 @@ void ActionDaemon::UpdateActions()
 	// Instant action routine
 	if (!instantActionQueue.empty())
 	{
-		;
+		cout << "Instant";
+		// get running actions
+		list<ActionElement> runningPausedActions = GetRunningPausedActions();
+
+		if (!runningPausedActions.empty())
+		{
+			// hard blocking action running?
+			bool RunningActionHardBlocking = false;
+			for (auto &elem : runningPausedActions)
+			{
+				if (elem.state == "RUNNING" && elem.blockingType == "HARD")
+					RunningActionHardBlocking = true;
+			}
+			if (!RunningActionHardBlocking)
+			{
+				// new instant action blocking hard
+				string &nextBlockType = instantActionQueue.front().blockingType;
+
+				if (nextBlockType == "HARD")
+				{
+					// Pause all actions
+					std_msgs::String pause_msg;
+					pause_msg.data = "RESUME";
+					messagePublisher["/prActions"].publish(pause_msg);
+
+					if (checkDriving())
+					{
+						// send action
+						messagePublisher["/actionToAgv"].publish(instantActionQueue.front());
+						instantActionQueue.pop_front();
+					}
+
+				}
+				else if (nextBlockType == "SOFT")
+				{
+					if (checkDriving())
+					{
+						// send action
+						messagePublisher["/actionToAgv"].publish(instantActionQueue.front());
+						instantActionQueue.pop_front();
+					}
+				}
+				else if (nextBlockType == "NONE")
+				{
+					// send action
+					messagePublisher["/actionToAgv"].publish(instantActionQueue.front());
+					instantActionQueue.pop_front();
+				}
+			}
+			else
+			{
+				// Pause all actions
+				std_msgs::String pause_msg;
+				pause_msg.data = "RESUME";
+				messagePublisher["/prActions"].publish(pause_msg);
+			}
+
+		}
 	}
 
 	// Order action routine
 	else if (!orderActionQueue.empty())
 	{
-		vda5050_msgs::Action nextActionInQueue = orderActionQueue[0];
-		bool RunningActionHardBlocking = false;
-		if (!RunningActionHardBlocking)
-		{
-			list<ActionElement> ActiveActions = GetActiveActions();
+		// get running actions
+		list<ActionElement> runningPausedActions = GetRunningPausedActions();
 
-			for (auto const &action_it : ActiveActions)
+		if (!runningPausedActions.empty())
+		{
+			// hard blocking action running?
+			bool RunningActionHardBlocking = false;
+			for (auto &elem : runningPausedActions)
 			{
-				if (action_it.state == "PAUSED")
+				if (elem.blockingType == "HARD")
+					RunningActionHardBlocking = true;
+			}
+
+			if (!RunningActionHardBlocking)
+			{
+				for (auto const &action_it : runningPausedActions)
 				{
-					std_msgs::String pause;
-					pause.data = "RESUME";
-					messagePublisher["/pauseAction"].publish(pause);
-				}
-				else
-				{
-					string currBlockType = ActionDaemon::orderActionQueue.front().blockingType;
-					if (currBlockType == "HARD")
+					// resume actions paused by instant actions
+					if (action_it.state == "PAUSED")
 					{
-						// Check running action
-						checkDriving();
+						std_msgs::String resume_msg;
+						resume_msg.data = "RESUME";
+						messagePublisher["/prActions"].publish(resume_msg);
 					}
-					else if (currBlockType == "SOFT")
+					// no actions to resume
+					else
 					{
-						checkDriving();
-					}
-					else if (currBlockType == "NONE")
-					{
+						// new action blocking hard
+						string &nextBlockType = orderActionQueue.front().blockingType;
+						if (nextBlockType == "HARD")
+						{
+							// TODO: Check if last action still running
+							// If driving -> stop, else publish action
+							if (ActionDaemon::checkDriving())
+							{
+								messagePublisher["/actionToAgv"].publish(orderActionQueue.front());
+								orderActionQueue.pop_front();
+							}
+						}
+						// new action blocking soft
+						else if (nextBlockType == "SOFT")
+						{
+							// If driving -> stop, else publish action
+							if (checkDriving())
+							{
+								messagePublisher["/actionToAgv"].publish(orderActionQueue.front());
+								orderActionQueue.pop_front();
+							}
+						}
+						// new action not blocking
+						else if (nextBlockType == "NONE")
+						{
+							messagePublisher["/actionToAgv"].publish(orderActionQueue.front());
+							orderActionQueue.pop_front();
+						}
 					}
 				}
 			}
-
-			// if (currentActionState == "RUNNING" || currentActionState == "INITIALIZING")
-			// {
-			// 	if (runningActionBlockingType != "HARD")
-			// 	{
-			// 		if (nextActionInQueue.blockingType == "SOFT")
-			// 		{
-			// 			if (isDriving == true)
-			// 			{
-			// 				messagePublisher["/stopDriving"].publish("STOP");
-			// 			}
-			// 			messagePublisher["/actionToAgv"].publish(nextActionInQueue);
-			// 			actionQueue.pop_front();
-			// 		}
-			// 		else if (nextActionInQueue.blockingType == "NONE")
-			// 		{
-			// 			messagePublisher["/actionToAgv"].publish(nextActionInQueue);
-			// 			actionQueue.pop_front();
-			// 		}
-			// 	}
-			// }
-			// else
-			// {
-			// 	messagePublisher["/actionToAgv"].publish(nextActionInQueue);
-			// 	actionQueue.pop_front();
-			// }
 		}
 	}
 }
 
-ActionElement::ActionElement(vda5050_msgs::Action* newAction, string newState)
+ActionElement::ActionElement(vda5050_msgs::Action* incomingAction, string newState)
 {
-	actionId = newAction->actionId;
-	blockingType = newAction->blockingType;
-	actionType = newAction->actionType;
-	actionDescription = newAction->actionDescription;
-	actionParameters = newAction->actionParameters;
+	actionId = incomingAction->actionId;
+	blockingType = incomingAction->blockingType;
+	actionType = incomingAction->actionType;
+	actionDescription = incomingAction->actionDescription;
+	actionParameters = incomingAction->actionParameters;
 	state = newState;
 }
 

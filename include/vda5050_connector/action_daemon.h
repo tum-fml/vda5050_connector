@@ -100,12 +100,7 @@ public:
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
-	/**
-	 * Empty description.
-	 */
-	void PublishActions();
-
-	/**
+		/**
 	 * Empty description.
 	 */
 	std::string createPublishTopic();
@@ -169,24 +164,46 @@ public:
 	void DrivingCallback(const std_msgs::Bool::ConstPtr &msg);
 
 	/**
-	 * @brief loop actions
+	 * @brief processes actions based on their type
+	 * 
+	 * The UpdateActions() method represents the main event loop.
+	 * Based on the order and instan action queues, the method processes incoming actions
+	 * and pauses driving state and pauses/resumes other actions.
 	 *
 	 */
 	void UpdateActions();
 
 	void AddActionToList(vda5050_msgs::Action *newAction, string newState);
 
+	/**
+	 * @brief checks whether or not the running action is hard blocking
+	 * 
+	 * @return true if the running action is hard blocking
+	 * @return false if the running action is not hard blocking
+	 */
 	bool RunningActionHardBlocking();
 
+	/**
+	 * @brief checks if the AGV is driving and stops driving if so
+	 * 
+	 * @return true if vehicle is not driving
+	 * @return false if vehicle is driving
+	 */
 	bool checkDriving();
 
-	std::list<ActionElement> GetActiveActions();
+	/**
+	 * @brief Return all running actions
+	 * 
+	 * @return std::list<ActionElement> List of running actions
+	 */
+	std::list<ActionElement> GetRunningActions();
 
 	/**
-	 * @brief finds 
+	 * @brief Get all running or paused actions
 	 * 
-	 * @return ActionElement Action with corresponding ID 
+	 * @return std::list<ActionElement> List of running or paused actions
 	 */
+	std::list<ActionElement> GetRunningPausedActions();
 
 	/**
 	 * @brief Finds and returns the action with the requested ID

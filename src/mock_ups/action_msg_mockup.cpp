@@ -59,12 +59,12 @@ void send_order_action(ros::Publisher *pub, string ID)
     else
         actionID = ID;
     std::string actionType = "Hebe Gabel";
-    std::string blockingType = "NONE";
+    std::string blockingType = "HARD";
     std::string actionDescription = "Hebe die Gabel der Weisheit";
 
     msg.actionId = actionID;
     msg.actionType = "Hebe Gabel";
-    msg.blockingType = "NONE";
+    msg.blockingType = "HARD";
     msg.actionDescription = "Hebe die Gabel der Weisheit";
 
     param.key = "Hoehe";
@@ -134,8 +134,9 @@ int main(int argc, char **argv)
             send_order_action(&actionPub, "79301da1-846d-44b0-b988-33957d157bd8");
         else
             send_order_action(&actionPub, "0");
-
-        // send_instant_action(&instActionPub);
+        
+        // if(triggertrigger==3)
+        //     send_instant_action(&instActionPub);
 
         if(triggertrigger==5)
         {
