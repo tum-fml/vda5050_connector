@@ -5,9 +5,9 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Bool.h"
 #include "vda5050_connector/action_daemon.h"
-#include "vda5050_msgs/ActionStates.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/Action.h"
+#include "vda5050_msgs/OrderActions.h"
 
 using namespace std;
 
@@ -70,40 +70,41 @@ void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 
 void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr &msg)
 {
-	for (auto &elem : msg->instantActions)
+	for (auto &action : msg->instantActions)
 	{
 		// Push action to queue and add action to active actions list
-		vda5050_msgs::Action currAction = elem;
-		instantActionQueue.push_back(elem);
+		instantActionQueue.push_back(action);
 		string actionStatus = "WAITING";
-		ActionDaemon::AddActionToList(&currAction, actionStatus);
+		ActionDaemon::AddActionToList(&action, "Instant", actionStatus);
 
 		// Create and publish action state msg
 		vda5050_msgs::ActionState state_msg;
 		state_msg.header = ActionDaemon::GetHeader();
-		state_msg.actionID = elem.actionId;
-		state_msg.actionType = elem.actionType;
+		state_msg.actionID = action.actionId;
+		state_msg.actionType = action.actionType;
 		state_msg.actionStatus = actionStatus;
 		state_msg.resultDescription = ""; /*Description necessary?*/
 		actionStatesPub.publish(state_msg);
 	}
 }
 
-void ActionDaemon::OrderActionsCallback(const vda5050_msgs::Action::ConstPtr &msg)
+void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr &msg)
 {
-	// Add action to active actions list
-	vda5050_msgs::Action currAction = *msg;
-	string actionStatus = "WAITING";
-	ActionDaemon::AddActionToList(&currAction, actionStatus);
+	for (const auto& action : msg->orderActions)
+	{
+		// Add action to active actions list
+		string actionStatus = "WAITING";
+		ActionDaemon::AddActionToList(&action, msg->orderId, actionStatus);
 
-	// Create and publish action state msg
-	vda5050_msgs::ActionState state_msg;
-	state_msg.header = ActionDaemon::GetHeader();
-	state_msg.actionID = msg->actionId;
-	state_msg.actionType = msg->actionType;
-	state_msg.actionStatus = actionStatus;
-	state_msg.resultDescription = ""; /*Description necessary?*/
-	actionStatesPub.publish(state_msg);
+		// Create and publish action state msg
+		vda5050_msgs::ActionState state_msg;
+		state_msg.header = ActionDaemon::GetHeader();
+		state_msg.actionID = action.actionId;
+		state_msg.actionType = action.actionType;
+		state_msg.actionStatus = actionStatus;
+		state_msg.resultDescription = ""; /*Description necessary?*/
+		actionStatesPub.publish(state_msg);
+	}
 }
 
 void ActionDaemon::OrderTriggerCallback(const std_msgs::String &msg)
@@ -141,7 +142,7 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
 			actionStatesPub.publish(msg);
-			activeActionList.remove(*actionToUpdate);
+			activeActionsList.remove(*actionToUpdate);
 		}
 		else if (msg->actionStatus == "FAILED")
 		{
@@ -152,7 +153,7 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
 			actionStatesPub.publish(msg);
-			activeActionList.remove(*actionToUpdate);
+			activeActionsList.remove(*actionToUpdate);
 			
 			std_msgs::String cancelMsg;
 			cancelMsg.data = "CANCEL ORDER";
@@ -168,10 +169,10 @@ void ActionDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
 	isDriving = msg->data;
 }
 
-void ActionDaemon::AddActionToList(vda5050_msgs::Action *incomingAction, string state)
+void ActionDaemon::AddActionToList(const vda5050_msgs::Action *incomingAction, string orderId, string state)
 {
-	ActionElement newAction(incomingAction, state);
-	activeActionList.push_back(newAction);
+	ActionElement newAction(incomingAction, orderId, state);
+	activeActionsList.push_back(newAction);
 }
 
 bool ActionDaemon::checkDriving()
@@ -190,7 +191,7 @@ bool ActionDaemon::checkDriving()
 list<ActionElement> ActionDaemon::GetRunningActions()
 {
 	list<ActionElement> runningActions;
-	for (auto const &action_it : activeActionList)
+	for (auto const &action_it : activeActionsList)
 	{
 		if (action_it.state == "RUNNING")
 		{
@@ -203,7 +204,7 @@ list<ActionElement> ActionDaemon::GetRunningActions()
 list<ActionElement> ActionDaemon::GetRunningPausedActions()
 {
 	list<ActionElement> runningPausedActions;
-	for (auto const &action_it : activeActionList)
+	for (auto const &action_it : activeActionsList)
 	{
 		if (action_it.state == "RUNNING" || action_it.state == "PAUSED")
 		{
@@ -215,7 +216,7 @@ list<ActionElement> ActionDaemon::GetRunningPausedActions()
 
 ActionElement* ActionDaemon::findAction(string actionId)
 {
-	for (auto &elem : activeActionList)
+	for (auto &elem : activeActionsList)
 	{
 		if (elem.compareId(actionId))
 			return &elem;
@@ -353,8 +354,9 @@ void ActionDaemon::UpdateActions()
 	}
 }
 
-ActionElement::ActionElement(vda5050_msgs::Action* incomingAction, string newState)
+ActionElement::ActionElement(const vda5050_msgs::Action* incomingAction, string incomingOrderId, string newState)
 {
+	orderId = incomingOrderId;
 	actionId = incomingAction->actionId;
 	blockingType = incomingAction->blockingType;
 	actionType = incomingAction->actionType;

@@ -4,6 +4,7 @@
 #include "daemon.h"
 #include "vda5050_msgs/InstantActions.h"
 #include "vda5050_msgs/ActionState.h"
+#include "vda5050_msgs/OrderActions.h"
 #include "std_msgs/Bool.h"
 #include <string>
 #include <list>
@@ -19,6 +20,7 @@ using namespace std;
 class ActionElement
 {
 	private:
+	string orderId; /** Unique ID to identify the related order*/
 	string actionId; /** Unique ID to identify the action*/
 	string actionType; /** Identifies the function of the action*/
 	string actionDescription; /** Additional information on the action*/
@@ -35,9 +37,10 @@ class ActionElement
 	 * @brief Construct a new Action Element object
 	 * 
 	 * @param incomingAction New incoming action
+	 * @param incomingOrderId ID of the related order
 	 * @param state State of the new action
 	 */
-	ActionElement(vda5050_msgs::Action* incomingAction, string state);
+	ActionElement(const vda5050_msgs::Action* incomingAction, string incomingOrderId, string state);
 
 	/**
 	 * @brief returns true if given ID is equal to ID of action element
@@ -63,7 +66,7 @@ class ActionElement
 class ActionDaemon : public Daemon
 {
 private:
-	std::list<ActionElement> activeActionList; /**List of actions to track the blocking type of all active actions*/
+	std::list<ActionElement> activeActionsList; /**List of actions to track the blocking type of all active actions*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderActionSub;  /** ordinary order actions from order_daemon to action_daemon*/
@@ -114,7 +117,7 @@ public:
 	 *
 	 * @param msg message including the incoming order action
 	 */
-	void OrderActionsCallback(const vda5050_msgs::Action::ConstPtr &msg);
+	void OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr &msg);
 	
 	/**
 	 * @brief callback for instant Actions topic from master controll
@@ -173,7 +176,14 @@ public:
 	 */
 	void UpdateActions();
 
-	void AddActionToList(vda5050_msgs::Action *newAction, string newState);
+	/**
+	 * @brief Adds a new action to the activeActionsList list.
+	 * 
+	 * @param newAction New incoming action
+	 * @param orderId ID of the related order
+	 * @param newState State of the new action
+	 */
+	void AddActionToList(const vda5050_msgs::Action *newAction, string orderId, string newState);
 
 	/**
 	 * @brief checks whether or not the running action is hard blocking
@@ -208,7 +218,7 @@ public:
 	/**
 	 * @brief Finds and returns the action with the requested ID
 	 * 
-	 * Finds the action in the activeActionList list which has the requested ID.
+	 * Finds the action in the activeActionsList list which has the requested ID.
 	 * The corresponding action is returned.
 	 * 
 	 * @param actionId ID of the action to find within the active Actions

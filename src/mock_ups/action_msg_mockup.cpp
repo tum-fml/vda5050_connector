@@ -6,6 +6,7 @@
 #include <string>
 #include <list>
 #include "vda5050_msgs/Action.h"
+#include "vda5050_msgs/OrderActions.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/InstantActions.h"
 #include <random>
@@ -49,8 +50,11 @@ namespace uuid {
 
 void send_order_action(ros::Publisher *pub, string ID)
 {
-    vda5050_msgs::Action msg;
+    vda5050_msgs::OrderActions msg;
+    vda5050_msgs::Action action;
     vda5050_msgs::ActionParameter param;
+
+    msg.orderId = uuid::generate_uuid_v4();
 
     std::string actionID;
 
@@ -62,14 +66,16 @@ void send_order_action(ros::Publisher *pub, string ID)
     std::string blockingType = "HARD";
     std::string actionDescription = "Hebe die Gabel der Weisheit";
 
-    msg.actionId = actionID;
-    msg.actionType = "Hebe Gabel";
-    msg.blockingType = "HARD";
-    msg.actionDescription = "Hebe die Gabel der Weisheit";
+
+    action.actionId = actionID;
+    action.actionType = "Hebe Gabel";
+    action.blockingType = "HARD";
+    action.actionDescription = "Hebe die Gabel der Weisheit";
+    msg.orderActions.push_back(action);
 
     param.key = "Hoehe";
     param.value = "50";
-    msg.actionParameters.push_back(param);
+    msg.orderActions.front().actionParameters.push_back(param);
 
     pub->publish(msg);
     ROS_INFO_STREAM("New order action sent!");
@@ -120,7 +126,7 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-	ros::Publisher actionPub = nh.advertise<vda5050_msgs::Action>("orderAction", 1000);
+	ros::Publisher actionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
 
 	ros::Publisher instActionPub = nh.advertise<vda5050_msgs::InstantActions>("instantAction", 1000);
 
