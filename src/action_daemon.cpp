@@ -109,7 +109,7 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstP
 
 void ActionDaemon::OrderTriggerCallback(const std_msgs::String &msg)
 {
-	ActionElement* activeAction = findAction(msg.data);
+	std::shared_ptr<ActionElement> activeAction = findAction(msg.data);
 
 	// Sort out duplicates?#########################################################################debug 
 
@@ -124,7 +124,7 @@ void ActionDaemon::OrderTriggerCallback(const std_msgs::String &msg)
 
 void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr &msg)
 {
-	ActionElement* actionToUpdate = findAction(msg->actionID);
+	std::shared_ptr<ActionElement> actionToUpdate = findAction(msg->actionID);
 	if (actionToUpdate)
 	{
 		actionStatesPub.publish(*msg);
@@ -142,7 +142,8 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
 			actionStatesPub.publish(msg);
-			activeActionsList.remove(*actionToUpdate);
+
+			activeActionsList.erase(remove(activeActionsList.begin(), activeActionsList.end(), actionToUpdate));
 		}
 		else if (msg->actionStatus == "FAILED")
 		{
@@ -153,7 +154,8 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
 			actionStatesPub.publish(msg);
-			activeActionsList.remove(*actionToUpdate);
+
+			activeActionsList.erase(remove(activeActionsList.begin(), activeActionsList.end(), actionToUpdate));
 			
 			std_msgs::String cancelMsg;
 			cancelMsg.data = "CANCEL ORDER";
@@ -171,7 +173,7 @@ void ActionDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
 
 void ActionDaemon::AddActionToList(const vda5050_msgs::Action *incomingAction, string orderId, string state)
 {
-	ActionElement newAction(incomingAction, orderId, state);
+	std::shared_ptr<ActionElement> newAction = std::make_shared<ActionElement>(incomingAction, orderId, state);
 	activeActionsList.push_back(newAction);
 }
 
@@ -188,12 +190,12 @@ bool ActionDaemon::checkDriving()
 		return true;
 }
 
-list<ActionElement> ActionDaemon::GetRunningActions()
+std::vector<std::shared_ptr<ActionElement>> ActionDaemon::GetRunningActions()
 {
-	list<ActionElement> runningActions;
+	std::vector<std::shared_ptr<ActionElement>> runningActions;
 	for (auto const &action_it : activeActionsList)
 	{
-		if (action_it.state == "RUNNING")
+		if (action_it->state == "RUNNING")
 		{
 			runningActions.push_back(action_it);
 		}
@@ -201,12 +203,12 @@ list<ActionElement> ActionDaemon::GetRunningActions()
 	return runningActions;
 }
 
-list<ActionElement> ActionDaemon::GetRunningPausedActions()
+std::vector<std::shared_ptr<ActionElement>> ActionDaemon::GetRunningPausedActions()
 {
-	list<ActionElement> runningPausedActions;
+	std::vector<std::shared_ptr<ActionElement>> runningPausedActions;
 	for (auto const &action_it : activeActionsList)
 	{
-		if (action_it.state == "RUNNING" || action_it.state == "PAUSED")
+		if (action_it->state == "RUNNING" || action_it->state == "PAUSED")
 		{
 			runningPausedActions.push_back(action_it);
 		}
@@ -214,14 +216,16 @@ list<ActionElement> ActionDaemon::GetRunningPausedActions()
 	return runningPausedActions;
 }
 
-ActionElement* ActionDaemon::findAction(string actionId)
+std::shared_ptr<ActionElement> ActionDaemon::findAction(string actionId)
 {
-	for (auto &elem : activeActionsList)
-	{
-		if (elem.compareId(actionId))
-			return &elem;
-	}
-	return nullptr;
+	// Empty check for activeActionsList?
+	std::vector<std::shared_ptr<ActionElement>>::iterator it = std::find_if(activeActionsList.begin(), activeActionsList.end(),
+																			[&actionId](std::shared_ptr<ActionElement> const &p)
+																			{ return p->compareId(actionId); });
+	if (it == activeActionsList.end())
+		return nullptr;
+	else
+		return *it;
 }
 
 void ActionDaemon::UpdateActions()
@@ -231,7 +235,7 @@ void ActionDaemon::UpdateActions()
 	{
 		cout << "Instant";
 		// get running actions
-		list<ActionElement> runningPausedActions = GetRunningPausedActions();
+		std::vector<std::shared_ptr<ActionElement>> runningPausedActions = GetRunningPausedActions();
 
 		if (!runningPausedActions.empty())
 		{
@@ -239,7 +243,7 @@ void ActionDaemon::UpdateActions()
 			bool RunningActionHardBlocking = false;
 			for (auto &elem : runningPausedActions)
 			{
-				if (elem.state == "RUNNING" && elem.blockingType == "HARD")
+				if (elem->state == "RUNNING" && elem->blockingType == "HARD")
 					RunningActionHardBlocking = true;
 			}
 			if (!RunningActionHardBlocking)
@@ -293,7 +297,7 @@ void ActionDaemon::UpdateActions()
 	else if (!orderActionQueue.empty())
 	{
 		// get running actions
-		list<ActionElement> runningPausedActions = GetRunningPausedActions();
+		std::vector<std::shared_ptr<ActionElement>> runningPausedActions = GetRunningPausedActions();
 
 		if (!runningPausedActions.empty())
 		{
@@ -301,7 +305,7 @@ void ActionDaemon::UpdateActions()
 			bool RunningActionHardBlocking = false;
 			for (auto &elem : runningPausedActions)
 			{
-				if (elem.blockingType == "HARD")
+				if (elem->blockingType == "HARD")
 					RunningActionHardBlocking = true;
 			}
 
@@ -310,7 +314,7 @@ void ActionDaemon::UpdateActions()
 				for (auto const &action_it : runningPausedActions)
 				{
 					// resume actions paused by instant actions
-					if (action_it.state == "PAUSED")
+					if (action_it->state == "PAUSED")
 					{
 						std_msgs::String resume_msg;
 						resume_msg.data = "RESUME";

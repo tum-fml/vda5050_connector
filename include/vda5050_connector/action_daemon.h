@@ -1,14 +1,15 @@
 #ifndef ACTION_DAEMON_H
 #define ACTION_DAEMON_H
+#include <string>
+#include <list>
+#include <deque>
+#include <memory>
 #include <ros/ros.h>
 #include "daemon.h"
 #include "vda5050_msgs/InstantActions.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/OrderActions.h"
 #include "std_msgs/Bool.h"
-#include <string>
-#include <list>
-#include <deque>
 
 using namespace std;
 
@@ -66,7 +67,7 @@ class ActionElement
 class ActionDaemon : public Daemon
 {
 private:
-	std::list<ActionElement> activeActionsList; /**List of actions to track the blocking type of all active actions*/
+	std::vector<std::shared_ptr<ActionElement>> activeActionsList; /**List of actions to track all active actions*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderActionSub;  /** ordinary order actions from order_daemon to action_daemon*/
@@ -204,27 +205,28 @@ public:
 	/**
 	 * @brief Return all running actions
 	 * 
-	 * @return std::list<ActionElement> List of running actions
+	 * @return std::vector<std::shared_ptr<ActionElement>> List of running actions
 	 */
-	std::list<ActionElement> GetRunningActions();
+	std::vector<std::shared_ptr<ActionElement>> GetRunningActions();
 
 	/**
 	 * @brief Get all running or paused actions
 	 * 
-	 * @return std::list<ActionElement> List of running or paused actions
+	 * @return std::vector<std::shared_ptr<ActionElement>> List of running or paused actions
 	 */
-	std::list<ActionElement> GetRunningPausedActions();
+	std::vector<std::shared_ptr<ActionElement>> GetRunningPausedActions();
 
 	/**
 	 * @brief Finds and returns the action with the requested ID
-	 * 
+	 *
 	 * Finds the action in the activeActionsList list which has the requested ID.
 	 * The corresponding action is returned.
-	 * 
+	 *
 	 * @param actionId ID of the action to find within the active Actions
-	 * @return ActionElement 
+	 * @return std::shared_ptr<ActionElement> Shared pointer to found action element
 	 */
-	ActionElement* findAction(string actionId); 
+
+	std::shared_ptr<ActionElement> findAction(string actionId); 
 };
 
 #endif
