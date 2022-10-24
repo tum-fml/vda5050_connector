@@ -54,7 +54,7 @@ void send_order_action(ros::Publisher *pub, string ID)
     vda5050_msgs::Action action;
     vda5050_msgs::ActionParameter param;
 
-    msg.orderId = uuid::generate_uuid_v4();
+    msg.orderId = "ABC";
 
     std::string actionID;
 
@@ -96,7 +96,7 @@ void send_instant_action(ros::Publisher *pub)
     instAction.version = "v1.0";
 
     msg1.actionId = uuid::generate_uuid_v4();
-    msg1.actionType = "Hebe Gabel";
+    msg1.actionType = "cancelOrder";
     msg1.blockingType = "NONE";
     msg1.actionDescription = "Hebe die Gabel der Weisheit";
 
@@ -106,10 +106,10 @@ void send_instant_action(ros::Publisher *pub)
     msg2.blockingType = "NONE";
     msg2.actionDescription = "Troet, Troet";
 
-    param1.key = "Hoehe";
+    param1.key = "orderId";
     param1.value = "50";
-    param1.key = "Lautstaerke";
-    param1.value = "150dB";
+    param2.key = "Lautstaerke";
+    param2.value = "150dB";
     msg1.actionParameters.push_back(param1);
     msg2.actionParameters.push_back(param2);
 
@@ -141,8 +141,8 @@ int main(int argc, char **argv)
         else
             send_order_action(&actionPub, "0");
         
-        // if(triggertrigger==3)
-        //     send_instant_action(&instActionPub);
+        if(triggertrigger==3)
+            send_instant_action(&instActionPub);
 
         if(triggertrigger==5)
         {

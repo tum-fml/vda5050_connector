@@ -10,6 +10,10 @@
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/OrderActions.h"
 #include "std_msgs/Bool.h"
+#include <string>
+#include <list>
+#include <deque>
+#include <memory>
 
 using namespace std;
 
@@ -44,13 +48,36 @@ class ActionElement
 	ActionElement(const vda5050_msgs::Action* incomingAction, string incomingOrderId, string state);
 
 	/**
-	 * @brief returns true if given ID is equal to ID of action element
+	 * @brief returns true if given action ID is equal to action ID of action element
 	 * 
-	 * @param actionId2 ID to compare
+	 * @param actionId2comp ID to compare
 	 * @return true if IDs are equal
 	 * @return false if IDs are not equal
 	 */
-	bool compareId(string actionId2);
+	bool compareActionId(string actionId2comp);
+
+	/**
+	 * @brief returns true if given order ID is equal to order ID of action element
+	 * 
+	 * @param orderId2comp ID to compare
+	 * @return true if IDs are equal
+	 * @return false if IDs are not equal
+	 */
+	bool compareOrderId(string orderId2comp);
+
+	/**
+	 * @brief Get the Action ID object
+	 * 
+	 * @return std::string Action ID
+	 */
+	std::string getActionId() const;
+
+	/**
+	 * @brief Get the Action type object
+	 * 
+	 * @return std::string Action type
+	 */
+	std::string getActionType() const;
 
 	/**
 	 * @brief Returns an action message composed of an ActionElement
@@ -68,6 +95,8 @@ class ActionDaemon : public Daemon
 {
 private:
 	std::vector<std::shared_ptr<ActionElement>> activeActionsList; /**List of actions to track all active actions*/
+	std::vector<std::string> orderCancellations; /**List of all orders (order IDs) which should be deleted*/
+	std::vector<std::weak_ptr<ActionElement>> actionsToCancel; /** List of active actions to cancel*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderActionSub;  /** ordinary order actions from order_daemon to action_daemon*/
@@ -180,11 +209,11 @@ public:
 	/**
 	 * @brief Adds a new action to the activeActionsList list.
 	 * 
-	 * @param newAction New incoming action
+	 * @param incomingAction Incoming action
 	 * @param orderId ID of the related order
-	 * @param newState State of the new action
+	 * @param state State of the incoming action
 	 */
-	void AddActionToList(const vda5050_msgs::Action *newAction, string orderId, string newState);
+	void AddActionToList(const vda5050_msgs::Action *incomingAction, string orderId, string state);
 
 	/**
 	 * @brief checks whether or not the running action is hard blocking
@@ -215,6 +244,14 @@ public:
 	 * @return std::vector<std::shared_ptr<ActionElement>> List of running or paused actions
 	 */
 	std::vector<std::shared_ptr<ActionElement>> GetRunningPausedActions();
+
+	/**
+	 * @brief Get all actions from activeActionsList which should be cancelled
+	 * 
+	 * @param orderIdToCancel ID of the order to cancel
+	 * @return std::vector<std::shared_ptr<ActionElement>>  List of pointers to actions to cancel
+	 */
+	std::vector<std::shared_ptr<ActionElement>> GetActionsToCancel(std::string orderIdToCancel);
 
 	/**
 	 * @brief Finds and returns the action with the requested ID
