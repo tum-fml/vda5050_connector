@@ -4,3 +4,5 @@ doc/latex/
 build/
 .vscode/
 .devcontainer/
+.catkin_tools/
+devel/

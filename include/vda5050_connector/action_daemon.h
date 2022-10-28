@@ -19,7 +19,7 @@ using namespace std;
 
 
 /**
- * @brief Class for storing information about a single action
+ * @brief Stores information about a single action
  * 
  */
 class ActionElement
@@ -87,6 +87,14 @@ class ActionElement
 	vda5050_msgs::Action packAction();
 };
 
+/** Struct to connect actions to cancel with their respective order ID*/
+struct orderToCancel
+{
+	std::string orderIdToCancel; /** Order (order ID) which should be deleted*/
+	std::string iActionId; /** Id of the instant action containing the cancel action*/
+	std::vector<std::weak_ptr<ActionElement>> actionsToCancel; /** List of active actions to cancel*/
+};
+
 /**
  * Daemon for processing of VDA 5050 action messages. Currently, the action
  * daemon is only used for passing messages from an MQTT topic to a ROS topic.
@@ -95,12 +103,12 @@ class ActionDaemon : public Daemon
 {
 private:
 	std::vector<std::shared_ptr<ActionElement>> activeActionsList; /**List of actions to track all active actions*/
-	std::vector<std::string> orderCancellations; /**List of all orders (order IDs) which should be deleted*/
-	std::vector<std::weak_ptr<ActionElement>> actionsToCancel; /** List of active actions to cancel*/
+	std::vector<orderToCancel> orderCancellations; /** list of all orders to cancel and their respective order id*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderActionSub;  /** ordinary order actions from order_daemon to action_daemon*/
 	ros::Subscriber orderTriggerSub; /** order daemon triggers actions*/
+	ros::Subscriber orderCancelSub;  /** order daemon sends response to order cancel request*/
 	ros::Publisher actionStatesPub;  /** states of actions from action_daemon to state_daemon*/
 	ros::Publisher orderCancelPub;	 /** cancelled actions from action_daemon to order_daemon*/
 
@@ -109,6 +117,7 @@ private:
 protected:
 	deque<vda5050_msgs::Action> orderActionQueue; /** queue for keeping track of order actions*/
 	deque<vda5050_msgs::Action> instantActionQueue; /** queue for keeping track of instant actions*/
+	std::vector<std::string> ordersSucCancelled; /** list of all orders cancelled by order daemon*/
 
 public:
 	/**
@@ -133,11 +142,6 @@ public:
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
-		/**
-	 * Empty description.
-	 */
-	std::string createPublishTopic();
-
 	/**
 	 * @brief callback for order actions topic from order_daemon
 	 *
@@ -150,17 +154,6 @@ public:
 	void OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr &msg);
 	
 	/**
-	 * @brief callback for instant Actions topic from master controll
-	 *
-	 * This callback is called when a new message arrives at the /instantActions topic.
-	 * Actions are queued into a FIFO queue.
-	 * The first element of that queue is sent to the AGV for exection.
-	 *
-	 * @param msg message including the incoming instant action
-	 */
-	void InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr &msg);
-
-	/**
 	 * @brief callback for order trigger topic from order daemon
 	 * 
 	 * This callback is called when a new message arrives at the /orderTrigger topic.
@@ -170,6 +163,29 @@ public:
 	 * @param msg message including the action ID to trigger
 	 */
 	void OrderTriggerCallback(const std_msgs::String &msg);
+
+	/**
+	 * @brief callback to process response to order cancel request from order daemon
+	 * 
+	 * This callback is called when a new message arrives at the /orderCancelResponse topic.
+	 * When a order cancel request was sent to the order daemon,
+	 * it sends the corresponding order id to cancel via the /orderCancelResponse topic
+	 * back to the action daemon to confirm the cancellation.
+	 * 
+	 * @param msg message including the cancelled order ID
+	 */
+	void OrderCancelCallback(const std_msgs::String &msg);
+
+	/**
+	 * @brief callback for instant Actions topic from master controll
+	 *
+	 * This callback is called when a new message arrives at the /instantActions topic.
+	 * Actions are queued into a FIFO queue.
+	 * The first element of that queue is sent to the AGV for exection.
+	 *
+	 * @param msg message including the incoming instant action
+	 */
+	void InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr &msg);
 
 	/**
 	 * @brief callback for agvActionState topic from AGV
@@ -197,16 +213,6 @@ public:
 	void DrivingCallback(const std_msgs::Bool::ConstPtr &msg);
 
 	/**
-	 * @brief processes actions based on their type
-	 * 
-	 * The UpdateActions() method represents the main event loop.
-	 * Based on the order and instan action queues, the method processes incoming actions
-	 * and pauses driving state and pauses/resumes other actions.
-	 *
-	 */
-	void UpdateActions();
-
-	/**
 	 * @brief Adds a new action to the activeActionsList list.
 	 * 
 	 * @param incomingAction Incoming action
@@ -214,15 +220,7 @@ public:
 	 * @param state State of the incoming action
 	 */
 	void AddActionToList(const vda5050_msgs::Action *incomingAction, string orderId, string state);
-
-	/**
-	 * @brief checks whether or not the running action is hard blocking
-	 * 
-	 * @return true if the running action is hard blocking
-	 * @return false if the running action is not hard blocking
-	 */
-	bool RunningActionHardBlocking();
-
+	
 	/**
 	 * @brief checks if the AGV is driving and stops driving if so
 	 * 
@@ -264,6 +262,16 @@ public:
 	 */
 
 	std::shared_ptr<ActionElement> findAction(string actionId); 
+	
+	/**
+	 * @brief processes actions based on their type
+	 * 
+	 * The UpdateActions() method represents the main event loop.
+	 * Based on the order and instan action queues, the method processes incoming actions
+	 * and pauses driving state and pauses/resumes other actions.
+	 *
+	 */
+	void UpdateActions();
 };
 
 #endif
