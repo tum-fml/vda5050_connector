@@ -10,7 +10,7 @@
 
 using namespace std;
 
-ActiveOrder::ActiveOrder(const vda5050_msgs::Order* incomingOrder)
+void ActiveOrder::setActiveOrder(const vda5050_msgs::Order* incomingOrder)
 {
 	orderId = incomingOrder->orderId;
 	orderUpdateId = incomingOrder->orderUpdateId;
@@ -55,11 +55,16 @@ bool ActiveOrder::isActive()
 	return false;
 }
 
+bool ActiveOrder::isFinished()
+{
+	return finished;
+}
 /*
  * Help
  */
 OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 {
+	activeOrder.finished = false;
 	LinkPublishTopics(&(this->nh));
 	LinkSubscriptionTopics(&(this->nh));
 
@@ -101,12 +106,6 @@ void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 	}	
 }
 
-void OrderDaemon::AddOrderToList(const vda5050_msgs::Order *incomingOrder)
-{
-	ActiveOrder newOrder(incomingOrder);
-	activeOrderList.push_back(newOrder);
-}
-
 bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
 {
 	/** TODO: How to validation check?*/
@@ -119,23 +118,23 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 	// OrderDaemon::AddOrderToList(msg.get());
 	if (validationCheck(msg))
 	{
-		if (!activeOrderList.empty())
+		if (!activeOrder.finished)
 		{
-			if (activeOrderList.front().compareOrderId(msg->orderId))
+			if (activeOrder.compareOrderId(msg->orderId))
 			{
-				if (activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+				if (activeOrder.compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
 				{
 					orderUpdateError(msg->orderId, msg->orderUpdateId);
 				}
-				else if (activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
+				else if (activeOrder.compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
 				{
 					/** TODO: Discard Message*/
 				}
 				else
 				{
-					if (activeOrderList.front().isActive())
+					if (activeOrder.isActive())
 					{
-						if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+						if (activeOrder.compareBase(msg->nodes.front().nodeId,
 																msg->nodes.front().sequenceId))
 						{
 							/** TODO: Add order update to order queue*/
@@ -147,7 +146,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 					}
 					else
 					{
-						if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+						if (activeOrder.compareBase(msg->nodes.front().nodeId,
 																msg->nodes.front().sequenceId))
 						{
 							/** TODO: Add order update to order queue*/
@@ -161,9 +160,9 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 			}
 			else
 			{
-				if (activeOrderList.front().isActive())
+				if (activeOrder.isActive())
 				{
-					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+					if (activeOrder.compareBase(msg->nodes.front().nodeId,
 															msg->nodes.front().sequenceId))
 					{
 						/** TODO: Add order to order queue*/

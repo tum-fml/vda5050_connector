@@ -26,7 +26,9 @@ class ActiveOrder
 	vector<vda5050_msgs::ActionState> actionList;
 
 	public:
-	ActiveOrder(const vda5050_msgs::Order* incomingOrder);
+	bool finished;	/** order finished?*/
+	
+	void setActiveOrder(const vda5050_msgs::Order* incomingOrder);
 
 	bool compareOrderId(string orderIdToCompare);
 
@@ -56,14 +58,21 @@ class ActiveOrder
 	 * @return false 
 	 */
 	bool isActive();
+
+	/**
+	 * @brief checks whether o not the order is marked as finished
+	 * 
+	 * @return true if order is finished
+	 * @return false if order is running
+	 */
+	bool isFinished();
 };
 
 class OrderDaemon: public Daemon
 {
 	private:
-	vector<ActiveOrder> activeOrderList; /**List of  all active orders*/
+	ActiveOrder activeOrder; /** Currently active Order*/
 
-	
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderCancelSub; 	/** cancel request from action daemon*/
 	ros::Subscriber agvPositionSub; 	/** position data from AGV*/
@@ -99,13 +108,6 @@ class OrderDaemon: public Daemon
 	 * Empty description.
 	 */
 	void PublishOrderActions();
-
-	/**
-	 * @brief Adds an incoming order to the order list
-	 * 
-	 * @param incomingOrder new order coming from MC
-	 */
-	void AddOrderToList(const vda5050_msgs::Order *incomingOrder);
 
 	/**
 	 * @brief checks if incoming order is valid
