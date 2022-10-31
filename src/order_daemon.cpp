@@ -65,9 +65,9 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 
 	// Initialize internal topics
 	orderCancelSub = nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelCallback, this);
-	orderCancelSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
+	agvPositionSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
 	orderActionPub = nh.advertise<vda5050_msgs::Action>("orderAction", 1000);
-	orderActionPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
+	orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
 }
 
 
@@ -79,7 +79,7 @@ void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 	for(const auto& elem : topicList)
 	{
 		ss<< "/" << elem.second;
-		if (CheckTopic(elem.first,"order"))
+		if (CheckTopic(elem.first,"orderToAgv"))
 		{
 			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::Order>(ss.str(),1000);
 		}
@@ -91,7 +91,7 @@ void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 	map<string,string>topicList = GetTopicSubscriberList();
 	for(const auto& elem : topicList)
 	{
-		if (CheckTopic(elem.first,"order"))
+		if (CheckTopic(elem.first,"orderFromMc"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::OrderCallback, this);
 	}
 	for(const auto& elem : topicList)
@@ -107,20 +107,57 @@ void OrderDaemon::AddOrderToList(const vda5050_msgs::Order *incomingOrder)
 	activeOrderList.push_back(newOrder);
 }
 
-void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg)
+bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
+{
+	/** TODO: How to validation check?*/
+	/** Maybe depending on AGV's capabilities (e.g. track planning etc.)*/
+	return true;
+}
+
+void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 {
 	// OrderDaemon::AddOrderToList(msg.get());
-	if (!activeOrderList.empty())
+	if (validationCheck(msg))
 	{
-		if (activeOrderList.front().compareOrderId(msg->orderId))
+		if (!activeOrderList.empty())
 		{
-			if(activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+			if (activeOrderList.front().compareOrderId(msg->orderId))
 			{
-				/** TODO: Reject incoming order*/
-			}
-			else if (activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
-			{
-				/** TODO: Discard Message*/
+				if (activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+				{
+					orderUpdateError(msg->orderId, msg->orderUpdateId);
+				}
+				else if (activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
+				{
+					/** TODO: Discard Message*/
+				}
+				else
+				{
+					if (activeOrderList.front().isActive())
+					{
+						if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+																msg->nodes.front().sequenceId))
+						{
+							/** TODO: Add order update to order queue*/
+						}
+						else
+						{
+							orderUpdateError(msg->orderId, msg->orderUpdateId);
+						}
+					}
+					else
+					{
+						if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+																msg->nodes.front().sequenceId))
+						{
+							/** TODO: Add order update to order queue*/
+						}
+						else
+						{
+							orderUpdateError(msg->orderId, msg->orderUpdateId);
+						}
+					}
+				}
 			}
 			else
 			{
@@ -129,53 +166,30 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg)
 					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
 															msg->nodes.front().sequenceId))
 					{
-						/** TODO: Add order update to order queue*/
+						/** TODO: Add order to order queue*/
 					}
-					else 
+					else
 					{
-						/** TODO: Reject order, report OrderUpdateError (orderId, orderUpdated as reference)*/
+						orderUpdateError(msg->orderId, msg->orderUpdateId);
 					}
 				}
 				else
 				{
-					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
-															msg->nodes.front().sequenceId))
-					{
-						/** TODO: Add order update to order queue*/
-					}
-					else 
-					{
-						/** TODO: Reject order, report OrderUpdateError (orderId, orderUpdated as reference)*/
-					}
+					// if (/** TODO: First node in deviation range?*/)
+					// {
+					// 	/** TODO: Delete aciton states, Accept order, fill states*/
+					// }
+					// else
+					// {
+					// 		orderUpdateError(msg->orderId, msg->orderUpdateId);
+					// }
 				}
 			}
 		}
-		else
-		{
-			if (activeOrderList.front().isActive())
-				{
-					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
-															msg->nodes.front().sequenceId))
-					{
-						/** TODO: Add order to order queue*/
-					}
-					else 
-					{
-						/** TODO: Reject order, report OrderError (orderId as reference)*/
-					}
-				}
-			else
-			{
-				// if (/** TODO: First node in deviation range?*/)
-				// {
-				// 	/** TODO: Delete aciton states, Accept order, fill states*/
-				// }
-				// else
-				// {
-				// 	/** TODO: Reject order*/
-				// }
-			}
-		}
+	}
+	else
+	{
+		/** TODO: RejectOrder report validationOrder*/
 	}
 }
 

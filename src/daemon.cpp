@@ -193,3 +193,12 @@ std::string Daemon::CreateTimestamp()
 	return(isoTimeStr);
 }
 
+
+void Daemon::orderUpdateError(std::string orderId, int orderUpdateId)
+{
+	std_msgs::String rejectMsg;
+	std::stringstream ss;
+	ss << "orderUpdateError: " << orderId << ", " << orderUpdateId;
+	rejectMsg.data = ss.str();
+	errorPublisher.publish(rejectMsg);
+}

@@ -62,11 +62,13 @@ class OrderDaemon: public Daemon
 {
 	private:
 	vector<ActiveOrder> activeOrderList; /**List of  all active orders*/
-	
+
 	
 	// Declare all ROS subscriber and publisher topics for internal communication
-	ros::Subscriber orderCancelSub; 	/** ordinary order actions from order_daemon to action_daemon*/
-	ros::Publisher orderActionPub; 		/** cancelled actions from action_daemon to order_daemon*/
+	ros::Subscriber orderCancelSub; 	/** cancel request from action daemon*/
+	ros::Subscriber agvPositionSub; 	/** position data from AGV*/
+	ros::Publisher orderActionPub; 		/** ordinary order actions from order_daemon to action_daemon*/
+	ros::Publisher orderCancelPub; 		/** response to cancel request*/
 
 	protected:
 
@@ -98,7 +100,21 @@ class OrderDaemon: public Daemon
 	 */
 	void PublishOrderActions();
 
+	/**
+	 * @brief Adds an incoming order to the order list
+	 * 
+	 * @param incomingOrder new order coming from MC
+	 */
 	void AddOrderToList(const vda5050_msgs::Order *incomingOrder);
+
+	/**
+	 * @brief checks if incoming order is valid
+	 * 
+	 * @param msg incoming order msg
+	 * @return true if order is valid
+	 * @return false if order is not valid
+	 */
+	bool validationCheck(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
 	 * Empty description.
