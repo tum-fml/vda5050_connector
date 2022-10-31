@@ -3,3 +3,6 @@ doc/html/
 doc/latex/
 build/
 .vscode/
+.catkin_tools/
+.devcontainer/
+devel/
