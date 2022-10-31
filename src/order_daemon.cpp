@@ -5,8 +5,55 @@
 #include <string>
 #include "vda5050_msgs/Order.h"
 #include "vda5050_msgs/Action.h"
+#include "vda5050_msgs/ActionState.h"
+#include "vda5050_msgs/AGVPosition.h"
 
 using namespace std;
+
+ActiveOrder::ActiveOrder(const vda5050_msgs::Order* incomingOrder)
+{
+	orderId = incomingOrder->orderId;
+	orderUpdateId = incomingOrder->orderUpdateId;
+	zoneSetId = incomingOrder->zoneSetId;
+	edgeList = incomingOrder->edges;
+	nodeList = incomingOrder->nodes;
+}
+
+bool ActiveOrder::compareOrderId(string orderIdToCompare)
+{
+	return this->orderId == orderIdToCompare;
+}
+
+string ActiveOrder::compareOrderUpdateId(int orderUpdateIdToCompare)
+{
+	if (orderUpdateIdToCompare == this->orderUpdateId)
+		return "EQUAL";
+	else if (orderUpdateIdToCompare > this->orderUpdateId)
+		return "HIGHER";
+	else if (orderUpdateIdToCompare < this->orderUpdateId)
+		return "LOWER";
+	else
+		return "ERROR";
+}
+
+bool ActiveOrder::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId)
+{
+	return (this->nodeList.back().nodeId == startOfNewBaseNodeId) &&
+		   (this->nodeList.back().sequenceId == startOfNewBaseSequenceId);
+}
+
+bool ActiveOrder::isActive()
+{
+	if (!this->nodeList.empty())
+	{
+		if (!this->edgeList.empty())
+		{
+			if (this->actionList.empty())
+				return true;
+		}
+	}
+	return false;
+}
 
 /*
  * Help
@@ -17,15 +64,17 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	LinkSubscriptionTopics(&(this->nh));
 
 	// Initialize internal topics
-	orderCancelSub = nh.subscribe("orderCancel", 1000, &OrderDaemon::OrderCancelCallback, this);
+	orderCancelSub = nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelCallback, this);
+	orderCancelSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
 	orderActionPub = nh.advertise<vda5050_msgs::Action>("orderAction", 1000);
+	orderActionPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
 }
 
 
 void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
-	std::map<std::string,std::string>topicList = GetTopicPublisherList();
-	std::stringstream ss;
+	map<string,string>topicList = GetTopicPublisherList();
+	stringstream ss;
 
 	for(const auto& elem : topicList)
 	{
@@ -39,23 +88,113 @@ void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 
 void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 {
-	std::map<std::string,std::string>topicList = GetTopicSubscriberList();
+	map<string,string>topicList = GetTopicSubscriberList();
 	for(const auto& elem : topicList)
 	{
 		if (CheckTopic(elem.first,"order"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::OrderCallback, this);
+	}
+	for(const auto& elem : topicList)
+	{
+		if (CheckTopic(elem.first,"actionStates"))
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::ActionStateCallback, this);
 	}	
 }
 
+void OrderDaemon::AddOrderToList(const vda5050_msgs::Order *incomingOrder)
+{
+	ActiveOrder newOrder(incomingOrder);
+	activeOrderList.push_back(newOrder);
+}
 
 void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg)
 {
-	// where the magic happens
+	// OrderDaemon::AddOrderToList(msg.get());
+	if (!activeOrderList.empty())
+	{
+		if (activeOrderList.front().compareOrderId(msg->orderId))
+		{
+			if(activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+			{
+				/** TODO: Reject incoming order*/
+			}
+			else if (activeOrderList.front().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
+			{
+				/** TODO: Discard Message*/
+			}
+			else
+			{
+				if (activeOrderList.front().isActive())
+				{
+					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+															msg->nodes.front().sequenceId))
+					{
+						/** TODO: Add order update to order queue*/
+					}
+					else 
+					{
+						/** TODO: Reject order, report OrderUpdateError (orderId, orderUpdated as reference)*/
+					}
+				}
+				else
+				{
+					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+															msg->nodes.front().sequenceId))
+					{
+						/** TODO: Add order update to order queue*/
+					}
+					else 
+					{
+						/** TODO: Reject order, report OrderUpdateError (orderId, orderUpdated as reference)*/
+					}
+				}
+			}
+		}
+		else
+		{
+			if (activeOrderList.front().isActive())
+				{
+					if (activeOrderList.front().compareBase(msg->nodes.front().nodeId,
+															msg->nodes.front().sequenceId))
+					{
+						/** TODO: Add order to order queue*/
+					}
+					else 
+					{
+						/** TODO: Reject order, report OrderError (orderId as reference)*/
+					}
+				}
+			else
+			{
+				// if (/** TODO: First node in deviation range?*/)
+				// {
+				// 	/** TODO: Delete aciton states, Accept order, fill states*/
+				// }
+				// else
+				// {
+				// 	/** TODO: Reject order*/
+				// }
+			}
+		}
+	}
 }
 
 void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
 {
 	// where the magic happens
+}
+
+void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg)
+{
+	// where the magic happens
+}
+
+void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg)
+{
+	/** TODO: handles movement queue of current order*/
+	/** TODO: combine nodes and edges list based on sequence ID*/
+	/** TODO: Send trajectory to AGV*/
+	/** TODO: Send actions to action daemon*/
 }
 
 void OrderDaemon::UpdateOrders()
