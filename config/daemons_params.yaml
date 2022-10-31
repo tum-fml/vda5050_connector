@@ -75,9 +75,9 @@ state_daemon:
 
 order_daemon:
     topics_publish:
-        order: /order_to_agv 
+        orderToAgv: /order_to_agv 
     topics_subscribe:
-        order: /order_from_mc
+        orderFromMc: /order_from_mc
         actionStates: /actionStates
 
 action_daemon:
