@@ -12,8 +12,8 @@
 using namespace std;
 
 /**
- * Daemon for processing of VDA 5050 action messages. Currently, the action
- * daemon is only used for passing messages from an MQTT topic to a ROS topic.
+ * @brief Currently active order
+ * 
  */
 class ActiveOrder
 {
@@ -66,12 +66,71 @@ class ActiveOrder
 	 * @return false if order is running
 	 */
 	bool isFinished();
+
+	/**
+	 * @brief returns "NODE" or "EDGE" based on sequence ID
+	 * 
+	 * @param currSequenceId current seuquence ID
+	 * @return string "NODE", when AGV is positioned on a node and
+	 * "EDGE", when AGV drives along an edge
+	 */
+	string findNodeEdge(int currSequenceId);
+
+	/**
+	 * @brief Get the front Node object
+	 * 
+	 * @return vda5050_msgs::Node 
+	 */
+	vda5050_msgs::Node getFrontNode();
 };
 
+/**
+ * @brief Current position of the AGV in map coordinates
+ * 
+ */
+class AGVPosition
+{
+	private:
+	float x;		/**x position in map coordinates*/
+	float y;		/**y position in world coordinates*/
+	float theta;	/**theta angle in world coordinates*/
+	string mapId;	/**map id of the current map*/
+
+	public:
+	AGVPosition();
+	
+	/**
+	 * @brief updates last position data to new position
+	 * 
+	 */
+	void updatePosition(float new_x, float new_y, float new_theta, string new_mapId);
+
+	/**
+	 * @brief computes the distance to the next node
+	 * 
+	 * @param node_x x position of the next node
+	 * @param node_y y position of the next node
+	 * @return float distance to the next node
+	 */
+	float nodeDistance(float node_x, float node_y);
+
+	/**
+	 * @brief Get theta angle
+	 * 
+	 * @return float theta angle
+	 */
+	float getTheta();
+};
+
+/**
+ * Daemon for processing of VDA 5050 action messages. Currently, the action
+ * daemon is only used for passing messages from an MQTT topic to a ROS topic.
+ */
 class OrderDaemon: public Daemon
 {
 	private:
 	ActiveOrder activeOrder; /** Currently active Order*/
+	AGVPosition agvPosition; /** Currently active Order*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderCancelSub; 	/** cancel request from action daemon*/
@@ -80,6 +139,7 @@ class OrderDaemon: public Daemon
 	ros::Publisher orderCancelPub; 		/** response to cancel request*/
 
 	protected:
+	int currSequenceId; /** true, if the AGV currently moves on an edge*/
 
 	public:
 	/**
@@ -117,6 +177,15 @@ class OrderDaemon: public Daemon
 	 * @return false if order is not valid
 	 */
 	bool validationCheck(const vda5050_msgs::Order::ConstPtr& msg);
+
+	/**
+	 * @brief computes the distance to the next node and
+	 * decides whether the AGV is in the deviation range of the next node 
+	 * 
+	 * @return true if AGV is in the deviation range
+	 * @return false if AGV is not in the deviation range
+	 */
+	bool inDevRange();
 
 	/**
 	 * Empty description.
