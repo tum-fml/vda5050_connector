@@ -290,6 +290,14 @@ If any parameters are not readable or not found on the parameter server, there i
    [INFO] [1657111653.836246]: MQTT connected
 ```
 
+## Comments on VDA 5050 specification
+### Assumptions in unclear situations
+**Situation:** Vehicle is processing an order and receives a new one (= differing order ID).
+
+**Our Solution:** The new order is rejected if it doesn't begin at the end of the base of the previous (= currently running) order.
+
+**Alternative:** The new order could be accepted if it begins at the end of the horizon of the previous order. Would lead to potential detours if the destination of the current order changes in the meantime.
+
 ## About
 
 The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
