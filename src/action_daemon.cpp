@@ -288,7 +288,7 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 		if ((msg->actionStatus == "WAITING") || (msg->actionStatus == "INITIALIZING") || (msg->actionStatus == "RUNNING") || (msg->actionStatus == "PAUSED"))
 		{
 			actionToUpdate->state = msg->actionStatus;
-			actionStatesPub.publish(msg);
+			// actionStatesPub.publish(msg);
 		}
 		else if (msg->actionStatus == "FINISHED")
 		{
@@ -298,8 +298,7 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 				resumeMsg.data = "RESUME";
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
-			actionStatesPub.publish(msg);
-
+			// actionStatesPub.publish(msg);
 			activeActionsList.erase(remove(activeActionsList.begin(), activeActionsList.end(), actionToUpdate));
 		}
 		else if (msg->actionStatus == "FAILED")
@@ -310,7 +309,7 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
 				resumeMsg.data = "RESUME";
 				messagePublisher["/prDriving"].publish(resumeMsg);
 			}
-			actionStatesPub.publish(msg);
+			// actionStatesPub.publish(msg);
 
 			activeActionsList.erase(remove(activeActionsList.begin(), activeActionsList.end(), actionToUpdate));
 			
