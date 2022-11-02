@@ -10,9 +10,9 @@
 
 using namespace std;
 
-/*-------------------------------------ActiveOrder--------------------------------------------*/
+/*-------------------------------------CurrentOrder--------------------------------------------*/
 
-void ActiveOrder::setActiveOrder(const vda5050_msgs::Order* incomingOrder)
+void CurrentOrder::setActiveOrder(const vda5050_msgs::Order* incomingOrder)
 {
 	orderId = incomingOrder->orderId;
 	orderUpdateId = incomingOrder->orderUpdateId;
@@ -21,12 +21,12 @@ void ActiveOrder::setActiveOrder(const vda5050_msgs::Order* incomingOrder)
 	nodeList = incomingOrder->nodes;
 }
 
-bool ActiveOrder::compareOrderId(string orderIdToCompare)
+bool CurrentOrder::compareOrderId(string orderIdToCompare)
 {
 	return this->orderId == orderIdToCompare;
 }
 
-string ActiveOrder::compareOrderUpdateId(int orderUpdateIdToCompare)
+string CurrentOrder::compareOrderUpdateId(int orderUpdateIdToCompare)
 {
 	if (orderUpdateIdToCompare == this->orderUpdateId)
 		return "EQUAL";
@@ -38,13 +38,13 @@ string ActiveOrder::compareOrderUpdateId(int orderUpdateIdToCompare)
 		return "ERROR";
 }
 
-bool ActiveOrder::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId)
+bool CurrentOrder::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId)
 {
 	return (this->nodeList.back().nodeId == startOfNewBaseNodeId) &&
 		   (this->nodeList.back().sequenceId == startOfNewBaseSequenceId);
 }
 
-bool ActiveOrder::isActive()
+bool CurrentOrder::isActive()
 {
 	if (!this->nodeList.empty())
 	{
@@ -57,12 +57,12 @@ bool ActiveOrder::isActive()
 	return false;
 }
 
-bool ActiveOrder::isFinished()
+bool CurrentOrder::isFinished()
 {
 	return finished;
 }
 
-string ActiveOrder::findNodeEdge(int currSequenceId)
+string CurrentOrder::findNodeEdge(int currSequenceId)
 {
 	if (edgeList.front().sequenceId == currSequenceId)
 		return "EDGE";
@@ -72,7 +72,7 @@ string ActiveOrder::findNodeEdge(int currSequenceId)
 		return "SEQUENCE ERROR";
 }
 
-vda5050_msgs::Node ActiveOrder::getFrontNode()
+vda5050_msgs::Node CurrentOrder::getFrontNode()
 {
 	return nodeList.front();
 }
@@ -109,7 +109,7 @@ float AGVPosition::getTheta()
 
 OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 {
-	activeOrder.finished = false;
+	currentOrder.finished = false;
 	LinkPublishTopics(&(this->nh));
 	LinkSubscriptionTopics(&(this->nh));
 
@@ -160,10 +160,10 @@ bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
 
 bool OrderDaemon::inDevRange()
 {
-	return ((agvPosition.nodeDistance(activeOrder.getFrontNode().nodePosition.x,
-									  activeOrder.getFrontNode().nodePosition.y)) <=
-			activeOrder.getFrontNode().nodePosition.allowedDeviationXY) &&
-		   (agvPosition.getTheta() <= activeOrder.getFrontNode().nodePosition.allowedDeviationTheta);
+	return ((agvPosition.nodeDistance(currentOrder.getFrontNode().nodePosition.x,
+									  currentOrder.getFrontNode().nodePosition.y)) <=
+			currentOrder.getFrontNode().nodePosition.allowedDeviationXY) &&
+		   (agvPosition.getTheta() <= currentOrder.getFrontNode().nodePosition.allowedDeviationTheta);
 }
 
 void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
@@ -171,21 +171,21 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 	// OrderDaemon::AddOrderToList(msg.get());
 	if (validationCheck(msg))
 	{
-		if (activeOrder.compareOrderId(msg->orderId))
+		if (currentOrder.compareOrderId(msg->orderId))
 		{
-			if (activeOrder.compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+			if (currentOrder.compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
 			{
 				orderUpdateError(msg->orderId, msg->orderUpdateId);
 			}
-			else if (activeOrder.compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
+			else if (currentOrder.compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
 			{
 				/** TODO: Discard Message*/
 			}
 			else
 			{
-				if (activeOrder.isActive())
+				if (currentOrder.isActive())
 				{
-					if (activeOrder.compareBase(msg->nodes.front().nodeId,
+					if (currentOrder.compareBase(msg->nodes.front().nodeId,
 															msg->nodes.front().sequenceId))
 					{
 						/** TODO: Update existing order*/
@@ -197,7 +197,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 				}
 				else
 				{
-					if (activeOrder.compareBase(msg->nodes.front().nodeId,
+					if (currentOrder.compareBase(msg->nodes.front().nodeId,
 															msg->nodes.front().sequenceId))
 					{
 						/** TODO: Update existing order*/
@@ -211,9 +211,9 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 		}
 		else
 		{
-			if (activeOrder.isActive())
+			if (currentOrder.isActive())
 			{
-				if (activeOrder.compareBase(msg->nodes.front().nodeId,
+				if (currentOrder.compareBase(msg->nodes.front().nodeId,
 														msg->nodes.front().sequenceId))
 				{
 					/** TODO: Append new order*/
@@ -260,9 +260,9 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 	/** TODO: Send actions to action daemon*/
 
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
-	if (!activeOrder.finished)
+	if (!currentOrder.finished)
 	{
-		if (activeOrder.findNodeEdge(currSequenceId) == "EDGE")
+		if (currentOrder.findNodeEdge(currSequenceId) == "EDGE")
 		{
 			if(inDevRange())
 				currSequenceId++;

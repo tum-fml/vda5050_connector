@@ -15,7 +15,7 @@ using namespace std;
  * @brief Currently active order
  * 
  */
-class ActiveOrder
+class CurrentOrder
 {
 	private:
 	string orderId;
@@ -129,8 +129,8 @@ class AGVPosition
 class OrderDaemon: public Daemon
 {
 	private:
-	ActiveOrder activeOrder; /** Currently active Order*/
-	AGVPosition agvPosition; /** Currently active Order*/
+	CurrentOrder currentOrder; /** Current order*/
+	AGVPosition agvPosition; /** Currently active order*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
 	ros::Subscriber orderCancelSub; 	/** cancel request from action daemon*/
