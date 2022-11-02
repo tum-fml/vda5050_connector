@@ -21,12 +21,13 @@ class CurrentOrder
 	string orderId;
 	int    orderUpdateId;
 	string zoneSetId;
-	vector<vda5050_msgs::Edge> edgeList;
-	vector<vda5050_msgs::Node> nodeList;
-	vector<vda5050_msgs::ActionState> actionList;
 
 	public:
 	bool finished;	/** order finished?*/
+	bool actionsFinished;	/** all actions related to current edge or node finished?*/
+	deque<vda5050_msgs::Edge> edgeList;
+	deque<vda5050_msgs::Node> nodeList;
+	deque<vda5050_msgs::ActionState> actionList;
 	
 	void setActiveOrder(const vda5050_msgs::Order* incomingOrder);
 
@@ -60,12 +61,13 @@ class CurrentOrder
 	bool isActive();
 
 	/**
-	 * @brief checks whether o not the order is marked as finished
+	 * @brief returns "NODE" or "EDGE" based on sequence ID
 	 * 
-	 * @return true if order is finished
-	 * @return false if order is running
+	 * @param currSequenceId current seuquence ID
+	 * @return string "NODE", when AGV is positioned on a node and
+	 * "EDGE", when AGV drives along an edge
 	 */
-	bool isFinished();
+	string findNodeEdge(int currSequenceId);
 
 	/**
 	 * @brief returns "NODE" or "EDGE" based on sequence ID
@@ -74,7 +76,6 @@ class CurrentOrder
 	 * @return string "NODE", when AGV is positioned on a node and
 	 * "EDGE", when AGV drives along an edge
 	 */
-	string findNodeEdge(int currSequenceId);
 
 	/**
 	 * @brief Get the front Node object
@@ -137,6 +138,7 @@ class OrderDaemon: public Daemon
 	ros::Subscriber agvPositionSub; 	/** position data from AGV*/
 	ros::Publisher orderActionPub; 		/** ordinary order actions from order_daemon to action_daemon*/
 	ros::Publisher orderCancelPub; 		/** response to cancel request*/
+	ros::Publisher orderTriggerPub;		/** triggers actions when AGV arrives at edge/node*/
 
 	protected:
 	int currSequenceId; /** true, if the AGV currently moves on an edge*/
@@ -186,6 +188,15 @@ class OrderDaemon: public Daemon
 	 * @return false if AGV is not in the deviation range
 	 */
 	bool inDevRange();
+
+	/**
+	 * @brief triggers actions of the following node or edge
+	 * 
+	 * @param nodeOrEdge is the AGV currently on a node or an edge?
+	 */
+	void triggerNewActions(string nodeOrEdge);
+
+	void sendMotionCommand();
 
 	/**
 	 * Empty description.
