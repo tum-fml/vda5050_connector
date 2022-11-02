@@ -27,7 +27,7 @@ class CurrentOrder
 	bool actionsFinished;	/** all actions related to current edge or node finished?*/
 	deque<vda5050_msgs::Edge> edgeList;
 	deque<vda5050_msgs::Node> nodeList;
-	deque<vda5050_msgs::ActionState> actionList;
+	vector<string> actionList;
 	
 	void setActiveOrder(const vda5050_msgs::Order* incomingOrder);
 

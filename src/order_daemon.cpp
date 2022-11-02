@@ -284,7 +284,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 				}
 				else
 				{
-						orderUpdateError(msg->orderId, msg->orderUpdateId);
+					orderUpdateError(msg->orderId, msg->orderUpdateId);
 				}
 			}
 		}
@@ -302,16 +302,24 @@ void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
 
 void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg)
 {
-	// where the magic happens
+	auto it = find(currentOrder.actionList.begin(), currentOrder.actionList.end(), msg.get()->actionID);
+	if (it != currentOrder.actionList.end())
+	{
+		if (msg.get()->actionStatus == "FINISHED")
+		{
+			currentOrder.actionList.erase(it);
+			if(currentOrder.actionList.empty())
+			{
+				currentOrder.actionsFinished = true;
+			}
+		}
+		else if (msg.get()->actionStatus == "FAILED")
+			/** TODO: Abort order and delete complete actionList*/;
+	}
 }
 
 void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg)
 {
-	/** TODO: handles motion queue of current order*/
-	/** TODO: combine nodes and edges list based on sequence ID*/
-	/** TODO: Send trajectory to AGV*/
-	/** TODO: Send actions to action daemon*/
-
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
 	if (!currentOrder.finished)
 	{
@@ -328,6 +336,8 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 						{
 							currSequenceId++;
 							triggerNewActions("NODE");
+							for (auto const &action : currentOrder.nodeList.front().actions)
+								currentOrder.actionList.push_back(action.actionId);
 						}
 						else
 							currentOrder.finished = true;
@@ -346,6 +356,8 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 						currSequenceId++;
 						triggerNewActions("EDGE");
 						sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct next node position is sent*/
+						for (auto const &action : currentOrder.edgeList.front().actions)
+							currentOrder.actionList.push_back(action.actionId);
 					}
 					else
 						currentOrder.finished = true;
