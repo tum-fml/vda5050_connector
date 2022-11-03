@@ -2,6 +2,8 @@
 #define ORDER_DAEMON_H
 #include <ros/ros.h>
 #include "daemon.h"
+#include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
 #include "vda5050_msgs/Order.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/AGVPosition.h"
@@ -141,6 +143,8 @@ class OrderDaemon: public Daemon
 	ros::Publisher orderTriggerPub;		/** triggers actions when AGV arrives at edge/node*/
 
 	protected:
+	bool cancelMode; /** true if order daemon is in cancel mode*/
+	bool isDriving; /** true if vehicle is driving*/
 	int currSequenceId; /** true, if the AGV currently moves on an edge*/
 
 	public:
@@ -217,6 +221,12 @@ class OrderDaemon: public Daemon
 	 * Empty description.
 	 */
     void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
+
+
+	/**
+	 * Empty description.
+	 */
+    void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 
 	/**
 	 * Empty description.

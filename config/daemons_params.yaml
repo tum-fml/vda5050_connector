@@ -76,9 +76,11 @@ state_daemon:
 order_daemon:
     topics_publish:
         orderMotion: /orderMotion
+        prDriving: /prDriving
     topics_subscribe:
         orderFromMc: /order_from_mc
         actionStates: /actionStates
+        driving: /driving
 
 action_daemon:
     topics_publish:

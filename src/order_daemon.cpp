@@ -1,5 +1,6 @@
 #include "vda5050_connector/order_daemon.h"
 #include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -127,9 +128,9 @@ void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 	{
 		ss<< "/" << elem.second;
 		if (CheckTopic(elem.first,"orderMotion"))
-		{
 			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::OrderMotion>(ss.str(),1000);
-		}
+		if (CheckTopic(elem.first,"prDriving"))
+			messagePublisher[elem.second]=nh->advertise<std_msgs::String>(ss.str(),1000);
 	}	
 }
 
@@ -140,12 +141,11 @@ void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 	{
 		if (CheckTopic(elem.first,"orderFromMc"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::OrderCallback, this);
-	}
-	for(const auto& elem : topicList)
-	{
 		if (CheckTopic(elem.first,"actionStates"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::ActionStateCallback, this);
-	}	
+		if (CheckTopic(elem.first, "driving"))
+			subscribers[elem.first] = nh->subscribe(elem.second, 1000, &OrderDaemon::DrivingCallback, this);
+	}
 }
 
 bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
@@ -297,7 +297,27 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 
 void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
 {
-	// where the magic happens
+	if (currentOrder.compareOrderId(msg.get()->data))
+	{
+		currentOrder.edgeList.clear();
+		currentOrder.nodeList.clear();
+		currentOrder.actionList.clear();
+		currentOrder.finished = true;
+		currentOrder.actionsFinished = true;
+		std_msgs::String msg;
+		msg.data = "PAUSE";
+		messagePublisher["prDriving"].publish(msg);
+		if (!isDriving)
+		{
+			std_msgs::String msg;
+			msg.data = "CANCELLED";
+			orderCancelPub.publish(msg);
+		}
+		else
+			cancelMode = true;
+	}
+	else
+		ROS_ERROR("Order to cancel not found: %s", string(msg.get()->data).c_str());
 }
 
 void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg)
@@ -368,9 +388,23 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 	}
 }
 
+void OrderDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
+{
+	isDriving = msg->data;
+}
+
 void OrderDaemon::UpdateOrders()
 {
-	// where the magic happens
+	if (cancelMode)
+	{
+		if (!isDriving)
+		{
+			std_msgs::String msg;
+			msg.data = "CANCELLED";
+			messagePublisher["orderCancelResponse"].publish(msg);
+			cancelMode = false;
+		}
+	}
 }
 
 int main(int argc, char **argv)
