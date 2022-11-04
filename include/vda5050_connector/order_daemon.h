@@ -84,7 +84,7 @@ class CurrentOrder
 	 * 
 	 * @return vda5050_msgs::Node 
 	 */
-	vda5050_msgs::Node getFrontNode();
+	vda5050_msgs::Node getBackNode();
 };
 
 /**
@@ -132,7 +132,7 @@ class AGVPosition
 class OrderDaemon: public Daemon
 {
 	private:
-	CurrentOrder currentOrder; /** Current order*/
+	vector<CurrentOrder> currentOrders; /** Current order*/
 	AGVPosition agvPosition; /** Currently active order*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
@@ -222,27 +222,32 @@ class OrderDaemon: public Daemon
 	 */
     void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
 
-
 	/**
 	 * Empty description.
 	 */
     void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 
 	/**
-	 * Empty description.
+	 * @brief overwrites the current order with the new order
+	 * 
 	 */
-	string createPublishTopic();
+	void startNewOrder();
+
+	/**
+	 * @brief appends the new order instead of the horizon
+	 * 
+	 */
+	void appendNewOrder();
+	
+	/**
+	 * @brief updates the existing order (i.e. release the horizon)
+	 * 
+	 */
+	void updateExistingOrder();
 
 	/**
 	 * @brief loop actions
-	 * 
-	 * get order actions
-	 * get instantAction topics
-	 * calculate queue
-	 * send queue to agv
-	 * send order cancellations to order_daemon
-	 * send action status to state_daemon
-	 * 
+	 *  
 	 */
 	void UpdateOrders();
 

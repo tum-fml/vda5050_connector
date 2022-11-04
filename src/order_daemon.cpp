@@ -69,9 +69,16 @@ string CurrentOrder::findNodeEdge(int currSequenceId)
 		return "SEQUENCE ERROR";
 }
 
-vda5050_msgs::Node CurrentOrder::getFrontNode()
+vda5050_msgs::Node CurrentOrder::getBackNode()
 {
-	return nodeList.front();
+	// find first element which is not released to find end of base
+	auto it = find_if(nodeList.begin(), nodeList.end(), [] (const vda5050_msgs::Node &node) {return node.released == false;});
+	// if an element in the horizon is found -> return the element before (== last element in base)
+	if (it != nodeList.end())
+		return *(it--);
+	// if the horizon is empty, take the last element of the list (== last element in base)
+	else
+		return nodeList.back();
 }
 
 /*-------------------------------------AGVPosition--------------------------------------------*/
@@ -106,7 +113,6 @@ float AGVPosition::getTheta()
 
 OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 {
-	currentOrder.finished = false;
 	LinkPublishTopics(&(this->nh));
 	LinkSubscriptionTopics(&(this->nh));
 
@@ -117,7 +123,6 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
 	orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
 }
-
 
 void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
@@ -157,19 +162,20 @@ bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
 
 bool OrderDaemon::inDevRange()
 {
-	return ((agvPosition.nodeDistance(currentOrder.getFrontNode().nodePosition.x,
-									  currentOrder.getFrontNode().nodePosition.y)) <=
-			currentOrder.getFrontNode().nodePosition.allowedDeviationXY) &&
-		   (agvPosition.getTheta() <= currentOrder.getFrontNode().nodePosition.allowedDeviationTheta);
+	/** TODO: Correct comparison -> compare last node of base with new start of base*/
+	return ((agvPosition.nodeDistance(currentOrders.back().getBackNode().nodePosition.x,
+									  currentOrders.back().getBackNode().nodePosition.y)) <=
+			currentOrders.back().getBackNode().nodePosition.allowedDeviationXY) &&
+		   (agvPosition.getTheta() <= currentOrders.back().getBackNode().nodePosition.allowedDeviationTheta);
 }
 
 void OrderDaemon::triggerNewActions(string nodeOrEdge)
 {
 	if (nodeOrEdge == "NODE")
 	{
-		if (this->currentOrder.nodeList.front().released)
+		if (this->currentOrders.front().nodeList.front().released)
 		{
-			for (auto const &action : this->currentOrder.nodeList.front().actions)
+			for (auto const &action : this->currentOrders.front().nodeList.front().actions)
 			{
 				std_msgs::String msg;
 				msg.data = action.actionId;
@@ -179,9 +185,9 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge)
 	}
 	else if (nodeOrEdge == "EDGE")
 	{
-		if (this->currentOrder.edgeList.front().released)
+		if (this->currentOrders.front().edgeList.front().released)
 		{
-			for (auto const &action : this->currentOrder.edgeList.front().actions)
+			for (auto const &action : this->currentOrders.front().edgeList.front().actions)
 			{
 				std_msgs::String msg;
 				msg.data = action.actionId;
@@ -195,7 +201,7 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge)
 
 void OrderDaemon::sendMotionCommand()
 {
-	vda5050_msgs::Edge edge = this->currentOrder.edgeList.front();
+	vda5050_msgs::Edge edge = currentOrders.front().edgeList.front();
 	vda5050_msgs::OrderMotion msg;
 	if (edge.released)
 	{
@@ -211,9 +217,10 @@ void OrderDaemon::sendMotionCommand()
 
 		//check if trajectory is in use
 		if (edge.trajectory.knotVector.empty())
-			msg.target = this->currentOrder.nodeList.front().nodePosition;
+			msg.target = currentOrders.front().nodeList.front().nodePosition;
 		else
 			msg.trajectory = edge.trajectory;
+		messagePublisher["orderMovement"].publish(msg);
 	}
 	else
 		ROS_ERROR("Neither node nor edge matching sequence ID!");
@@ -224,24 +231,54 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 	// OrderDaemon::AddOrderToList(msg.get());
 	if (validationCheck(msg))
 	{
-		if (currentOrder.compareOrderId(msg->orderId))
+		if (!currentOrders.empty())
 		{
-			if (currentOrder.compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+			if (currentOrders.back().compareOrderId(msg->orderId))
 			{
-				orderUpdateError(msg->orderId, msg->orderUpdateId);
-			}
-			else if (currentOrder.compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
-			{
-				/** TODO: Discard Message*/
+				if (currentOrders.back().compareOrderUpdateId(msg->orderUpdateId) == "LOWER")
+				{
+					orderUpdateError(msg->orderId, msg->orderUpdateId);
+				}
+				else if (currentOrders.back().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
+				{
+					/** TODO: Discard Message*/
+				}
+				else
+				{
+					if (currentOrders.back().isActive())
+					{
+						if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
+															 msg->nodes.front().sequenceId))
+						{
+							/** TODO: Update existing order*/
+						}
+						else
+						{
+							orderUpdateError(msg->orderId, msg->orderUpdateId);
+						}
+					}
+					else
+					{
+						if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
+															 msg->nodes.front().sequenceId))
+						{
+							/** TODO: Update existing order*/
+						}
+						else
+						{
+							orderUpdateError(msg->orderId, msg->orderUpdateId);
+						}
+					}
+				}
 			}
 			else
 			{
-				if (currentOrder.isActive())
+				if (currentOrders.back().isActive())
 				{
-					if (currentOrder.compareBase(msg->nodes.front().nodeId,
-															msg->nodes.front().sequenceId))
+					if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
+														 msg->nodes.front().sequenceId))
 					{
-						/** TODO: Update existing order*/
+						/** TODO: Append new order*/
 					}
 					else
 					{
@@ -250,10 +287,9 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 				}
 				else
 				{
-					if (currentOrder.compareBase(msg->nodes.front().nodeId,
-															msg->nodes.front().sequenceId))
+					if (inDevRange())
 					{
-						/** TODO: Update existing order*/
+						/** TODO: Start new order*/
 					}
 					else
 					{
@@ -263,31 +299,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 			}
 		}
 		else
-		{
-			if (currentOrder.isActive())
-			{
-				if (currentOrder.compareBase(msg->nodes.front().nodeId,
-														msg->nodes.front().sequenceId))
-				{
-					/** TODO: Append new order*/
-				}
-				else
-				{
-					orderUpdateError(msg->orderId, msg->orderUpdateId);
-				}
-			}
-			else
-			{
-				if (inDevRange())
-				{
-					/** TODO: Start new order*/
-				}
-				else
-				{
-					orderUpdateError(msg->orderId, msg->orderUpdateId);
-				}
-			}
-		}
+			; /** TODO: Create new order*/
 	}
 	else
 	{
@@ -297,13 +309,13 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 
 void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
 {
-	if (currentOrder.compareOrderId(msg.get()->data))
+	if (currentOrders.back().compareOrderId(msg.get()->data))
 	{
-		currentOrder.edgeList.clear();
-		currentOrder.nodeList.clear();
-		currentOrder.actionList.clear();
-		currentOrder.finished = true;
-		currentOrder.actionsFinished = true;
+		currentOrders.back().edgeList.clear();
+		currentOrders.back().nodeList.clear();
+		currentOrders.back().actionList.clear();
+		currentOrders.back().finished = true;
+		currentOrders.back().actionsFinished = true;
 		std_msgs::String msg;
 		msg.data = "PAUSE";
 		messagePublisher["prDriving"].publish(msg);
@@ -320,67 +332,74 @@ void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
 		ROS_ERROR("Order to cancel not found: %s", string(msg.get()->data).c_str());
 }
 
-void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg)
+void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr &msg)
 {
-	auto it = find(currentOrder.actionList.begin(), currentOrder.actionList.end(), msg.get()->actionID);
-	if (it != currentOrder.actionList.end())
+	for (auto &order : currentOrders)
 	{
-		if (msg.get()->actionStatus == "FINISHED")
+		auto it = find(order.actionList.begin(), order.actionList.end(), msg.get()->actionID);
+		if (it != order.actionList.end())
 		{
-			currentOrder.actionList.erase(it);
-			if(currentOrder.actionList.empty())
+			if (msg.get()->actionStatus == "FINISHED")
 			{
-				currentOrder.actionsFinished = true;
+				order.actionList.erase(it);
+				if (order.actionList.empty())
+				{
+					order.actionsFinished = true;
+				}
 			}
+			else if (msg.get()->actionStatus == "FAILED")
+				/** TODO: Abort order and delete complete actionList*/;
 		}
-		else if (msg.get()->actionStatus == "FAILED")
-			/** TODO: Abort order and delete complete actionList*/;
 	}
 }
 
 void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg)
 {
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
-	if (!currentOrder.finished)
+	if (!currentOrders.front().finished)
 	{
-		if (currentOrder.findNodeEdge(currSequenceId) == "EDGE")
+		if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE")
 		{
 			if(inDevRange())
 				{
-					if (currentOrder.actionsFinished)
+					if (currentOrders.front().actionsFinished)
 					{
-						currentOrder.actionsFinished = false;
-						currentOrder.edgeList.pop_front();
+						currentOrders.front().actionsFinished = false;
+						currentOrders.front().edgeList.pop_front();
 
-						if (!(currentOrder.nodeList.empty()))
+						if (!(currentOrders.front().nodeList.empty()))
 						{
 							currSequenceId++;
 							triggerNewActions("NODE");
-							for (auto const &action : currentOrder.nodeList.front().actions)
-								currentOrder.actionList.push_back(action.actionId);
+							for (auto const &action : currentOrders.front().nodeList.front().actions)
+								currentOrders.front().actionList.push_back(action.actionId);
 						}
 						else
-							currentOrder.finished = true;
+							currentOrders.front().finished = true;
+							currentOrders.erase(currentOrders.begin());
 					}
 				}
 		}
-		else if (currentOrder.findNodeEdge(currSequenceId) == "NODE")
+		else if (currentOrders.front().findNodeEdge(currSequenceId) == "NODE")
 			{
-				if (currentOrder.actionsFinished)
+				if (currentOrders.front().actionsFinished)
 				{
-					currentOrder.actionsFinished = false;
-					currentOrder.nodeList.pop_front();
+					currentOrders.front().actionsFinished = false;
+					currentOrders.front().nodeList.pop_front();
 
-					if (!(currentOrder.edgeList.empty()))
+					if (!(currentOrders.front().edgeList.empty()))
 					{
 						currSequenceId++;
 						triggerNewActions("EDGE");
 						sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct next node position is sent*/
-						for (auto const &action : currentOrder.edgeList.front().actions)
-							currentOrder.actionList.push_back(action.actionId);
+						for (auto const &action : currentOrders.front().edgeList.front().actions)
+							currentOrders.front().actionList.push_back(action.actionId);
 					}
 					else
-						currentOrder.finished = true;
+					{
+						currentOrders.front().finished = true;
+						currentOrders.erase(currentOrders.begin());
+					}
 				}
 			}
 		else
@@ -391,6 +410,21 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 void OrderDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
 {
 	isDriving = msg->data;
+}
+
+void startNewOrder()
+{
+	;
+}
+
+void appendNewOrder()
+{
+	;
+}
+
+void updateExistingOrder()
+{
+	;
 }
 
 void OrderDaemon::UpdateOrders()
