@@ -25,13 +25,12 @@ class CurrentOrder
 	string zoneSetId;
 
 	public:
-	bool finished;	/** order finished?*/
 	bool actionsFinished;	/** all actions related to current edge or node finished?*/
-	deque<vda5050_msgs::Edge> edgeList;
-	deque<vda5050_msgs::Node> nodeList;
-	vector<string> actionList;
+	deque<vda5050_msgs::Edge> edgeStates; /** contains all edges, the AGV has not completed, yet*/
+	deque<vda5050_msgs::Node> nodeStates; /** contains all nodes, the AGV has not completed, yet*/
+	vector<string> actionStates;
 	
-	void setActiveOrder(const vda5050_msgs::Order* incomingOrder);
+	CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder);
 
 	bool compareOrderId(string orderIdToCompare);
 
@@ -55,6 +54,13 @@ class CurrentOrder
 	bool compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId);
 
 	/**
+	 * @brief Set the Order Update Id object
+	 * 
+	 * @param incomingUpdateId incoming order update ID
+	 */
+	void setOrderUpdateId(int incomingUpdateId);
+
+	/**
 	 * @brief decides whether or not the order is active
 	 * 
 	 * @return true 
@@ -72,19 +78,18 @@ class CurrentOrder
 	string findNodeEdge(int currSequenceId);
 
 	/**
-	 * @brief returns "NODE" or "EDGE" based on sequence ID
-	 * 
-	 * @param currSequenceId current seuquence ID
-	 * @return string "NODE", when AGV is positioned on a node and
-	 * "EDGE", when AGV drives along an edge
-	 */
-
-	/**
 	 * @brief Get the front Node object
 	 * 
 	 * @return vda5050_msgs::Node 
 	 */
 	vda5050_msgs::Node getBackNode();
+
+	/**
+	 * @brief sends all new actions to action daemon
+	 * 
+	 * @param actionPublisher topic to publish actions to
+	 */
+	void sendActions(ros::Publisher actionPublisher);
 };
 
 /**
@@ -228,22 +233,25 @@ class OrderDaemon: public Daemon
     void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 
 	/**
-	 * @brief overwrites the current order with the new order
+	 * @brief creates a new order element if no order exists
 	 * 
+	 * @param msg newly arrived order
 	 */
-	void startNewOrder();
+	void startNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
 	 * @brief appends the new order instead of the horizon
 	 * 
+	 * @param msg newly arrived order
 	 */
-	void appendNewOrder();
+	void appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
 	
 	/**
 	 * @brief updates the existing order (i.e. release the horizon)
 	 * 
+	 * @param msg newly arrived order
 	 */
-	void updateExistingOrder();
+	void updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
 	 * @brief loop actions

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include "vda5050_msgs/Order.h"
+#include "vda5050_msgs/OrderActions.h"
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/AGVPosition.h"
@@ -14,13 +15,13 @@ using namespace std;
 
 /*-------------------------------------CurrentOrder--------------------------------------------*/
 
-void CurrentOrder::setActiveOrder(const vda5050_msgs::Order* incomingOrder)
+CurrentOrder::CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder)
 {
 	orderId = incomingOrder->orderId;
 	orderUpdateId = incomingOrder->orderUpdateId;
 	zoneSetId = incomingOrder->zoneSetId;
-	edgeList = deque<vda5050_msgs::Edge>({incomingOrder->edges.begin(), incomingOrder->edges.end()});
-	nodeList = deque<vda5050_msgs::Node>({incomingOrder->nodes.begin(), incomingOrder->nodes.end()});
+	edgeStates = deque<vda5050_msgs::Edge>({incomingOrder->edges.begin(), incomingOrder->edges.end()});
+	nodeStates = deque<vda5050_msgs::Node>({incomingOrder->nodes.begin(), incomingOrder->nodes.end()});
 }
 
 bool CurrentOrder::compareOrderId(string orderIdToCompare)
@@ -42,17 +43,22 @@ string CurrentOrder::compareOrderUpdateId(int orderUpdateIdToCompare)
 
 bool CurrentOrder::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId)
 {
-	return (this->nodeList.back().nodeId == startOfNewBaseNodeId) &&
-		   (this->nodeList.back().sequenceId == startOfNewBaseSequenceId);
+	return (this->nodeStates.back().nodeId == startOfNewBaseNodeId) &&
+		   (this->nodeStates.back().sequenceId == startOfNewBaseSequenceId);
+}
+
+void CurrentOrder::setOrderUpdateId(int incomingUpdateId)
+{
+	this->orderUpdateId = incomingUpdateId;
 }
 
 bool CurrentOrder::isActive()
 {
-	if (!this->nodeList.empty())
+	if (!this->nodeStates.empty())
 	{
-		if (!this->edgeList.empty())
+		if (!this->edgeStates.empty())
 		{
-			if (this->actionList.empty())
+			if (this->actionStates.empty())
 				return true;
 		}
 	}
@@ -61,9 +67,9 @@ bool CurrentOrder::isActive()
 
 string CurrentOrder::findNodeEdge(int currSequenceId)
 {
-	if (edgeList.front().sequenceId == currSequenceId)
+	if (edgeStates.front().sequenceId == currSequenceId)
 		return "EDGE";
-	else if (nodeList.front().sequenceId == currSequenceId)
+	else if (nodeStates.front().sequenceId == currSequenceId)
 		return "NODE";
 	else
 		return "SEQUENCE ERROR";
@@ -72,13 +78,40 @@ string CurrentOrder::findNodeEdge(int currSequenceId)
 vda5050_msgs::Node CurrentOrder::getBackNode()
 {
 	// find first element which is not released to find end of base
-	auto it = find_if(nodeList.begin(), nodeList.end(), [] (const vda5050_msgs::Node &node) {return node.released == false;});
+	auto it = find_if(nodeStates.begin(), nodeStates.end(), [] (const vda5050_msgs::Node &node) {return node.released == false;});
 	// if an element in the horizon is found -> return the element before (== last element in base)
-	if (it != nodeList.end())
+	if (it != nodeStates.end())
 		return *(it--);
 	// if the horizon is empty, take the last element of the list (== last element in base)
 	else
-		return nodeList.back();
+		return nodeStates.back();
+}
+
+void CurrentOrder::sendActions(ros::Publisher actionPublisher)
+{
+	int maxSequenceId = max(edgeStates.back().sequenceId, nodeStates.back().sequenceId);
+	deque<vda5050_msgs::Edge>::iterator edgeIt = edgeStates.begin();
+	deque<vda5050_msgs::Node>::iterator nodeIt = nodeStates.begin();
+	
+	for (int currSeq = 0; currSeq <= maxSequenceId; currSeq++) /** Offene Frage: startet sequenceId bei 0?*/
+	{
+		if ((edgeIt->sequenceId == currSeq) && (edgeIt->released))
+		{
+			vda5050_msgs::OrderActions msg;
+			msg.orderActions = edgeIt->actions;
+			msg.orderId = orderId;
+			actionPublisher.publish(msg);
+			*edgeIt++;
+		}
+		if ((nodeIt->sequenceId == currSeq) && (nodeIt->released))
+		{
+			vda5050_msgs::OrderActions msg;
+			msg.orderActions = nodeIt->actions;
+			msg.orderId = orderId;
+			actionPublisher.publish(msg);
+			*nodeIt++;
+		}
+	}
 }
 
 /*-------------------------------------AGVPosition--------------------------------------------*/
@@ -119,7 +152,7 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	// Initialize internal topics
 	orderCancelSub = nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelCallback, this);
 	agvPositionSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
-	orderActionPub = nh.advertise<vda5050_msgs::Action>("orderAction", 1000);
+	orderActionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
 	orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
 }
@@ -173,9 +206,9 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge)
 {
 	if (nodeOrEdge == "NODE")
 	{
-		if (this->currentOrders.front().nodeList.front().released)
+		if (this->currentOrders.front().nodeStates.front().released)
 		{
-			for (auto const &action : this->currentOrders.front().nodeList.front().actions)
+			for (auto const &action : this->currentOrders.front().nodeStates.front().actions)
 			{
 				std_msgs::String msg;
 				msg.data = action.actionId;
@@ -185,9 +218,9 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge)
 	}
 	else if (nodeOrEdge == "EDGE")
 	{
-		if (this->currentOrders.front().edgeList.front().released)
+		if (this->currentOrders.front().edgeStates.front().released)
 		{
-			for (auto const &action : this->currentOrders.front().edgeList.front().actions)
+			for (auto const &action : this->currentOrders.front().edgeStates.front().actions)
 			{
 				std_msgs::String msg;
 				msg.data = action.actionId;
@@ -201,7 +234,7 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge)
 
 void OrderDaemon::sendMotionCommand()
 {
-	vda5050_msgs::Edge edge = currentOrders.front().edgeList.front();
+	vda5050_msgs::Edge edge = currentOrders.front().edgeStates.front();
 	vda5050_msgs::OrderMotion msg;
 	if (edge.released)
 	{
@@ -217,7 +250,7 @@ void OrderDaemon::sendMotionCommand()
 
 		//check if trajectory is in use
 		if (edge.trajectory.knotVector.empty())
-			msg.target = currentOrders.front().nodeList.front().nodePosition;
+			msg.target = currentOrders.front().nodeStates.front().nodePosition;
 		else
 			msg.trajectory = edge.trajectory;
 		messagePublisher["orderMovement"].publish(msg);
@@ -228,7 +261,6 @@ void OrderDaemon::sendMotionCommand()
 
 void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 {
-	// OrderDaemon::AddOrderToList(msg.get());
 	if (validationCheck(msg))
 	{
 		if (!currentOrders.empty())
@@ -250,7 +282,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 						if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
 															 msg->nodes.front().sequenceId))
 						{
-							/** TODO: Update existing order*/
+							updateExistingOrder(msg);
 						}
 						else
 						{
@@ -262,7 +294,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 						if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
 															 msg->nodes.front().sequenceId))
 						{
-							/** TODO: Update existing order*/
+							updateExistingOrder(msg);
 						}
 						else
 						{
@@ -278,7 +310,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 					if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
 														 msg->nodes.front().sequenceId))
 					{
-						/** TODO: Append new order*/
+						appendNewOrder(msg);
 					}
 					else
 					{
@@ -289,7 +321,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 				{
 					if (inDevRange())
 					{
-						/** TODO: Start new order*/
+						startNewOrder(msg);
 					}
 					else
 					{
@@ -299,7 +331,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 			}
 		}
 		else
-			; /** TODO: Create new order*/
+			startNewOrder(msg);
 	}
 	else
 	{
@@ -311,10 +343,9 @@ void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
 {
 	if (currentOrders.back().compareOrderId(msg.get()->data))
 	{
-		currentOrders.back().edgeList.clear();
-		currentOrders.back().nodeList.clear();
-		currentOrders.back().actionList.clear();
-		currentOrders.back().finished = true;
+		currentOrders.back().edgeStates.clear();
+		currentOrders.back().nodeStates.clear();
+		currentOrders.back().actionStates.clear();
 		currentOrders.back().actionsFinished = true;
 		std_msgs::String msg;
 		msg.data = "PAUSE";
@@ -336,13 +367,13 @@ void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr 
 {
 	for (auto &order : currentOrders)
 	{
-		auto it = find(order.actionList.begin(), order.actionList.end(), msg.get()->actionID);
-		if (it != order.actionList.end())
+		auto it = find(order.actionStates.begin(), order.actionStates.end(), msg.get()->actionID);
+		if (it != order.actionStates.end())
 		{
 			if (msg.get()->actionStatus == "FINISHED")
 			{
-				order.actionList.erase(it);
-				if (order.actionList.empty())
+				order.actionStates.erase(it);
+				if (order.actionStates.empty())
 				{
 					order.actionsFinished = true;
 				}
@@ -356,7 +387,7 @@ void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr 
 void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg)
 {
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
-	if (!currentOrders.front().finished)
+	if (!currentOrders.empty())
 	{
 		if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE")
 		{
@@ -365,17 +396,16 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 					if (currentOrders.front().actionsFinished)
 					{
 						currentOrders.front().actionsFinished = false;
-						currentOrders.front().edgeList.pop_front();
+						currentOrders.front().edgeStates.pop_front();
 
-						if (!(currentOrders.front().nodeList.empty()))
+						if (!(currentOrders.front().nodeStates.empty()))
 						{
 							currSequenceId++;
 							triggerNewActions("NODE");
-							for (auto const &action : currentOrders.front().nodeList.front().actions)
-								currentOrders.front().actionList.push_back(action.actionId);
+							for (auto const &action : currentOrders.front().nodeStates.front().actions)
+								currentOrders.front().actionStates.push_back(action.actionId);
 						}
 						else
-							currentOrders.front().finished = true;
 							currentOrders.erase(currentOrders.begin());
 					}
 				}
@@ -385,21 +415,18 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 				if (currentOrders.front().actionsFinished)
 				{
 					currentOrders.front().actionsFinished = false;
-					currentOrders.front().nodeList.pop_front();
+					currentOrders.front().nodeStates.pop_front();
 
-					if (!(currentOrders.front().edgeList.empty()))
+					if (!(currentOrders.front().edgeStates.empty()))
 					{
 						currSequenceId++;
 						triggerNewActions("EDGE");
 						sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct next node position is sent*/
-						for (auto const &action : currentOrders.front().edgeList.front().actions)
-							currentOrders.front().actionList.push_back(action.actionId);
+						for (auto const &action : currentOrders.front().edgeStates.front().actions)
+							currentOrders.front().actionStates.push_back(action.actionId);
 					}
 					else
-					{
-						currentOrders.front().finished = true;
 						currentOrders.erase(currentOrders.begin());
-					}
 				}
 			}
 		else
@@ -412,19 +439,60 @@ void OrderDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
 	isDriving = msg->data;
 }
 
-void startNewOrder()
+void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 {
-	;
+	CurrentOrder newOrder(msg);
+	currentOrders.push_back(newOrder);
+	sendMotionCommand();
+	newOrder.sendActions(orderActionPub);
+
+	/** TODO: Send order states really necessary?*/
 }
 
-void appendNewOrder()
+void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 {
-	;
+	// Clear horizon
+	currentOrders.front().edgeStates.erase(remove_if(currentOrders.front().edgeStates.begin(),
+													 currentOrders.front().edgeStates.end(),
+													 [](vda5050_msgs::Edge delEdge)
+													 { return !delEdge.released; }));
+	currentOrders.front().nodeStates.erase(remove_if(currentOrders.front().nodeStates.begin(),
+													 currentOrders.front().nodeStates.end(),
+													 [](vda5050_msgs::Node delNode)
+													 { return !delNode.released; }));
+	// Add new order
+	CurrentOrder newOrder(msg);
+	currentOrders.push_back(newOrder);
+	newOrder.sendActions(orderActionPub);
+	
+	/** TODO: Send order states really necessary?*/
 }
 
-void updateExistingOrder()
+void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 {
-	;
+	// Clear horizon
+	currentOrders.front().edgeStates.erase(remove_if(currentOrders.front().edgeStates.begin(),
+													 currentOrders.front().edgeStates.end(),
+													 [](vda5050_msgs::Edge delEdge)
+													 { return !delEdge.released; }));
+	currentOrders.front().nodeStates.erase(remove_if(currentOrders.front().nodeStates.begin(),
+													 currentOrders.front().nodeStates.end(),
+													 [](vda5050_msgs::Node delNode)
+													 { return !delNode.released; }));
+
+	// Append nodeStates/edgeStates
+	for (auto const &newEdge: msg->edges)
+		currentOrders.front().edgeStates.push_back(newEdge); /** TODO: Frage: wirklich front(), wenn mehrere orders vorhanden?*/
+	for (auto const &newNode: msg->nodes)
+		currentOrders.front().nodeStates.push_back(newNode);
+
+	currentOrders.front().setOrderUpdateId(msg->orderUpdateId);
+	
+	// Send actions
+	CurrentOrder newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
+	newOrder.sendActions(orderActionPub);
+
+	/** TODO: Send order states really necessary?*/
 }
 
 void OrderDaemon::UpdateOrders()
