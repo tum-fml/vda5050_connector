@@ -118,14 +118,6 @@ class Daemon
 	std::map<std::string,std::string> ReadTopicParams(ros::NodeHandle *nh,std::string paramTopicName);
 	vda5050_msgs::Header GetHeader();
 	bool CheckRange(double lowerRange, double upperRange, double value, std::string msg_name);
-
-	/**
-	 * @brief sends an order update error to the error topic
-	 * 
-	 * @param orderId orderId of the incoming order
-	 * @param orderUpdateId orderUpdateId of the incoming order
-	 */
-	void orderUpdateError(std::string orderId, int orderUpdateId);
 };
 
 #endif

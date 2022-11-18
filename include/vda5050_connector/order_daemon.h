@@ -259,6 +259,22 @@ class OrderDaemon: public Daemon
 	 */
 	void UpdateOrders();
 
+	/**
+	 * @brief sends an order update error to the error topic
+	 * 
+	 * @param orderId orderId of the incoming order
+	 * @param orderUpdateId orderUpdateId of the incoming order
+	 */
+	void orderUpdateError(string orderId, int orderUpdateId);
+
+	/**
+	 * @brief sends an order validation error to the error topic
+	 * 
+	 * @param orderId orderId of the incoming order
+	 * @param orderUpdateId orderUpdateId of the incoming order
+	 */
+	void orderValidationError(string orderId, int orderUpdateId);
+
 };
 
 #endif

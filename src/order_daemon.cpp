@@ -273,7 +273,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 				}
 				else if (currentOrders.back().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL")
 				{
-					/** TODO: Discard Message*/
+					ROS_WARN_STREAM("Order discarded. Strucure invalid! " << msg->orderId << ", " << msg->orderUpdateId);
 				}
 				else
 				{
@@ -305,28 +305,14 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 			}
 			else
 			{
-				if (currentOrders.back().isActive())
+				if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
+													 msg->nodes.front().sequenceId))
 				{
-					if (currentOrders.back().compareBase(msg->nodes.front().nodeId,
-														 msg->nodes.front().sequenceId))
-					{
-						appendNewOrder(msg);
-					}
-					else
-					{
-						orderUpdateError(msg->orderId, msg->orderUpdateId);
-					}
+					appendNewOrder(msg);
 				}
 				else
 				{
-					if (inDevRange())
-					{
-						startNewOrder(msg);
-					}
-					else
-					{
-						orderUpdateError(msg->orderId, msg->orderUpdateId);
-					}
+					orderUpdateError(msg->orderId, msg->orderUpdateId);
 				}
 			}
 		}
@@ -335,7 +321,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 	}
 	else
 	{
-		/** TODO: RejectOrder report validationOrder*/
+		orderValidationError(msg->orderId, msg->orderUpdateId);
 	}
 }
 
@@ -507,6 +493,24 @@ void OrderDaemon::UpdateOrders()
 			cancelMode = false;
 		}
 	}
+}
+
+void OrderDaemon::orderUpdateError(string orderId, int orderUpdateId)
+{
+	std_msgs::String rejectMsg;
+	stringstream ss;
+	ss << "orderUpdateError: " << orderId << ", " << orderUpdateId;
+	rejectMsg.data = ss.str();
+	errorPublisher.publish(rejectMsg);
+}
+
+void OrderDaemon::orderValidationError(string orderId, int orderUpdateId)
+{
+	std_msgs::String rejectMsg;
+	stringstream ss;
+	ss << "orderValidationError: " << orderId << ", " << orderUpdateId;
+	rejectMsg.data = ss.str();
+	errorPublisher.publish(rejectMsg);
 }
 
 int main(int argc, char **argv)

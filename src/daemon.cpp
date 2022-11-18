@@ -192,13 +192,3 @@ std::string Daemon::CreateTimestamp()
 	std::string isoTimeStr = boost::posix_time::to_iso_extended_string(posixTime);
 	return(isoTimeStr);
 }
-
-
-void Daemon::orderUpdateError(std::string orderId, int orderUpdateId)
-{
-	std_msgs::String rejectMsg;
-	std::stringstream ss;
-	ss << "orderUpdateError: " << orderId << ", " << orderUpdateId;
-	rejectMsg.data = ss.str();
-	errorPublisher.publish(rejectMsg);
-}
