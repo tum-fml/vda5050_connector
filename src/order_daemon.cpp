@@ -161,14 +161,18 @@ void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
 	map<string,string>topicList = GetTopicPublisherList();
 	stringstream ss;
+	std::string topic_index;
 
 	for(const auto& elem : topicList)
 	{
-		ss<< "/" << elem.second;
+		topic_index = GetTopic(elem.first);
+		ROS_INFO("topic_index = %s",topic_index.c_str());
 		if (CheckTopic(elem.first,"orderMotion"))
-			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::OrderMotion>(ss.str(),1000);
-		if (CheckTopic(elem.first,"prDriving"))
-			messagePublisher[elem.second]=nh->advertise<std_msgs::String>(ss.str(),1000);
+			messagePublisher[topic_index] = nh->advertise<vda5050_msgs::OrderMotion>(elem.second,1000);
+		if (CheckTopic(elem.first,"prDriving")) {
+			messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second,1000);
+		}
+			
 	}	
 }
 
@@ -178,9 +182,9 @@ void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 	for(const auto& elem : topicList)
 	{
 		if (CheckTopic(elem.first,"orderFromMc"))
-			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::OrderCallback, this);
+			subscribers[elem.first] = nh->subscribe(elem.second,1000,&OrderDaemon::OrderCallback, this);
 		if (CheckTopic(elem.first,"actionStates"))
-			subscribers[elem.first]=nh->subscribe(elem.second,1000,&OrderDaemon::ActionStateCallback, this);
+			subscribers[elem.first] = nh->subscribe(elem.second,1000,&OrderDaemon::ActionStateCallback, this);
 		if (CheckTopic(elem.first, "driving"))
 			subscribers[elem.first] = nh->subscribe(elem.second, 1000, &OrderDaemon::DrivingCallback, this);
 	}
@@ -253,7 +257,7 @@ void OrderDaemon::sendMotionCommand()
 			msg.target = currentOrders.front().nodeStates.front().nodePosition;
 		else
 			msg.trajectory = edge.trajectory;
-		messagePublisher["orderMovement"].publish(msg);
+		messagePublisher["orderMotion"].publish(msg);
 	}
 	else
 		ROS_ERROR("Neither node nor edge matching sequence ID!");
@@ -515,7 +519,7 @@ void OrderDaemon::orderValidationError(string orderId, int orderUpdateId)
 
 int main(int argc, char **argv)
 {	
-	ros::init(argc, argv, "order_deamon");
+	ros::init(argc, argv, "order_daemon");
 
 	OrderDaemon orderDaemon;
 

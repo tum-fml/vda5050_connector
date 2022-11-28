@@ -108,6 +108,12 @@ class Daemon
 	bool CheckTopic(std::string str1,std::string str2);
 
 	/**
+	 * Checks if topic str2 is within topic str1 TODO
+	 * 
+	 * */
+	std::string GetTopic(std::string hierarchical_topic);
+
+	/**
 	 * checks if str2 is in str1 
 	 * 
 	 * */
