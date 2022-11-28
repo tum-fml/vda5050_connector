@@ -116,6 +116,12 @@ bool Daemon::CheckTopic(std::string str1,std::string str2)
 	
 }
 
+std::string Daemon::GetTopic(std::string hierarchical_topic)
+{
+	size_t last_slash = hierarchical_topic.find_last_of("/");
+	return hierarchical_topic.substr(last_slash+1);
+}
+
 bool Daemon::CheckRange(double lowerRange, double upperRange, double value, std::string msg_name)
 {
 	bool withinRange=false;

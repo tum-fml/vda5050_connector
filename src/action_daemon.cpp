@@ -82,30 +82,22 @@ ActionDaemon::ActionDaemon() : Daemon(&(this->nh), "action_daemon")
 
 void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
-	map<string, string> topicList = GetTopicPublisherList();
-	stringstream ss;
+	map<string,string>topicList = GetTopicPublisherList();
+	std::string topic_index;
 
-	for (const auto &elem : topicList)
+	for(const auto& elem : topicList)
 	{
-		ss.str("");
-		ss << "/" << elem.second;
+		topic_index = GetTopic(elem.first);
+		// ROS_INFO("topic_index = %s",topic_index.c_str());
 		if (CheckTopic(elem.first, "actionToAgv"))
-		{
-			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::Action>(ss.str(), 1000);
-		}
+			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::Action>(elem.second, 1000);
 		if (CheckTopic(elem.first, "actionCancel"))
-		{
-			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(ss.str(), 1000);
-		}
+			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(elem.second, 1000);
 		if (CheckTopic(elem.first, "prActions"))
-		{
-			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(ss.str(), 1000);
-		}
+			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(elem.second, 1000);
 		if (CheckTopic(elem.first, "prDriving"))
-		{
-			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(ss.str(), 1000);
-		}
-	}
+			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(elem.second, 1000);
+	}	
 }
 
 void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
