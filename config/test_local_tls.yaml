@@ -1,0 +1,16 @@
+# Connection parameters
+connection:
+  host: tumwfml-subun1.fml.mw.tum.de
+  port: 1883
+  keepalive: 60
+
+# MQTT parameters
+#client:
+  # User MQTT311
+#  protocol: 4
+
+# authentication credentials
+account:
+  username: jingsong
+  password: GR§sz67U=o
+
