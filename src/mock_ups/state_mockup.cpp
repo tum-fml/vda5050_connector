@@ -31,16 +31,16 @@ vda5050_msgs::State createMessage()
 	msg.header.version="1.1";
 	msg.header.manufacturer="fml Enterprise";
 	msg.header.serialNumber="ajf894ajc";
-	msg.orderId="pass nr 3.5";
-	msg.orderUpdateId=876324;
-	msg.zoneSetId="fml hall of fame";
-	msg.agvPosition.x=0;
-	msg.agvPosition.y=0;
+//	msg.orderId="pass nr 3.5";
+//	msg.orderUpdateId=876324;
+//	msg.zoneSetId="fml hall of fame";
+	msg.agvPosition.x=25.07;
+	msg.agvPosition.y=17.44;
 	msg.agvPosition.theta=0;
 	msg.agvPosition.positionInitialized=true;
-	msg.agvPosition.mapId="ae9748b3-8996-4a67-8709-cbbd40d95ea5";
+	msg.agvPosition.mapId="c01bf928-27b4-4018-9df0-cb37b96bf710";
 	msg.batteryState.batteryCharge=70.0;
-	msg.driving=true;
+//	msg.driving=true;
 	
 	return (msg);
 	
@@ -77,10 +77,10 @@ int main(int argc, char **argv)
 		ros::spinOnce();
 		loop_rate.sleep();
 		msg.header.headerId+=1;
-		msg=updateMessage(msg,angle,r,mx,my);
-		angle+=0.05;
-			if (angle >= M_PI)
-		angle=-M_PI;
+//		msg=updateMessage(msg,angle,r,mx,my);
+//		angle+=0.05;
+//			if (angle >= M_PI)
+//		angle=-M_PI;
 	}
 	return(0);
 };
