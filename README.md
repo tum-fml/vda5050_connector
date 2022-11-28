@@ -290,6 +290,29 @@ If any parameters are not readable or not found on the parameter server, there i
    [INFO] [1657111653.836246]: MQTT connected
 ```
 
+## Comments on VDA 5050 specification
+### Assumptions in unclear situations
+**Situation:** Vehicle is processing an order and receives a new one (= differing order ID).
+
+**Our Solution:** The new order is rejected if it doesn't begin at the end of the base of the previous (= currently running) order.
+
+**Alternative:** The new order could be accepted if it begins at the end of the horizon of the previous order. Would lead to potential detours if the destination of the current order changes in the meantime.
+
+
+**Situation:** The order message definition in the vda_msgs repository contains a boolean field called "replace". According to the commentary, this should be used if the base of an order is to be replaced by a new set of nodes/edges. However, the guideline does not define this procedure.
+
+**Our Solution:** We do not implement the base replacement procedure. **TODO:** Throw a warning if the flag is set.
+
+**Alternative:** A replacement procedure could be added to the routine of receiving a message on the order topic. See the according documentation and flow diagrams.
+
+
+**Situation:** A new order is received. The guideline tells us to "validate" the order, but does not state how to achieve this.
+
+**Our Solution:** We postpone the implementation of validations and expect the fleet controller to send conform order messages.
+
+**Alternative:** Order messages should be validated to avoid undeterministic behavior, waiting and errors. The validation should at least check if the number of edges equals the number of nodes minus one.
+
+
 ## About
 
 The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
