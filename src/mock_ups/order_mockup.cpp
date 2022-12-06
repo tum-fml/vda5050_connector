@@ -4,19 +4,21 @@
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/Edge.h"
 
-vda5050_msgs::Order create_example_order()
+vda5050_msgs::Order create_example_order(int new_headerId, int new_orderId, int new_oderUpdateId)
 {
     vda5050_msgs::Order msg;
     // header
-    msg.headerId = 0;
+    msg.headerId = new_headerId;
     msg.timestamp = "10/6/2022 10:16:37 AM";
     msg.version = "v1";
     msg.manufacturer;
     msg.serialNumber;
 
-    msg.orderId = "f879f35e-a11f-4835-b13a-866c1bbc292a";
+    // msg.orderId = "f879f35e-a11f-4835-b13a-866c1bbc292a";
 
-    msg.orderUpdateId = 0;
+    msg.orderId = std::to_string(new_orderId);
+
+    msg.orderUpdateId = new_oderUpdateId;
 
     msg.zoneSetId = " ";
 
@@ -79,19 +81,52 @@ vda5050_msgs::Order create_example_order()
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "order_mockup");
-    ros::NodeHandle nh;
+    ros::init(argc, argv, "order_publisher");
+    ros::NodeHandle n;
 
-    ros::Publisher order_pub = nh.advertise<vda5050_msgs::Order>("order_from_mc", 1000);
-    ros::Rate loop_rate(1);
+    // initialize a publisher
+    ros::Publisher order_pub = n.advertise<vda5050_msgs::Order>("order_from_mc", 1000);
+
+    // read parameters from server
+    float new_order_freq;
+    float order_update_freq;
+
+    n.getParam("order_mockup/new_order_frequency", new_order_freq);
+    ROS_INFO("new order is published every %fs", new_order_freq);
+    n.getParam("order_mockup/order_update_frequency", order_update_freq);
+    ROS_INFO("order update is published every %fs", order_update_freq);
+
+    // set publish frequency
+    auto freq = 1 / order_update_freq;
+    int divisor = new_order_freq / order_update_freq;
+
+    ros::Rate loop_rate(freq);
+    int count = 0;
+    int new_headerId = 0;
+    int new_orderId = 1000;
+    int new_oderUpdateId = 0;
 
     while (ros::ok())
     {
-        vda5050_msgs::Order order_msg = create_example_order();
+        vda5050_msgs::Order order_msg = create_example_order(new_headerId,
+                                                           new_orderId,
+                                                           new_oderUpdateId);
+
         order_pub.publish(order_msg);
+
+        count++;
+        new_oderUpdateId++;
+
+
+        if (count % divisor == 0) {
+
+            new_headerId++;
+            new_orderId++;
+            new_oderUpdateId = 0;
+        }
+        
+
         ros::spinOnce();
         loop_rate.sleep();
     }
-
-    return 0;
 }
