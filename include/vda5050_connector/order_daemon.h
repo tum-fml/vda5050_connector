@@ -25,9 +25,10 @@ class CurrentOrder
 	string zoneSetId;
 
 	public:
-	bool actionsFinished;	/** all actions related to current edge or node finished?*/
-	deque<vda5050_msgs::Edge> edgeStates; /** contains all edges, the AGV has not completed, yet*/
-	deque<vda5050_msgs::Node> nodeStates; /** contains all nodes, the AGV has not completed, yet*/
+	bool actionsFinished;					/** all actions related to current edge or node finished?*/
+	bool actionCancellationComplete;		/** all actions cancelled in case of order cancellation*/
+	deque<vda5050_msgs::Edge> edgeStates; 	/** contains all edges, the AGV has not completed, yet*/
+	deque<vda5050_msgs::Node> nodeStates; 	/** contains all nodes, the AGV has not completed, yet*/
 	vector<string> actionStates;
 	
 	CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder);
@@ -141,16 +142,17 @@ class OrderDaemon: public Daemon
 	AGVPosition agvPosition; /** Currently active order*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
-	ros::Subscriber orderCancelSub; 	/** cancel request from action daemon*/
-	ros::Subscriber agvPositionSub; 	/** position data from AGV*/
-	ros::Publisher orderActionPub; 		/** ordinary order actions from order_daemon to action_daemon*/
-	ros::Publisher orderCancelPub; 		/** response to cancel request*/
-	ros::Publisher orderTriggerPub;		/** triggers actions when AGV arrives at edge/node*/
+	ros::Subscriber orderCancelSub; 		/** cancel request from action daemon*/
+	ros::Subscriber agvPositionSub; 		/** position data from AGV*/
+	ros::Subscriber allActionsCancelledSub;	/** response from action daemon if all actions of a order to cancel are successfully cancelled*/
+	ros::Publisher  orderActionPub; 		/** ordinary order actions from order_daemon to action_daemon*/
+	ros::Publisher  orderCancelPub; 		/** response to cancel request*/
+	ros::Publisher  orderTriggerPub;		/** triggers actions when AGV arrives at edge/node*/
 
 	protected:
-	bool cancelMode; /** true if order daemon is in cancel mode*/
-	bool isDriving; /** true if vehicle is driving*/
-	int currSequenceId; /** true, if the AGV currently moves on an edge*/
+	vector<string> ordersToCancel; 		/** stores all order IDs to cancel*/
+	bool isDriving; 					/** true if vehicle is driving*/
+	int currSequenceId; 				/** true, if the AGV currently moves on an edge*/
 
 	public:
 	/**
@@ -174,11 +176,6 @@ class OrderDaemon: public Daemon
 	 * @param nh	Empty parameter description
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
-
-	/**
-	 * Empty description.
-	 */
-	void PublishOrderActions();
 
 	/**
 	 * @brief checks if incoming order is valid
@@ -215,7 +212,15 @@ class OrderDaemon: public Daemon
     /**
 	 * Empty description.
 	 */
-    void OrderCancelCallback(const std_msgs::String::ConstPtr& msg);
+    void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
+
+	/**
+	 * @brief sets flag in currentOrders in case all related actions
+	 * have been successfully cancelled in case of order cancellation
+	 * 
+	 * @param msg order ID of the order to cancel
+	 */
+	void allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
 	 * Empty description.

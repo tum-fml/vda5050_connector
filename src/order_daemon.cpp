@@ -17,6 +17,9 @@ using namespace std;
 
 CurrentOrder::CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder)
 {
+	actionsFinished = false;
+	actionCancellationComplete = false;
+	
 	orderId = incomingOrder->orderId;
 	orderUpdateId = incomingOrder->orderUpdateId;
 	zoneSetId = incomingOrder->zoneSetId;
@@ -95,7 +98,7 @@ void CurrentOrder::sendActions(ros::Publisher actionPublisher)
 	
 	for (int currSeq = 0; currSeq <= maxSequenceId; currSeq++) /** Offene Frage: startet sequenceId bei 0?*/
 	{
-		if ((edgeIt->sequenceId == currSeq) && (edgeIt->released))
+		if ((edgeIt->sequenceId == currSeq) && (edgeIt->released) && !(edgeIt->actions.empty()))
 		{
 			vda5050_msgs::OrderActions msg;
 			msg.orderActions = edgeIt->actions;
@@ -103,7 +106,7 @@ void CurrentOrder::sendActions(ros::Publisher actionPublisher)
 			actionPublisher.publish(msg);
 			*edgeIt++;
 		}
-		if ((nodeIt->sequenceId == currSeq) && (nodeIt->released))
+		if ((nodeIt->sequenceId == currSeq) && (nodeIt->released) && !(nodeIt->actions.empty()))
 		{
 			vda5050_msgs::OrderActions msg;
 			msg.orderActions = nodeIt->actions;
@@ -150,8 +153,9 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	LinkSubscriptionTopics(&(this->nh));
 
 	// Initialize internal topics
-	orderCancelSub = nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelCallback, this);
+	orderCancelSub = nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelRequestCallback, this);
 	agvPositionSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
+	allActionsCancelledSub = nh.subscribe("allActionsCancelled", 1000, &OrderDaemon::allActionsCancelledCallback, this);
 	orderActionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
 	orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
@@ -172,7 +176,6 @@ void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 		if (CheckTopic(elem.first,"prDriving")) {
 			messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second,1000);
 		}
-			
 	}	
 }
 
@@ -329,28 +332,35 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 	}
 }
 
-void OrderDaemon::OrderCancelCallback(const std_msgs::String::ConstPtr& msg)
+void OrderDaemon::OrderCancelRequestCallback(const std_msgs::String::ConstPtr &msg)
 {
-	if (currentOrders.back().compareOrderId(msg.get()->data))
+	ROS_INFO("Received cancel request for order: %s", msg.get()->data.c_str());
+	auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
+							  [&msg](CurrentOrder order)
+							  { return order.compareOrderId(msg.get()->data); });
+	if (orderToCancel != currentOrders.end())
 	{
-		currentOrders.back().edgeStates.clear();
-		currentOrders.back().nodeStates.clear();
-		currentOrders.back().actionStates.clear();
-		currentOrders.back().actionsFinished = true;
-		std_msgs::String msg;
-		msg.data = "PAUSE";
-		messagePublisher["prDriving"].publish(msg);
-		if (!isDriving)
+		if (isDriving == true)
 		{
 			std_msgs::String msg;
-			msg.data = "CANCELLED";
-			orderCancelPub.publish(msg);
+			msg.data = "PAUSE";
+			messagePublisher["prDriving"].publish(msg);
 		}
-		else
-			cancelMode = true;
+		ordersToCancel.push_back(msg.get()->data);
 	}
 	else
-		ROS_ERROR("Order to cancel not found: %s", string(msg.get()->data).c_str());
+		ROS_ERROR("Order to cancel not found: %s", msg.get()->data.c_str());
+}
+
+void OrderDaemon::allActionsCancelledCallback(const std_msgs::String::ConstPtr &msg)
+{
+	auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
+							  [&msg](CurrentOrder order)
+							  { return order.compareOrderId(msg.get()->data); });
+	if (orderToCancel != currentOrders.end())
+	{
+		orderToCancel->actionCancellationComplete = true;
+	}
 }
 
 void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr &msg)
@@ -487,14 +497,40 @@ void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 
 void OrderDaemon::UpdateOrders()
 {
-	if (cancelMode)
+	if (!ordersToCancel.empty())
 	{
 		if (!isDriving)
 		{
-			std_msgs::String msg;
-			msg.data = "CANCELLED";
-			messagePublisher["orderCancelResponse"].publish(msg);
-			cancelMode = false;
+			for (vector<string>::iterator orderIdIt = ordersToCancel.begin(); orderIdIt!= ordersToCancel.end();)
+			{
+					auto order = find_if(currentOrders.begin(), currentOrders.end(),
+									[&orderIdIt](CurrentOrder currOrd)
+									  { return currOrd.compareOrderId(*orderIdIt); });
+					if (order != currentOrders.end())
+					{
+						if (order->actionCancellationComplete)
+						{
+							/** remove order from currentOrders */
+							currentOrders.erase(std::remove_if(currentOrders.begin(), currentOrders.end(),
+															[&orderIdIt](CurrentOrder &order)
+															{ return order.compareOrderId(*orderIdIt); }),
+												currentOrders.end());
+							/** send response to action daemon */
+							std_msgs::String msg;
+							msg.data = *orderIdIt;
+							orderCancelPub.publish(msg);
+							ordersToCancel.erase(orderIdIt);
+
+							/** TODO: start next order */
+						}
+						else
+						orderIdIt++;
+					}
+					else
+					{
+						ROS_WARN("Order to cancel not found: %s", (*orderIdIt).c_str());
+					}
+			}
 		}
 	}
 }
