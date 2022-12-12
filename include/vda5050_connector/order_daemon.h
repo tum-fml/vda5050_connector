@@ -14,7 +14,7 @@
 using namespace std;
 
 /**
- * @brief Currently active order
+ * @brief container for incoming orders
  * 
  */
 class CurrentOrder
@@ -64,8 +64,8 @@ class CurrentOrder
 	/**
 	 * @brief decides whether or not the order is active
 	 * 
-	 * @return true 
-	 * @return false 
+	 * @return true if order is active
+	 * @return false if order is inactive
 	 */
 	bool isActive();
 
@@ -79,11 +79,11 @@ class CurrentOrder
 	string findNodeEdge(int currSequenceId);
 
 	/**
-	 * @brief Get the front Node object
+	 * @brief Get the last released node (= last node in current base)
 	 * 
-	 * @return vda5050_msgs::Node 
+	 * @return vda5050_msgs::Node last node in current base
 	 */
-	vda5050_msgs::Node getBackNode();
+	vda5050_msgs::Node getLastNodeInBase();
 
 	/**
 	 * @brief sends all new actions to action daemon
@@ -132,16 +132,16 @@ class AGVPosition
 };
 
 /**
- * Daemon for processing of VDA 5050 action messages. Currently, the action
- * daemon is only used for passing messages from an MQTT topic to a ROS topic.
+ * @brief Daemon for processing VDA 5050 order messages
+ * 
  */
 class OrderDaemon: public Daemon
 {
 	private:
-	vector<CurrentOrder> currentOrders; /** Current order*/
-	AGVPosition agvPosition; /** Currently active order*/
+	vector<CurrentOrder> currentOrders;	/** Current order*/
+	AGVPosition agvPosition; 			/** Currently active order*/
 
-	// Declare all ROS subscriber and publisher topics for internal communication
+	/** declare all ROS subscriber and publisher topics for internal communication*/
 	ros::Subscriber orderCancelSub; 		/** cancel request from action daemon*/
 	ros::Subscriber agvPositionSub; 		/** position data from AGV*/
 	ros::Subscriber allActionsCancelledSub;	/** response from action daemon if all actions of a order to cancel are successfully cancelled*/
@@ -156,29 +156,30 @@ class OrderDaemon: public Daemon
 
 	public:
 	/**
-	 * Empty description.
+	 * OrderDaemon constructor
+	 * Links all internal and external ROS topics
 	 * 
-	 * @param nh	Empty parameter description
-	 * @param daemonName	Empty parameter description
+	 * @param nh	ROS node handle for order daemon
+	 * @param daemonName	Name specifies the daemon type
 	 */
 	OrderDaemon();
 
 	/**
-	 * Empty description.
+	 * Links all external publishing topics
 	 * 
-	 * @param nh	Empty parameter description
+	 * @param nh	ROS node handle for order daemon
 	 */
 	void LinkPublishTopics(ros::NodeHandle *nh);
 
 	/**
-	 * Empty description.
+	 * Links all external subscribing topics
 	 * 
-	 * @param nh	Empty parameter description
+	 * @param nh	ROS node handle for order daemon
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
-	 * @brief checks if incoming order is valid
+	 * @brief checks if the incoming order is valid
 	 * 
 	 * @param msg incoming order msg
 	 * @return true if order is valid
@@ -202,16 +203,28 @@ class OrderDaemon: public Daemon
 	 */
 	void triggerNewActions(string nodeOrEdge);
 
+	/**
+	 * @brief sends motion commands to the AGV
+	 * 
+	 */
 	void sendMotionCommand();
 
 	/**
-	 * Empty description.
+	 * @brief callback for incoming orders
+	 * decides if the incoming order should be appended or rejected
+	 * according to the flowchart in VDA5050
+	 * 
+	 * @param msg incoming order message
 	 */
 	void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
     
     /**
-	 * Empty description.
-	 */
+     * @brief callback for incoming cancel requests
+	 * In case, an instant message with an cancel request arrives at the action daemon,
+	 * the request is transferred to the order daemon by this topic.
+     * 
+     * @param msg 
+     */
     void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
@@ -223,17 +236,26 @@ class OrderDaemon: public Daemon
 	void allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
-	 * Empty description.
+	 * @brief tracks action states to decide if the current node/edge is finished
+	 * and can be left
+	 * 
+	 * @param msg incoming action state message
 	 */
     void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 
 	/**
-	 * Empty description.
+	 * @brief updates the saved position with the incoming position;
+	 * depending on position and action states it decides whether or not the
+	 * current node or edge is finished and the next one can be started
+	 * 
+	 * @param msg incoming position update message
 	 */
     void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
 
 	/**
-	 * Empty description.
+	 * @brief keeps track of the driving state of the AGV
+	 * 
+	 * @param msg driving state message from AGV
 	 */
     void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 
@@ -259,7 +281,7 @@ class OrderDaemon: public Daemon
 	void updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
-	 * @brief loop actions
+	 * @brief loop function running in ROS loop
 	 *  
 	 */
 	void UpdateOrders();

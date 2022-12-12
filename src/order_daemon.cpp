@@ -78,14 +78,14 @@ string CurrentOrder::findNodeEdge(int currSequenceId)
 		return "SEQUENCE ERROR";
 }
 
-vda5050_msgs::Node CurrentOrder::getBackNode()
+vda5050_msgs::Node CurrentOrder::getLastNodeInBase()
 {
-	// find first element which is not released to find end of base
+	/** find first element which is not released to find end of base*/
 	auto it = find_if(nodeStates.begin(), nodeStates.end(), [] (const vda5050_msgs::Node &node) {return node.released == false;});
-	// if an element in the horizon is found -> return the element before (== last element in base)
+	/** if an element in the horizon is found -> return the element before (== last element in base)*/
 	if (it != nodeStates.end())
 		return *(it--);
-	// if the horizon is empty, take the last element of the list (== last element in base)
+	/** if the horizon is empty, take the last element of the list (== last element in base)*/
 	else
 		return nodeStates.back();
 }
@@ -149,10 +149,11 @@ float AGVPosition::getTheta()
 
 OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 {
+	/** Initialize external ROS topics*/
 	LinkPublishTopics(&(this->nh));
 	LinkSubscriptionTopics(&(this->nh));
 
-	// Initialize internal topics
+	/** Initialize internal ROS topics*/
 	orderCancelSub = nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelRequestCallback, this);
 	agvPositionSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
 	allActionsCancelledSub = nh.subscribe("allActionsCancelled", 1000, &OrderDaemon::allActionsCancelledCallback, this);
@@ -203,10 +204,10 @@ bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
 bool OrderDaemon::inDevRange()
 {
 	/** TODO: Correct comparison -> compare last node of base with new start of base*/
-	return ((agvPosition.nodeDistance(currentOrders.back().getBackNode().nodePosition.x,
-									  currentOrders.back().getBackNode().nodePosition.y)) <=
-			currentOrders.back().getBackNode().nodePosition.allowedDeviationXY) &&
-		   (agvPosition.getTheta() <= currentOrders.back().getBackNode().nodePosition.allowedDeviationTheta);
+	return ((agvPosition.nodeDistance(currentOrders.back().getLastNodeInBase().nodePosition.x,
+									  currentOrders.back().getLastNodeInBase().nodePosition.y)) <=
+			currentOrders.back().getLastNodeInBase().nodePosition.allowedDeviationXY) &&
+		   (agvPosition.getTheta() <= currentOrders.back().getLastNodeInBase().nodePosition.allowedDeviationTheta);
 }
 
 void OrderDaemon::triggerNewActions(string nodeOrEdge)
@@ -255,7 +256,7 @@ void OrderDaemon::sendMotionCommand()
 		msg.orientation = edge.orientation;
 		msg.length = edge.length;
 
-		/** check if trajectory is in use */
+		/** check if trajectory is in use*/
 		if (edge.trajectory.knotVector.empty())
 			msg.target = currentOrders.front().nodeStates.front().nodePosition;
 		else
@@ -355,8 +356,8 @@ void OrderDaemon::OrderCancelRequestCallback(const std_msgs::String::ConstPtr &m
 void OrderDaemon::allActionsCancelledCallback(const std_msgs::String::ConstPtr &msg)
 {
 	auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
-							  [&msg](CurrentOrder order)
-							  { return order.compareOrderId(msg.get()->data); });
+								 [&msg](CurrentOrder order)
+								 { return order.compareOrderId(msg.get()->data); });
 	if (orderToCancel != currentOrders.end())
 	{
 		orderToCancel->actionCancellationComplete = true;
@@ -451,7 +452,7 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 
 void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 {
-	/** clear horizon */
+	/** clear horizon*/
 	currentOrders.front().edgeStates.erase(remove_if(currentOrders.front().edgeStates.begin(),
 													 currentOrders.front().edgeStates.end(),
 													 [](vda5050_msgs::Edge delEdge)
@@ -460,7 +461,7 @@ void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 													 currentOrders.front().nodeStates.end(),
 													 [](vda5050_msgs::Node delNode)
 													 { return !delNode.released; }));
-	/** add new order */
+	/** add new order*/
 	CurrentOrder newOrder(msg);
 	currentOrders.push_back(newOrder);
 	newOrder.sendActions(orderActionPub);
@@ -470,7 +471,7 @@ void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 
 void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 {
-	/** clear horizon */
+	/** clear horizon*/
 	currentOrders.front().edgeStates.erase(remove_if(currentOrders.front().edgeStates.begin(),
 													 currentOrders.front().edgeStates.end(),
 													 [](vda5050_msgs::Edge delEdge)
@@ -480,7 +481,7 @@ void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 													 [](vda5050_msgs::Node delNode)
 													 { return !delNode.released; }));
 
-	/** append nodeStates/edgeStates */
+	/** append nodeStates/edgeStates*/
 	for (auto const &newEdge: msg->edges)
 		currentOrders.front().edgeStates.push_back(newEdge); /** TODO: Frage: wirklich front(), wenn mehrere orders vorhanden?*/
 	for (auto const &newNode: msg->nodes)
@@ -488,7 +489,7 @@ void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 
 	currentOrders.front().setOrderUpdateId(msg->orderUpdateId);
 	
-	/** send actions */
+	/** send actions*/
 	CurrentOrder newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
 	newOrder.sendActions(orderActionPub);
 
@@ -510,12 +511,12 @@ void OrderDaemon::UpdateOrders()
 					{
 						if (order->actionCancellationComplete)
 						{
-							/** remove order from currentOrders */
+							/** remove order from currentOrders*/
 							currentOrders.erase(std::remove_if(currentOrders.begin(), currentOrders.end(),
 															[&orderIdIt](CurrentOrder &order)
 															{ return order.compareOrderId(*orderIdIt); }),
 												currentOrders.end());
-							/** send response to action daemon */
+							/** send response to action daemon*/
 							std_msgs::String msg;
 							msg.data = *orderIdIt;
 							orderCancelPub.publish(msg);
