@@ -10,6 +10,8 @@
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/AGVPosition.h"
 #include "vda5050_msgs/OrderMotion.h"
+#include "vda5050_msgs/NodeState.h"
+#include "vda5050_msgs/EdgeState.h"
 
 using namespace std;
 
@@ -117,6 +119,41 @@ void CurrentOrder::sendActions(ros::Publisher actionPublisher)
 	}
 }
 
+void CurrentOrder::sendNodeStates(ros::Publisher nodeStatesPublisher)
+{
+	for (auto const &state_it : this->nodeStates)
+	{
+		/** Create node states message*/
+		vda5050_msgs::NodeState state_msg;
+		state_msg.nodeId = state_it.nodeId;
+		state_msg.sequenceId = state_it.sequenceId;
+		state_msg.nodeDescription = state_it.nodeDescription;
+		state_msg.position = state_it.nodePosition;
+		state_msg.released = state_it.released;
+
+		/** publish node states message*/
+		nodeStatesPublisher.publish(state_msg);
+	}
+}
+
+void CurrentOrder::sendEdgeStates(ros::Publisher edgeStatesPublisher)
+{
+	for (auto const &state_it : this->edgeStates)
+	{
+		/** Create node states message*/
+		vda5050_msgs::EdgeState state_msg;
+		state_msg.edgeId = state_it.edgeId;
+		state_msg.sequenceId = state_it.sequenceId;
+		state_msg.edgeDescription = state_it.edgeDescription;
+		state_msg.trajectory = state_it.trajectory;
+		state_msg.released = state_it.released;
+
+		/** publish node states message*/
+		edgeStatesPublisher.publish(state_msg);
+	}
+}
+
+
 /*-------------------------------------AGVPosition--------------------------------------------*/
 
 AGVPosition::AGVPosition()
@@ -160,6 +197,8 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	orderActionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
 	orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
+	nodeStatesPub = nh.advertise<vda5050_msgs::NodeState>("nodeStates", 1000);
+	edgeStatesPub = nh.advertise<vda5050_msgs::EdgeState>("edgeStates", 1000);
 }
 
 void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
@@ -396,7 +435,10 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 				{
 					if (currentOrders.front().actionsFinished)
 					{
+						/** reset actions finished flag*/
 						currentOrders.front().actionsFinished = false;
+
+						/** delete edgeState from queue*/
 						currentOrders.front().edgeStates.pop_front();
 
 						if (!(currentOrders.front().nodeStates.empty()))
@@ -415,7 +457,10 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
 			{
 				if (currentOrders.front().actionsFinished)
 				{
+					/** reset actionsFinished flag*/
 					currentOrders.front().actionsFinished = false;
+
+					/** delete nodeState from queue*/
 					currentOrders.front().nodeStates.pop_front();
 
 					if (!(currentOrders.front().edgeStates.empty()))
@@ -442,12 +487,16 @@ void OrderDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr &msg)
 
 void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 {
+	/** create new order element*/
 	CurrentOrder newOrder(msg);
 	currentOrders.push_back(newOrder);
+	/** send motion commands to AGV*/
 	sendMotionCommand();
+	/** send actions to action daemon*/
 	newOrder.sendActions(orderActionPub);
-
-	/** TODO: Send order states really necessary?*/
+	/** send node and edge states to state daemon*/
+	currentOrders.back().sendNodeStates(nodeStatesPub);
+	currentOrders.back().sendEdgeStates(edgeStatesPub);
 }
 
 void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
@@ -465,8 +514,9 @@ void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	CurrentOrder newOrder(msg);
 	currentOrders.push_back(newOrder);
 	newOrder.sendActions(orderActionPub);
-	
-	/** TODO: Send order states really necessary?*/
+	/** send node and edge states to state daemon*/
+	currentOrders.front().sendNodeStates(nodeStatesPub);
+	currentOrders.front().sendEdgeStates(edgeStatesPub);
 }
 
 void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
@@ -493,7 +543,9 @@ void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	CurrentOrder newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
 	newOrder.sendActions(orderActionPub);
 
-	/** TODO: Send order states really necessary?*/
+	/** send node and edge states to state daemon*/
+	currentOrders.front().sendNodeStates(nodeStatesPub);
+	currentOrders.front().sendEdgeStates(edgeStatesPub);
 }
 
 void OrderDaemon::UpdateOrders()

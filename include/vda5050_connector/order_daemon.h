@@ -88,9 +88,23 @@ class CurrentOrder
 	/**
 	 * @brief sends all new actions to action daemon
 	 * 
-	 * @param actionPublisher topic to publish actions to
+	 * @param actionPublisher ROS publisher to publish actions over
 	 */
 	void sendActions(ros::Publisher actionPublisher);
+
+	/**
+	 * @brief sends all new node states to state daemon
+	 * 
+	 * @param nodeStatesPublisher ROS publisher to publish node states over
+	 */
+	void sendNodeStates(ros::Publisher nodeStatesPublisher);
+
+	/**
+	 * @brief sends all new edge states to state daemon
+	 * 
+	 * @param edgeStatesPublisher ROS publisher to publish edge states over
+	 */
+	void sendEdgeStates(ros::Publisher edgeStatesPublisher);
 };
 
 /**
@@ -147,7 +161,9 @@ class OrderDaemon: public Daemon
 	ros::Subscriber allActionsCancelledSub;	/** response from action daemon if all actions of a order to cancel are successfully cancelled*/
 	ros::Publisher  orderActionPub; 		/** ordinary order actions from order_daemon to action_daemon*/
 	ros::Publisher  orderCancelPub; 		/** response to cancel request*/
-	ros::Publisher  orderTriggerPub;		/** triggers actions when AGV arrives at edge/node*/
+	ros::Publisher  orderTriggerPub;		/** triggers actions when AGV arrives at edge or node*/
+	ros::Publisher  nodeStatesPub;			/** node state transfer topic (to state daemon)*/
+	ros::Publisher  edgeStatesPub;			/** edge state transfer topic (to state daemon)*/
 
 	protected:
 	vector<string> ordersToCancel; 		/** stores all order IDs to cancel*/
