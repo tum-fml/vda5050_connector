@@ -1,0 +1,10 @@
+<launch>
+  <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
+  <node name="order_daemon" pkg="vda5050_connector" type="order_daemon" output="screen" >  </node>
+  <node name="order_mockup" pkg="vda5050_connector" type="order_mockup" output="screen">
+  <remap from="order" to="order" />
+  <!-- frequency in second-->
+  <param name="new_order_frequency" value="30.0" />
+  <param name="order_update_frequency" value="5.0" />
+</node>
+</launch>

@@ -27,25 +27,21 @@ state_daemon:
     topics_publish:
         state: /state 
     topics_subscribe:
-        orderId: "/orderId"
-        orderUpdateId: "/orderUpdateId"                  #VDA5050 specific, Uint32
         zoneSetId: "/zoneSetId"                      #VDA5050 specific, string
-        lastNodeId: "/lastNodeId"                     #VDA5050 specific, string
-        lastNodeSequenceId: "/lastNodeSequenceId"             #VDA5050 specific, Uint32
         nodeStates: "/nodeState"                      #VDA5050 specific, array
             # ADD nodeState	
         edgeStates: "/edgeState"                      #VDA5050 specific, array
             # ADD edgeState
-        agvPosition:                            #VDA5050 specific + partially covered by ROS common msg, JSON
-            positionInitialized: "/positionInitialized"       #VDA5050 specific, boolean
-            localizationScore: "/localizationScore"         #VDA5050 specific, float64 (Range 0.0-1.0)
-            deviationRange: "/deviationRange"            #VDA5050 specific, float64
-            pose: "/odometry"                 #non VDA5050 Topic to gain access to Odometry topic
-#            x: "/TBD13"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.x, float64
-#            y: "/TBD14"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.y, float64
-#            theta: "/TBD15"
-            mapId: "/mapId"                     #VDA5050 specific, string
-            mapDescription: "/mapDescription"            #VDA5050 specific, string
+        agvPosition: /agvPosition                           #VDA5050 specific + partially covered by ROS common msg, JSON
+#             positionInitialized: "/positionInitialized"       #VDA5050 specific, boolean
+#             localizationScore: "/localizationScore"         #VDA5050 specific, float64 (Range 0.0-1.0)
+#             deviationRange: "/deviationRange"            #VDA5050 specific, float64
+#             pose: "/odometry"                 #non VDA5050 Topic to gain access to Odometry topic
+# #            x: "/TBD13"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.x, float64
+# #            y: "/TBD14"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.y, float64
+# #            theta: "/TBD15"
+#             mapId: "/mapId"                     #VDA5050 specific, string
+#             mapDescription: "/mapDescription"            #VDA5050 specific, string
         velocity: "/rosVelocity"                            #ROS msg -> nav_msgs/Odometry Message.twist, covered by ROS msg
 #            vx: "/TBD19"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.x, float64
 #            vy: "/TBD20"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.y, float64
@@ -75,9 +71,12 @@ state_daemon:
 
 order_daemon:
     topics_publish:
-        order: /order_to_agv 
+        orderMotion: /orderMotion
+        prDriving: /prDriving
     topics_subscribe:
-        order: /order_from_mc
+        orderFromMc: /order_from_mc
+        actionStates: /actionStates
+        driving: /driving
 
 action_daemon:
     topics_publish:
