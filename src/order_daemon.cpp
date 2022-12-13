@@ -1,9 +1,10 @@
 #include "vda5050_connector/order_daemon.h"
-#include "std_msgs/String.h"
-#include "std_msgs/Bool.h"
 #include <iostream>
 #include <vector>
 #include <string>
+#include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
+#include "std_msgs/Int32.h"
 #include "vda5050_msgs/Order.h"
 #include "vda5050_msgs/OrderActions.h"
 #include "vda5050_msgs/Action.h"
@@ -50,6 +51,16 @@ bool CurrentOrder::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSe
 {
 	return (this->nodeStates.back().nodeId == startOfNewBaseNodeId) &&
 		   (this->nodeStates.back().sequenceId == startOfNewBaseSequenceId);
+}
+
+string CurrentOrder::getOrderId()
+{
+	return this->orderId;
+}
+
+int CurrentOrder::getOrderUpdateId()
+{
+	return this->orderUpdateId;
 }
 
 void CurrentOrder::setOrderUpdateId(int incomingUpdateId)
@@ -199,6 +210,10 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
 	nodeStatesPub = nh.advertise<vda5050_msgs::NodeState>("nodeStates", 1000);
 	edgeStatesPub = nh.advertise<vda5050_msgs::EdgeState>("edgeStates", 1000);
+	lastNodeIdPub = nh.advertise<std_msgs::String>("lastNodeId", 1000);
+	lastNodeSequenceIdPub = nh.advertise<std_msgs::String>("lastNodeSequenceId", 1000);
+	orderIdPub = nh.advertise<std_msgs::String>("orderId", 1000);
+	orderUpdateIdPub = nh.advertise<std_msgs::Int32>("orderUpdateId", 1000);
 }
 
 void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
@@ -240,13 +255,12 @@ bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
 	return true;
 }
 
-bool OrderDaemon::inDevRange()
+bool OrderDaemon::inDevRange(vda5050_msgs::Node node)
 {
-	/** TODO: Correct comparison -> compare last node of base with new start of base*/
-	return ((agvPosition.nodeDistance(currentOrders.back().getLastNodeInBase().nodePosition.x,
-									  currentOrders.back().getLastNodeInBase().nodePosition.y)) <=
-			currentOrders.back().getLastNodeInBase().nodePosition.allowedDeviationXY) &&
-		   (agvPosition.getTheta() <= currentOrders.back().getLastNodeInBase().nodePosition.allowedDeviationTheta);
+	return ((agvPosition.nodeDistance(node.nodePosition.x,
+									  node.nodePosition.y)) <=
+			node.nodePosition.allowedDeviationXY) &&
+		   (agvPosition.getTheta() <= node.nodePosition.allowedDeviationTheta);
 }
 
 void OrderDaemon::triggerNewActions(string nodeOrEdge)
@@ -322,7 +336,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 				{
 					ROS_WARN_STREAM("Order discarded. Strucure invalid! " << msg->orderId << ", " << msg->orderUpdateId);
 				}
-				else
+				else 
 				{
 					if (currentOrders.back().isActive())
 					{
@@ -364,7 +378,13 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr &msg)
 			}
 		}
 		else
-			startNewOrder(msg);
+		{
+			if (inDevRange(msg.get()->nodes.front()))
+				startNewOrder(msg);
+			else
+				orderUpdateError(msg->orderId, msg->orderUpdateId);
+		}
+			
 	}
 	else
 	{
@@ -424,57 +444,86 @@ void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr 
 	}
 }
 
-void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg)
+void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr &msg)
 {
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
 	if (!currentOrders.empty() && ordersToCancel.empty())
 	{
 		if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE")
 		{
-			if(inDevRange())
-				{
-					if (currentOrders.front().actionsFinished)
-					{
-						/** reset actions finished flag*/
-						currentOrders.front().actionsFinished = false;
-
-						/** delete edgeState from queue*/
-						currentOrders.front().edgeStates.pop_front();
-
-						if (!(currentOrders.front().nodeStates.empty()))
-						{
-							currSequenceId++;
-							triggerNewActions("NODE");
-							for (auto const &action : currentOrders.front().nodeStates.front().actions)
-								currentOrders.front().actionStates.push_back(action.actionId);
-						}
-						else
-							currentOrders.erase(currentOrders.begin());
-					}
-				}
-		}
-		else if (currentOrders.front().findNodeEdge(currSequenceId) == "NODE")
+			if (inDevRange(currentOrders.front().nodeStates.front()))
 			{
 				if (currentOrders.front().actionsFinished)
 				{
-					/** reset actionsFinished flag*/
+					/** reset actions finished flag*/
 					currentOrders.front().actionsFinished = false;
 
-					/** delete nodeState from queue*/
-					currentOrders.front().nodeStates.pop_front();
+					/** delete edgeState from queue*/
+					currentOrders.front().edgeStates.pop_front();
 
-					if (!(currentOrders.front().edgeStates.empty()))
+					/** Further node in base?*/
+					if (!(currentOrders.front().nodeStates.empty()))
 					{
-						currSequenceId++;
-						triggerNewActions("EDGE");
-						sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct next node position is sent*/
-						for (auto const &action : currentOrders.front().edgeStates.front().actions)
+						currSequenceId = currentOrders.front().nodeStates.front().sequenceId;
+						triggerNewActions("NODE");
+						for (auto const &action : currentOrders.front().nodeStates.front().actions)
 							currentOrders.front().actionStates.push_back(action.actionId);
 					}
+					/** No further node -> error; all orders must begin and end with a node*/
 					else
-						currentOrders.erase(currentOrders.begin());
+						ROS_ERROR("Missing node in current order!");
+					/** TODO: Send on error topic?, How to proceed?*/
 				}
 			}
+		}
+		else if (currentOrders.front().findNodeEdge(currSequenceId) == "NODE")
+		{
+			if (currentOrders.front().actionsFinished)
+			{
+				/** reset actionsFinished flag*/
+				currentOrders.front().actionsFinished = false;
+
+				/** send last node ID to state daemon*/
+				std_msgs::String lastNodeIdMsg;
+				lastNodeIdMsg.data = currentOrders.front().nodeStates.front().nodeId;
+				lastNodeIdPub.publish(lastNodeIdMsg);
+
+				/** send last node sequence ID to state daemon*/
+				std_msgs::String lastNodeSequenceIdMsg;
+				lastNodeSequenceIdMsg.data = currentOrders.front().nodeStates.front().sequenceId;
+				lastNodeSequenceIdPub.publish(lastNodeSequenceIdMsg);
+
+				/** delete nodeState from queue*/
+				currentOrders.front().nodeStates.pop_front();
+
+				/** further edge in base?*/
+				if (currentOrders.front().edgeStates.front().released &&
+					!(currentOrders.front().edgeStates.empty()))
+				{
+					currSequenceId = currentOrders.front().edgeStates.front().sequenceId;
+					triggerNewActions("EDGE");
+					sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct next node position is sent*/
+					for (auto const &action : currentOrders.front().edgeStates.front().actions)
+						currentOrders.front().actionStates.push_back(action.actionId);
+				}
+				else
+				{
+					currentOrders.erase(currentOrders.begin());
+					if (currentOrders.empty())
+					{
+						/** send order ID to state daemon*/
+						std_msgs::String orderIdMsg;
+						orderIdMsg.data = currentOrders.front().getOrderId();
+						orderIdPub.publish(orderIdMsg);
+
+						/** send order update ID to state daemon*/
+						std_msgs::Int32 orderUpdateIdMsg;
+						orderUpdateIdMsg.data = currentOrders.front().getOrderUpdateId();
+						orderUpdateIdPub.publish(orderUpdateIdMsg);
+					}
+				}
+			}
+		}
 		else
 			ROS_ERROR("Neither node nor edge matching position update!");
 	}
@@ -490,13 +539,26 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	/** create new order element*/
 	CurrentOrder newOrder(msg);
 	currentOrders.push_back(newOrder);
+
 	/** send motion commands to AGV*/
 	sendMotionCommand();
+
 	/** send actions to action daemon*/
 	newOrder.sendActions(orderActionPub);
+
 	/** send node and edge states to state daemon*/
-	currentOrders.back().sendNodeStates(nodeStatesPub);
-	currentOrders.back().sendEdgeStates(edgeStatesPub);
+	currentOrders.front().sendNodeStates(nodeStatesPub);
+	currentOrders.front().sendEdgeStates(edgeStatesPub);
+
+	/** send order ID to state daemon*/
+	std_msgs::String orderIdMsg;
+	orderIdMsg.data = currentOrders.front().getOrderId();
+	orderIdPub.publish(orderIdMsg);
+	
+	/** send order update ID to state daemon*/
+	std_msgs::Int32 orderUpdateIdMsg;
+	orderUpdateIdMsg.data = currentOrders.front().getOrderUpdateId();
+	orderUpdateIdPub.publish(orderUpdateIdMsg);
 }
 
 void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
@@ -510,10 +572,12 @@ void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 													 currentOrders.front().nodeStates.end(),
 													 [](vda5050_msgs::Node delNode)
 													 { return !delNode.released; }));
+
 	/** add new order*/
 	CurrentOrder newOrder(msg);
 	currentOrders.push_back(newOrder);
 	newOrder.sendActions(orderActionPub);
+	
 	/** send node and edge states to state daemon*/
 	currentOrders.front().sendNodeStates(nodeStatesPub);
 	currentOrders.front().sendEdgeStates(edgeStatesPub);
@@ -537,15 +601,20 @@ void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	for (auto const &newNode: msg->nodes)
 		currentOrders.front().nodeStates.push_back(newNode);
 
-	currentOrders.front().setOrderUpdateId(msg->orderUpdateId);
+	currentOrders.front().setOrderUpdateId(msg.get()->orderUpdateId);
 	
-	/** send actions*/
+	/** send actions to action daemon*/
 	CurrentOrder newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
 	newOrder.sendActions(orderActionPub);
 
 	/** send node and edge states to state daemon*/
 	currentOrders.front().sendNodeStates(nodeStatesPub);
 	currentOrders.front().sendEdgeStates(edgeStatesPub);
+
+	/** send order update ID to state daemon*/
+	std_msgs::Int32 orderUpdateMsg;
+	orderUpdateMsg.data = msg.get()->orderUpdateId;
+	orderUpdateIdPub.publish(orderUpdateMsg);
 }
 
 void OrderDaemon::UpdateOrders()

@@ -27,11 +27,7 @@ state_daemon:
     topics_publish:
         state: /state 
     topics_subscribe:
-        orderId: "/orderId"
-        orderUpdateId: "/orderUpdateId"                  #VDA5050 specific, Uint32
         zoneSetId: "/zoneSetId"                      #VDA5050 specific, string
-        lastNodeId: "/lastNodeId"                     #VDA5050 specific, string
-        lastNodeSequenceId: "/lastNodeSequenceId"             #VDA5050 specific, Uint32
         nodeStates: "/nodeState"                      #VDA5050 specific, array
             # ADD nodeState	
         edgeStates: "/edgeState"                      #VDA5050 specific, array

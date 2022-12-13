@@ -55,6 +55,20 @@ class CurrentOrder
 	bool compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId);
 
 	/**
+	 * @brief Get the order ID
+	 * 
+	 * @return string order ID
+	 */
+	string getOrderId();
+
+	/**
+	 * @brief Get the order update ID
+	 * 
+	 * @return int order update ID
+	 */
+	int getOrderUpdateId();
+
+	/**
 	 * @brief Set the Order Update Id object
 	 * 
 	 * @param incomingUpdateId incoming order update ID
@@ -164,6 +178,10 @@ class OrderDaemon: public Daemon
 	ros::Publisher  orderTriggerPub;		/** triggers actions when AGV arrives at edge or node*/
 	ros::Publisher  nodeStatesPub;			/** node state transfer topic (to state daemon)*/
 	ros::Publisher  edgeStatesPub;			/** edge state transfer topic (to state daemon)*/
+	ros::Publisher  lastNodeIdPub;			/**last node ID; changes when a node is left*/
+	ros::Publisher  lastNodeSequenceIdPub;	/** last node sequence ID; changes when a node is left*/
+	ros::Publisher  orderIdPub; 			/** order ID; changes when a new order is started*/
+	ros::Publisher  orderUpdateIdPub;		/** order ID; changes when a new order or order update is started*/
 
 	protected:
 	vector<string> ordersToCancel; 		/** stores all order IDs to cancel*/
@@ -204,13 +222,14 @@ class OrderDaemon: public Daemon
 	bool validationCheck(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
-	 * @brief computes the distance to the next node and
-	 * decides whether the AGV is in the deviation range of the next node 
+	 * @brief decides whether the AGV position is within
+	 * the permissible deviation range of the given node
 	 * 
-	 * @return true if AGV is in the deviation range
-	 * @return false if AGV is not in the deviation range
+	 * @param node node to calculate the distance to
+	 * @return true if AGV position is in the deviation range
+	 * @return false if AGV position is not in the deviation range
 	 */
-	bool inDevRange();
+	bool inDevRange(vda5050_msgs::Node node);
 
 	/**
 	 * @brief triggers actions of the following node or edge
