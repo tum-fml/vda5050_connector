@@ -12,13 +12,13 @@
 
 using namespace std;
 
-// TODO: Send orderCancel to order daemon (2 cases: instantAction, failed action)
-// TODO: Implement instantAction routine
-// TODO: Implement orderAction routine
-// TODO: Implement difference between paused by instantAction and paused by AGV
-// TODO: Check if last action still running (new action blocking type hard)
-// TODO: Sort instant actions by blocking type (hard least)???
-// TODO: Implement topic to cancel actions on AGV
+/** TODO: Send orderCancel to order daemon (2 cases: instantAction, failed action)*/
+/** TODO: Implement instantAction routine*/
+/** TODO: Implement orderAction routine*/
+/** TODO: Implement difference between paused by instantAction and paused by AGV*/
+/** TODO: Check if last action still running (new action blocking type hard)*/
+/** TODO: Sort instant actions by blocking type (hard least)???*/
+/** TODO: Implement topic to cancel actions on AGV*/
 
 /*--------------------------------ActionElement--------------------------------------------------------------*/
 
@@ -72,12 +72,13 @@ ActionDaemon::ActionDaemon() : Daemon(&(this->nh), "action_daemon")
 	LinkPublishTopics(&(this->nh));
 	LinkSubscriptionTopics(&(this->nh));
 
-	// Initialize internal topics
+	/** Initialize internal topics*/
 	orderActionSub = nh.subscribe("orderAction", 1000, &ActionDaemon::OrderActionsCallback, this);
 	orderTriggerSub = nh.subscribe("orderTrigger", 1000, &ActionDaemon::OrderTriggerCallback, this);
 	orderCancelSub = nh.subscribe("orderCancelResponse", 1000, &ActionDaemon::OrderCancelCallback, this);
 	actionStatesPub = nh.advertise<vda5050_msgs::ActionState>("actionStates", 1000);
 	orderCancelPub = nh.advertise<std_msgs::String>("orderCancelRequest", 1000);
+	allActionsCancelledPub = nh.advertise<std_msgs::String>("allActionsCancelled", 1000);
 }
 
 void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
@@ -118,17 +119,17 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstP
 {
 	for (const auto& action : msg->orderActions)
 	{
-		// Add action to active actions list
+		/** Add action to active actions list*/
 		string actionStatus = "WAITING";
 		ActionDaemon::AddActionToList(&action, msg->orderId, actionStatus);
 
-		// Create and publish action state msg
+		/** Create and publish action state msg*/
 		vda5050_msgs::ActionState state_msg;
 		state_msg.header = ActionDaemon::GetHeader();
 		state_msg.actionID = action.actionId;
 		state_msg.actionType = action.actionType;
 		state_msg.actionStatus = actionStatus;
-		state_msg.resultDescription = ""; /*Description necessary?*/
+		state_msg.resultDescription = ""; /** Description necessary?*/
 		actionStatesPub.publish(state_msg);
 	}
 }
@@ -141,7 +142,7 @@ void ActionDaemon::OrderTriggerCallback(const std_msgs::String &msg)
 
 	if (activeAction)
 	{
-		// Push action to queue
+		/** Push action to queue*/
 		orderActionQueue.push_back(activeAction->packAction());
 	}
 	else
@@ -158,17 +159,17 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 	//Iterate over all actions in the instantActions msg
 	for (auto &iaction : msg->instantActions)
 	{
-		// Add action to active actions list
+		/** Add action to active actions list*/
 		ActionDaemon::AddActionToList(&iaction, "Instant", "WAITING");
-		// Initialize order ID variable
+		/** Initialize order ID variable*/
 		string orderIdToCancel;
 
-		// Decide if the action contains an order cancel
+		/** Decide if the action contains an order cancel*/
 		if (iaction.actionType == "cancelOrder")
 		{	
-			// New actions to cancel
+			/** New actions to cancel*/
 			vector<shared_ptr<ActionElement>> newActionsToCancel;
-			// Add orderId to orderCancellations list and get all actions to cancel
+			/** Add orderId to orderCancellations list and get all actions to cancel*/
 			for (auto const &param : iaction.actionParameters)
 			{
 				if (param.key == "orderId")
@@ -178,34 +179,34 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 				}
 			}
 
-			// Cancel actions from newActionsToCancel list
+			/** Cancel actions from newActionsToCancel list*/
 			for (auto cAction : newActionsToCancel)
 			{
-				// Wating actions can simply be removed as long as they have not been sent to the AGV
+				/** Wating actions can simply be removed as long as they have not been sent to the AGV*/
 				if (cAction->state == "WAITING")
 				{
-					// Check if Action has already been sent to AGV (in activeActionsList but not in queue)
+					/** Check if Action has already been sent to AGV (in activeActionsList but not in queue)*/
 					auto queueAction = find_if(orderActionQueue.begin(), orderActionQueue.end(),
 										   [cAction](vda5050_msgs::Action &orderAction)
 										   { return orderAction.actionId == cAction->getActionId(); });
 					
-					// No action found in queue -> action already sent to AGV
+					/** No action found in queue -> action already sent to AGV*/
 					if (queueAction == orderActionQueue.end())
 					{
-						// Send action cancel request to AGV
+						/** Send action cancel request to AGV*/
 						std_msgs::String cancel_msg;
 						cancel_msg.data = cAction->getActionId();
 						messagePublisher["actionCancel"].publish(cancel_msg);
 					}
-					// Action found in queue -> not sent to AGV so far
+					/** Action found in queue -> not sent to AGV so far*/
 					else
 					{
-						// delete action from queue
+						/** delete action from queue*/
 						orderActionQueue.erase(queueAction);
-						// delete from newActionsToCancel
+						/** delete from newActionsToCancel*/
 						newActionsToCancel.erase(remove(newActionsToCancel.begin(), newActionsToCancel.end(), cAction));
 
-						// send failed state to state daemon
+						/** send failed state to state daemon*/
 						vda5050_msgs::ActionState state_msg;
 						state_msg.header = ActionDaemon::GetHeader();
 						state_msg.actionID = cAction->getActionId();
@@ -214,7 +215,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 						state_msg.resultDescription = "order cancelled"; /*Description necessary?*/
 						actionStatesPub.publish(state_msg);
 
-						// delete from activeActionsList
+						/** delete from activeActionsList*/
 						auto actAct_it = find_if(activeActionsList.begin(), activeActionsList.end(),
 												 [cAction](shared_ptr<ActionElement> &activeAction)
 												 { return activeAction->compareActionId(cAction->getActionId()); });
@@ -225,47 +226,48 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 						}
 					}
 				}
-				// Running/Initializing/Paused actions must be stopped
+				/** Running/Initializing/Paused actions must be stopped*/
 				else
 				{
-					// Send action cancel request to AGV
+					/** Send action cancel request to AGV*/
 					std_msgs::String cancel_msg;
 					cancel_msg.data = cAction->getActionId();
 					messagePublisher["actionCancel"].publish(cancel_msg);
 				}
 			}
-			// Create new order to cancel
+			/** Create new order to cancel*/
 			orderToCancel newOrderToCancel;
 			newOrderToCancel.orderIdToCancel = orderIdToCancel;
 			newOrderToCancel.iActionId = iaction.actionId;
-			// Add all remaining new actions to cancel to the list
+			newOrderToCancel.allActionsCancelledSent = false;
+			/** Add all remaining new actions to cancel to the list*/
 			if (!newActionsToCancel.empty())
 				newOrderToCancel.actionsToCancel.insert(newOrderToCancel.actionsToCancel.end(), newActionsToCancel.begin(), newActionsToCancel.end());
-			// If no action to cancel remains (i.e. no action has been sent to the AGV already)
-			// -> remove order ID from cancellation list in update loop
+			/** If no action to cancel remains (i.e. no action has been sent to the AGV already)*/
+			/** -> remove order ID from cancellation list in update loop*/
 
-			// Add new order to cancel to list
+			/** Add new order to cancel to list*/
 			orderCancellations.push_back(newOrderToCancel);
 
-			// Send cancel request to order daemon
+			/** Send cancel request to order daemon*/
 			std_msgs::String cancelOrderMsg;
 			cancelOrderMsg.data = orderIdToCancel;
 			orderCancelPub.publish(cancelOrderMsg);
 
 		}
 
-		// if the action contains no order cancel
+		/** if the action contains no order cancel*/
 		else
 		{
-			// Push to instant action queue
+			/** Push to instant action queue*/
 			instantActionQueue.push_back(iaction);
-			// Create and publish action state msg
+			/** Create and publish action state msg*/
 			vda5050_msgs::ActionState state_msg;
 			state_msg.header = ActionDaemon::GetHeader();
 			state_msg.actionID = iaction.actionId;
 			state_msg.actionType = iaction.actionType;
 			state_msg.actionStatus = "WAITING";
-			state_msg.resultDescription = ""; /*Description necessary?*/
+			state_msg.resultDescription = ""; /** Description necessary?*/
 			actionStatesPub.publish(state_msg);
 		}
 	}
@@ -391,13 +393,13 @@ shared_ptr<ActionElement> ActionDaemon::findAction(string actionId)
 
 void ActionDaemon::UpdateActions()
 {
-	// check if orders must be cancelled -> block all actions
+	/** check if orders must be cancelled -> block all actions*/
 	if (!orderCancellations.empty())
 	{
 		vector<orderToCancel> orderCancellationsFinished;
 		for (auto &orderCan_it : orderCancellations)
 		{
-			// Remove failed/finished actions from observing list
+			/** Remove failed/finished actions from observing list*/
 			if (!orderCan_it.actionsToCancel.empty())
 			{
 				orderCan_it.actionsToCancel.erase(
@@ -408,23 +410,31 @@ void ActionDaemon::UpdateActions()
 						{ return p.expired(); }),
 					orderCan_it.actionsToCancel.end());
 			}
-			// Only check the order cancel state, if all actions are cancelled
+			/** Only check the order cancel state, if all actions are cancelled*/
 			if (orderCan_it.actionsToCancel.empty())
 			{
-				// Check if order has been cancelled by order daemon
+				/** send all actions cancelled signal to order daemon*/
+				if (!orderCan_it.allActionsCancelledSent)
+				{
+					std_msgs::String allActionsCancelledMsg;
+					allActionsCancelledMsg.data = orderCan_it.orderIdToCancel;
+					allActionsCancelledPub.publish(allActionsCancelledMsg);
+				}
+				
+				/** Check if order has been cancelled by order daemon*/
 				auto orderCancelled = find_if(ordersSucCancelled.begin(), ordersSucCancelled.end(),
 												 [orderCan_it](string orderCanc)
 												 { return orderCan_it.orderIdToCancel == orderCanc; });
-				// If order has been cancelled by order deamon
+				/** If order has been cancelled by order deamon*/
 				if (orderCancelled != ordersSucCancelled.end())
 				{
-					// Send action state finished
+					/** Send action state finished*/
 					auto actAct_it = find_if(activeActionsList.begin(), activeActionsList.end(),
 											 [&orderCan_it](shared_ptr<ActionElement> &activeAction)
 											 { return activeAction->compareActionId(orderCan_it.iActionId); });
 					if (actAct_it != activeActionsList.end())
 					{
-						// Create and publish action state msg
+						/** Create and publish action state msg*/
 						vda5050_msgs::ActionState state_msg;
 						state_msg.header = ActionDaemon::GetHeader();
 						state_msg.actionID = (**actAct_it).getActionId();
@@ -433,7 +443,7 @@ void ActionDaemon::UpdateActions()
 						state_msg.resultDescription = ""; /*Description necessary?*/
 						actionStatesPub.publish(state_msg);
 
-						// Remove instant action from active actions list
+						/** Remove instant action from active actions list*/
 						activeActionsList.erase(actAct_it);
 					}
 					else
@@ -441,14 +451,14 @@ void ActionDaemon::UpdateActions()
 						ROS_ERROR_STREAM("ACTION NOT FOUND IN ACTIVE ACTIONS!");
 					}
 
-					// Remove order to cancel from orderSucCancelled list
+					/** Remove order to cancel from orderSucCancelled list*/
 					ordersSucCancelled.erase(orderCancelled);
-					// Remove order to cancel from orderCancellations list
+					/** Remove order to cancel from orderCancellations list*/
 					orderCancellationsFinished.push_back(orderCan_it);
 				}
 			}
 		}
-		// Delete from List
+		/** Delete from List*/
 		for (auto const &finishedOrderCancel : orderCancellationsFinished)
 		{
 			auto ordCan_it = find_if(orderCancellations.begin(), orderCancellations.end(),
@@ -459,15 +469,15 @@ void ActionDaemon::UpdateActions()
 		}
 	}
 	
-	// Instant action routine -> block order actions
+	/** Instant action routine -> block order actions*/
 	else if (!instantActionQueue.empty())
 	{
-		// get running actions
+		/** get running actions*/
 		vector<shared_ptr<ActionElement>> runningPausedActions = GetRunningPausedActions();
 
 		if (!runningPausedActions.empty())
 		{
-			// hard blocking action running?
+			/** hard blocking action running?*/
 			bool RunningActionHardBlocking = false;
 			for (auto &elem : runningPausedActions)
 			{
@@ -476,18 +486,18 @@ void ActionDaemon::UpdateActions()
 			}
 			if (!RunningActionHardBlocking)
 			{
-				// new instant action blocking hard
+				/** new instant action blocking hard*/
 				string &nextBlockType = instantActionQueue.front().blockingType;
 
 				if (nextBlockType == "HARD")
 				{
 					if (checkDriving())
 					{
-						// send action
+						/** send action*/
 						messagePublisher["/actionToAgv"].publish(instantActionQueue.front());
 						instantActionQueue.pop_front();
 					}
-					// Pause all actions
+					/** Pause all actions*/
 					std_msgs::String pause_msg;
 					pause_msg.data = "PAUSE";
 					messagePublisher["/prActions"].publish(pause_msg);
@@ -497,21 +507,21 @@ void ActionDaemon::UpdateActions()
 				{
 					if (checkDriving())
 					{
-						// send action
+						/** send action*/
 						messagePublisher["/actionToAgv"].publish(instantActionQueue.front());
 						instantActionQueue.pop_front();
 					}
 				}
 				else if (nextBlockType == "NONE")
 				{
-					// send action
+					/** send action*/
 					messagePublisher["/actionToAgv"].publish(instantActionQueue.front());
 					instantActionQueue.pop_front();
 				}
 			}
 			else
 			{
-				// Pause all actions
+				/** Pause all actions*/
 				std_msgs::String pause_msg;
 				pause_msg.data = "PAUSE";
 				messagePublisher["/prActions"].publish(pause_msg);
@@ -519,15 +529,15 @@ void ActionDaemon::UpdateActions()
 		}
 	}
 
-	// Order action routine
+	/** Order action routine*/
 	else if (!orderActionQueue.empty())
 	{
-		// get running actions
+		/** get running actions*/
 		vector<shared_ptr<ActionElement>> runningPausedActions = GetRunningPausedActions();
 
 		if (!runningPausedActions.empty())
 		{
-			// hard blocking action running?
+			/** hard blocking action running?*/
 			bool RunningActionHardBlocking = false;
 			for (auto &elem : runningPausedActions)
 			{
@@ -539,39 +549,39 @@ void ActionDaemon::UpdateActions()
 			{
 				for (auto const &action_it : runningPausedActions)
 				{
-					// resume actions paused by instant actions
+					/** resume actions paused by instant actions*/
 					if (action_it->state == "PAUSED")
 					{
 						std_msgs::String resume_msg;
 						resume_msg.data = "RESUME";
 						messagePublisher["/prActions"].publish(resume_msg);
 					}
-					// no actions to resume
+					/** no actions to resume*/
 					else
 					{
-						// new action blocking hard
+						/** new action blocking hard*/
 						string &nextBlockType = orderActionQueue.front().blockingType;
 						if (nextBlockType == "HARD")
 						{
-							// TODO: Check if last action still running
-							// If driving -> stop, else publish action
+							/** TODO: Check if last action still running*/
+							/** If driving -> stop, else publish action*/
 							if (ActionDaemon::checkDriving())
 							{
 								messagePublisher["/actionToAgv"].publish(orderActionQueue.front());
 								orderActionQueue.pop_front();
 							}
 						}
-						// new action blocking soft
+						/** new action blocking soft*/
 						else if (nextBlockType == "SOFT")
 						{
-							// If driving -> stop, else publish action
+							/** If driving -> stop, else publish action*/
 							if (checkDriving())
 							{
 								messagePublisher["/actionToAgv"].publish(orderActionQueue.front());
 								orderActionQueue.pop_front();
 							}
 						}
-						// new action not blocking
+						/** new action not blocking*/
 						else if (nextBlockType == "NONE")
 						{
 							messagePublisher["/actionToAgv"].publish(orderActionQueue.front());

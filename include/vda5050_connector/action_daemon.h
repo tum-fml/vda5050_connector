@@ -68,16 +68,16 @@ class ActionElement
 	/**
 	 * @brief Get the Action ID object
 	 * 
-	 * @return std::string Action ID
+	 * @return string Action ID
 	 */
-	std::string getActionId() const;
+	string getActionId() const;
 
 	/**
 	 * @brief Get the Action type object
 	 * 
-	 * @return std::string Action type
+	 * @return string Action type
 	 */
-	std::string getActionType() const;
+	string getActionType() const;
 
 	/**
 	 * @brief Returns an action message composed of an ActionElement
@@ -90,9 +90,10 @@ class ActionElement
 /** Struct to connect actions to cancel with their respective order ID*/
 struct orderToCancel
 {
-	std::string orderIdToCancel; /** Order (order ID) which should be deleted*/
-	std::string iActionId; /** Id of the instant action containing the cancel action*/
-	std::vector<std::weak_ptr<ActionElement>> actionsToCancel; /** List of active actions to cancel*/
+	string orderIdToCancel; /** Order (order ID) which should be deleted*/
+	string iActionId; /** Id of the instant action containing the cancel action*/
+	vector<weak_ptr<ActionElement>> actionsToCancel; /** List of active actions to cancel*/
+	bool allActionsCancelledSent; /** flag to send all actions cancelled message only once*/
 };
 
 /**
@@ -102,22 +103,23 @@ struct orderToCancel
 class ActionDaemon : public Daemon
 {
 private:
-	std::vector<std::shared_ptr<ActionElement>> activeActionsList; /**List of actions to track all active actions*/
-	std::vector<orderToCancel> orderCancellations; /** list of all orders to cancel and their respective order id*/
+	vector<shared_ptr<ActionElement>> activeActionsList; /**List of actions to track all active actions*/
+	vector<orderToCancel> orderCancellations; /** list of all orders to cancel and their respective order id*/
 
 	// Declare all ROS subscriber and publisher topics for internal communication
-	ros::Subscriber orderActionSub;  /** ordinary order actions from order_daemon to action_daemon*/
-	ros::Subscriber orderTriggerSub; /** order daemon triggers actions*/
-	ros::Subscriber orderCancelSub;  /** order daemon sends response to order cancel request*/
-	ros::Publisher actionStatesPub;  /** states of actions from action_daemon to state_daemon*/
-	ros::Publisher orderCancelPub;	 /** cancelled actions from action_daemon to order_daemon*/
+	ros::Subscriber orderActionSub;  		/** ordinary order actions from order_daemon to action_daemon*/
+	ros::Subscriber orderTriggerSub; 		/** order daemon triggers actions*/
+	ros::Subscriber orderCancelSub;  		/** order daemon sends response to order cancel request*/
+	ros::Publisher 	actionStatesPub; 		/** states of actions from action_daemon to state_daemon*/
+	ros::Publisher 	orderCancelPub;	 		/** cancelled actions from action_daemon to order_daemon*/
+	ros::Publisher 	allActionsCancelledPub;	/** all actions of one order to cancel cancelled from action_daemon to order_daemon*/
 
 	bool isDriving; /** True, if the vehicle is driving*/
 
 protected:
 	deque<vda5050_msgs::Action> orderActionQueue; /** queue for keeping track of order actions*/
 	deque<vda5050_msgs::Action> instantActionQueue; /** queue for keeping track of instant actions*/
-	std::vector<std::string> ordersSucCancelled; /** list of all orders cancelled by order daemon*/
+	vector<string> ordersSucCancelled; /** list of all orders cancelled by order daemon*/
 
 public:
 	/**
@@ -232,24 +234,24 @@ public:
 	/**
 	 * @brief Return all running actions
 	 * 
-	 * @return std::vector<std::shared_ptr<ActionElement>> List of running actions
+	 * @return vector<shared_ptr<ActionElement>> List of running actions
 	 */
-	std::vector<std::shared_ptr<ActionElement>> GetRunningActions();
+	vector<shared_ptr<ActionElement>> GetRunningActions();
 
 	/**
 	 * @brief Get all running or paused actions
 	 * 
-	 * @return std::vector<std::shared_ptr<ActionElement>> List of running or paused actions
+	 * @return vector<shared_ptr<ActionElement>> List of running or paused actions
 	 */
-	std::vector<std::shared_ptr<ActionElement>> GetRunningPausedActions();
+	vector<shared_ptr<ActionElement>> GetRunningPausedActions();
 
 	/**
 	 * @brief Get all actions from activeActionsList which should be cancelled
 	 * 
 	 * @param orderIdToCancel ID of the order to cancel
-	 * @return std::vector<std::shared_ptr<ActionElement>>  List of pointers to actions to cancel
+	 * @return vector<shared_ptr<ActionElement>>  List of pointers to actions to cancel
 	 */
-	std::vector<std::shared_ptr<ActionElement>> GetActionsToCancel(std::string orderIdToCancel);
+	vector<shared_ptr<ActionElement>> GetActionsToCancel(string orderIdToCancel);
 
 	/**
 	 * @brief Finds and returns the action with the requested ID
@@ -258,10 +260,10 @@ public:
 	 * The corresponding action is returned.
 	 *
 	 * @param actionId ID of the action to find within the active Actions
-	 * @return std::shared_ptr<ActionElement> Shared pointer to found action element
+	 * @return shared_ptr<ActionElement> Shared pointer to found action element
 	 */
 
-	std::shared_ptr<ActionElement> findAction(string actionId); 
+	shared_ptr<ActionElement> findAction(string actionId); 
 	
 	/**
 	 * @brief processes actions based on their type
