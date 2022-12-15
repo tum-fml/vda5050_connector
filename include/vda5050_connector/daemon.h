@@ -32,10 +32,10 @@ class Daemon
 	std::map<std::string,ros::Subscriber> subscribers; /**< Dummy
 							     comment. */
 	ros::Publisher errorPublisher; /**< Dummy comment. */
-
 	ros::NodeHandle nh; /** ROS nodehandle to create a single node for each daemon */
 	
 	public:
+	
 	Daemon();
 	Daemon(ros::NodeHandle *nh, std::string daemonName);
 
@@ -110,6 +110,11 @@ class Daemon
 	 *              topic.
 	 */
 	bool CheckTopic(std::string str1,std::string str2);
+
+	/**
+	 * Empty description.
+	 */
+	std::string GetTopic(std::string hierarchical_topic);
 
 	/**
 	 * Checks if the second string is contained in the first string.
