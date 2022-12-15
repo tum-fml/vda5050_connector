@@ -106,6 +106,15 @@ int main(int argc, char **argv)
     int new_orderId = 1000;
     int new_oderUpdateId = 0;
 
+    vda5050_msgs::Order order_msg = create_example_order(new_headerId,
+                                                           new_orderId,
+                                                           new_oderUpdateId);
+
+        order_pub.publish(order_msg);
+
+        count++;
+        new_oderUpdateId++;
+
     while (ros::ok())
     {
         vda5050_msgs::Order order_msg = create_example_order(new_headerId,

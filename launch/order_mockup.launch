@@ -5,6 +5,6 @@
   <remap from="order" to="order" />
   <!-- frequency in second-->
   <param name="new_order_frequency" value="30.0" />
-  <param name="order_update_frequency" value="5.0" />
-</node>
+  <param name="order_update_frequency" value="5.0" />  </node>
+  <node name="position_mockup" pkg="vda5050_connector" type="position_mockup" output="screen" > </node>
 </launch>

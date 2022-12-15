@@ -108,8 +108,12 @@ void CurrentOrder::sendActions(ros::Publisher actionPublisher)
 	int maxSequenceId = max(edgeStates.back().sequenceId, nodeStates.back().sequenceId);
 	deque<vda5050_msgs::Edge>::iterator edgeIt = edgeStates.begin();
 	deque<vda5050_msgs::Node>::iterator nodeIt = nodeStates.begin();
+
+	/** in case the first node has no actions, set actions finished to true*/
+	if (nodeStates.front().actions.empty())
+		this->actionsFinished = true;
 	
-	for (int currSeq = 0; currSeq <= maxSequenceId; currSeq++) /** Offene Frage: startet sequenceId bei 0?*/
+	for (int currSeq = 0; currSeq <= maxSequenceId; currSeq++) /** TODO: Offene Frage: startet sequenceId bei 0?*/
 	{
 		if ((edgeIt->sequenceId == currSeq) && (edgeIt->released) && !(edgeIt->actions.empty()))
 		{
@@ -211,7 +215,7 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 	nodeStatesPub = nh.advertise<vda5050_msgs::NodeState>("nodeStates", 1000);
 	edgeStatesPub = nh.advertise<vda5050_msgs::EdgeState>("edgeStates", 1000);
 	lastNodeIdPub = nh.advertise<std_msgs::String>("lastNodeId", 1000);
-	lastNodeSequenceIdPub = nh.advertise<std_msgs::String>("lastNodeSequenceId", 1000);
+	lastNodeSequenceIdPub = nh.advertise<std_msgs::Int32>("lastNodeSequenceId", 1000);
 	orderIdPub = nh.advertise<std_msgs::String>("orderId", 1000);
 	orderUpdateIdPub = nh.advertise<std_msgs::Int32>("orderUpdateId", 1000);
 }
@@ -269,24 +273,34 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge)
 	{
 		if (this->currentOrders.front().nodeStates.front().released)
 		{
-			for (auto const &action : this->currentOrders.front().nodeStates.front().actions)
+			if (!this->currentOrders.front().nodeStates.front().actions.empty())
 			{
-				std_msgs::String msg;
-				msg.data = action.actionId;
-				orderTriggerPub.publish(msg);
+				for (auto const &action : this->currentOrders.front().nodeStates.front().actions)
+				{
+					std_msgs::String msg;
+					msg.data = action.actionId;
+					orderTriggerPub.publish(msg);
+				}
 			}
+			else
+				currentOrders.front().actionsFinished = true;
 		}
 	}
 	else if (nodeOrEdge == "EDGE")
 	{
 		if (this->currentOrders.front().edgeStates.front().released)
 		{
-			for (auto const &action : this->currentOrders.front().edgeStates.front().actions)
+			if (!this->currentOrders.front().edgeStates.front().actions.empty())
 			{
-				std_msgs::String msg;
-				msg.data = action.actionId;
-				orderTriggerPub.publish(msg);
+				for (auto const &action : this->currentOrders.front().edgeStates.front().actions)
+				{
+					std_msgs::String msg;
+					msg.data = action.actionId;
+					orderTriggerPub.publish(msg);
+				}
 			}
+			else
+				currentOrders.front().actionsFinished = true;
 		}
 	}
 	else
@@ -447,6 +461,7 @@ void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr 
 void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr &msg)
 {
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
+	// ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
 	if (!currentOrders.empty() && ordersToCancel.empty())
 	{
 		if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE")
@@ -480,6 +495,7 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr 
 		{
 			if (currentOrders.front().actionsFinished)
 			{
+				// ROS_INFO("Node passed through!");
 				/** reset actionsFinished flag*/
 				currentOrders.front().actionsFinished = false;
 
@@ -489,7 +505,7 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr 
 				lastNodeIdPub.publish(lastNodeIdMsg);
 
 				/** send last node sequence ID to state daemon*/
-				std_msgs::String lastNodeSequenceIdMsg;
+				std_msgs::Int32 lastNodeSequenceIdMsg;
 				lastNodeSequenceIdMsg.data = currentOrders.front().nodeStates.front().sequenceId;
 				lastNodeSequenceIdPub.publish(lastNodeSequenceIdMsg);
 
@@ -525,7 +541,7 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr 
 			}
 		}
 		else
-			ROS_ERROR("Neither node nor edge matching position update!");
+			;//ROS_ERROR("Neither node nor edge matching position update!");
 	}
 }
 
@@ -540,11 +556,14 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	CurrentOrder newOrder(msg);
 	currentOrders.push_back(newOrder);
 
+	/** set sequence ID*/
+	currSequenceId = msg->nodes.front().sequenceId;
+
 	/** send motion commands to AGV*/
 	sendMotionCommand();
 
 	/** send actions to action daemon*/
-	newOrder.sendActions(orderActionPub);
+	currentOrders.back().sendActions(orderActionPub);
 
 	/** send node and edge states to state daemon*/
 	currentOrders.front().sendNodeStates(nodeStatesPub);
@@ -559,6 +578,8 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	std_msgs::Int32 orderUpdateIdMsg;
 	orderUpdateIdMsg.data = currentOrders.front().getOrderUpdateId();
 	orderUpdateIdPub.publish(orderUpdateIdMsg);
+
+	// ROS_INFO("Started new order: %s", msg->orderId.c_str());
 }
 
 void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
