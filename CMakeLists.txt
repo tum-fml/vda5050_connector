@@ -143,7 +143,7 @@ add_executable(visualization_daemon src/visualization_daemon.cpp src/daemon.cpp)
 add_executable(order_daemon src/order_daemon.cpp src/daemon.cpp)
 add_executable(vis_mockup src/mock_ups/vis_mockup.cpp)
 add_executable(state_mockup src/mock_ups/state_mockup.cpp)
-add_executable(order_mockup src/mock_ups/order_mockup.cpp)
+add_executable(order_mockup src/mock_ups/order_mockup/order_mockup.cpp)
 add_executable(position_mockup src/mock_ups/position_mockup.cpp)
 
 ## Rename C++ executable without prefix
