@@ -8,38 +8,42 @@
 using namespace std;
 
 /**
- * Daemon for processing of VDA 5050 action messages. Currently, the action
- * daemon is only used for passing messages from an MQTT topic to a ROS topic.
+ * Daemon for processing of VDA 5050 action messages. The order daemon consists
+ * of a) a main loop which processes orders according to their states and
+ * changes in the system state and b) several callbacks which receive and
+ * process system changes.
  */
 class OrderDaemon: public Daemon
 {
 	private:
-	vda5050_msgs::Order orderMessage; /**< Empty documentation stub. */
+	vda5050_msgs::Order orderMessage; /**< TODO Unused --> remove? */
 	
-	// Declare all ROS subscriber and publisher topics for internal communication
-	ros::Subscriber orderCancelSub; 	/** ordinary order actions from order_daemon to action_daemon*/
-	ros::Publisher orderActionPub; 		/** cancelled actions from action_daemon to order_daemon*/
+	// Declare all ROS subscriber & publisher topics for internal communication
+	ros::Subscriber orderCancelSub;
+		/**< ordinary order actions from order_daemon to action_daemon */
+	ros::Publisher orderActionPub;
+		/**< cancelled actions from action_daemon to order_daemon */
 	
 	public:
 	/**
 	 * Empty description.
 	 * 
-	 * @param nh	Empty parameter description
-	 * @param daemonName	Empty parameter description
+	 * @param nh          Empty parameter description
+	 * @param daemonName  Empty parameter description
 	 */
 	OrderDaemon();
 
 	/**
 	 * Empty description.
 	 * 
-	 * @param nh	Empty parameter description
+	 * @param nh  Empty parameter description
 	 */
 	void LinkPublishTopics(ros::NodeHandle *nh);
 
 	/**
 	 * Empty description.
 	 * 
-	 * @param nh	Empty parameter description
+	 * @param nh  Empty parameter description
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
@@ -54,25 +58,27 @@ class OrderDaemon: public Daemon
 	void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
     
     /**
-	 * Empty description.
+	 * Callback function for incoming order cancellation messages.
+	 * 
+	 * @param msg  Incoming message.
 	 */
     void OrderCancelCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
 	 * Empty description.
+	 * 
+	 * @return  Empty description.
 	 */
 	std::string createPublishTopic();
 
 	/**
-	 * @brief loop actions
-	 * 
-	 * get order actions
-	 * get instantAction topics
-	 * calculate queue
-	 * send queue to agv
-	 * send order cancellations to order_daemon
-	 * send action status to state_daemon
-	 * 
+	 * Main loop of the daemon. The routine consists of the following steps:
+	 * - get order actions
+	 * - get instantAction topics
+	 * - calculate queue
+	 * - send queue to agv
+	 * - send order cancellations to order_daemon
+	 * - send action status to state_daemon
 	 */
 	void UpdateOrders();
 

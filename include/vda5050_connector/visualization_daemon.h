@@ -67,6 +67,7 @@ class VisDaemon: public Daemon
 	/**
 	 * Creates the subscribers for the required topics given from the config
 	 * file.
+	 * 
 	 * @param nh	Pointer to node handler.
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
@@ -85,6 +86,8 @@ class VisDaemon: public Daemon
 	
 	/**
 	 * Empty comment.
+	 * 
+	 * @param msg  Empty description.
 	 */
 	double CalculateAgvOrientation(const nav_msgs::Odometry::ConstPtr& msg);
 	

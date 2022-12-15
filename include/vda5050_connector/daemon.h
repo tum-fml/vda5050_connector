@@ -97,27 +97,76 @@ class Daemon
 	
 	/**
 	 * Empty comment.
+	 * 
 	 * @return	Empty return comment.
 	 */
 	std::string getTopicStructurePrefix();
 
 	/**
-	 * Checks if topic str2 is within topic str1
+	 * Checks if the second topic is a child topic of the first topic.
 	 * 
-	 * */
+	 * @param str1  Name of the first topic.
+	 * @param str2  Name of the topic that might be a child topic of the other
+	 *              topic.
+	 */
 	bool CheckTopic(std::string str1,std::string str2);
 
 	/**
-	 * checks if str2 is in str1 
+	 * Checks if the second string is contained in the first string.
 	 * 
-	 * */
-	bool CompareStrings(std::string str1,std::string str2);
+	 * @param str1  Some string.
+	 * @param str2  Second string that might be a substring of the other string.
+	 */
+	bool CompareStrings(std::string str1, std::string str2);
+
+	/**
+	 * Empty description.
+	 */
 	void InitHeaderInfo();
+	
+	/**
+	 * Empty description.
+	 * 
+	 * @param nh  Pointer to the ROS node handle.
+	 */
 	void LinkErrorTopics(ros::NodeHandle *nh);
+
+	/**
+	 * Empty description.
+	 */
 	void UpdateHeader();
-	std::map<std::string,std::string> ReadTopicParams(ros::NodeHandle *nh,std::string paramTopicName);
+
+	/**
+	 * Read in the user-specified topic names. The user can specify names for
+	 * the topics that contain the needed information. For mapping the contents
+	 * to the topic names, this method scans the parameter server.
+	 * 
+	 * @param nh              Pointer to the ROS node handle.
+	 * @param paramTopicName  Name of the param family to scan through.
+	 * 
+	 * @return                Map from topic descriptor to user-defined topic
+	 *                        name.
+	 */
+	std::map<std::string,std::string> ReadTopicParams(ros::NodeHandle *nh,
+		std::string paramTopicName);
+
+	/**
+	 * Get the header of a ROS message. TODO which message is processed?
+	 * 
+	 * @return  Header of the message.
+	 */
 	vda5050_msgs::Header GetHeader();
-	bool CheckRange(double lowerRange, double upperRange, double value, std::string msg_name);
+
+	/**
+	 * Empty description.
+	 * 
+	 * @param lowerRange  Empty description.
+	 * @param upperRange  Empty description.
+	 * @param value       Empty description.
+	 * @param msg_name    Empty description.
+	 */
+	bool CheckRange(double lowerRange, double upperRange, double value,
+		std::string msg_name);
 };
 
 #endif
