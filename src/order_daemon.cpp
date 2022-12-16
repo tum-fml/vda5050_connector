@@ -225,7 +225,6 @@ OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon")
 void OrderDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
 	map<string,string>topicList = GetTopicPublisherList();
-	stringstream ss;
 	std::string topic_index;
 
 	for(const auto& elem : topicList)
