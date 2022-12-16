@@ -31,11 +31,11 @@ vda5050_msgs::Visualization createMessage()
 	msg.version="1.1";
 	msg.manufacturer="fml Enterprise";
 	msg.serialNumber="ajf894ajc";
-	msg.agvPosition.x=0;
-	msg.agvPosition.y=0;
+	msg.agvPosition.x=25.07;
+	msg.agvPosition.y=17.44;
 	msg.agvPosition.theta=0;
 	msg.agvPosition.positionInitialized=true;
-	msg.agvPosition.mapId="ae9748b3-8996-4a67-8709-cbbd40d95ea5";
+	msg.agvPosition.mapId="c01bf928-27b4-4018-9df0-cb37b96bf710";
 	return (msg);
 	
 }
@@ -51,7 +51,7 @@ vda5050_msgs::Visualization updateMessage(vda5050_msgs::Visualization msg, float
 
 int main(int argc, char **argv)
 {
-	string topicPublish = "viz";
+	string topicPublish = "viz_to_mc";
 	if (argc > 1)
 		topicPublish=argv[1];
 	ros::init(argc, argv, "vis_msg_mockup");
@@ -70,10 +70,10 @@ int main(int argc, char **argv)
 		ros::spinOnce();
 		loop_rate.sleep();
 		msg.headerId+=1;
-		msg=updateMessage(msg,angle,r,mx,my);
-		angle+=0.05;
-			if (angle >= M_PI)
-		angle=-M_PI;
+//		msg=updateMessage(msg,angle,r,mx,my);
+//		angle+=0.05;
+//			if (angle >= M_PI)
+//		angle=-M_PI;
 	}
 	return(0);
 };

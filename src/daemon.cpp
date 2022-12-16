@@ -70,16 +70,16 @@ std::string Daemon::GetParameter(std::string paramName)
 void Daemon::InitHeaderInfo()
 {
 	messageHeader.headerId = 0;
-	messageHeader.version = GetParameter("~AGV_Data/version");
-	messageHeader.manufacturer = GetParameter("~AGV_Data/manufacturer");
-	messageHeader.serialNumber = GetParameter("~AGV_Data/serialNumber");
+	messageHeader.version = GetParameter("AGV_Data/version");
+	messageHeader.manufacturer = GetParameter("AGV_Data/manufacturer");
+	messageHeader.serialNumber = GetParameter("AGV_Data/serialNumber");
 }
 
 void Daemon::createTopicStructurePrefix()
 {
 	vda5050_msgs::Header header = GetHeader();
 	std::stringstream ss;
-	ss << GetParameter("~AGV_Data/interfaceName") << "/" << GetParameter("~AGV_Data/majorVersion")<< "/" << messageHeader.manufacturer << "/" << messageHeader.serialNumber;
+	ss << GetParameter("AGV_Data/interfaceName") << "/" << GetParameter("AGV_Data/majorVersion")<< "/" << messageHeader.manufacturer << "/" << messageHeader.serialNumber;
 	mqttTopicStructurePrefix = ss.str();
 }
 
@@ -114,6 +114,12 @@ bool Daemon::CheckTopic(std::string str1,std::string str2)
 	}
 	return (hasTopic);
 	
+}
+
+std::string Daemon::GetTopic(std::string hierarchical_topic)
+{
+	size_t last_slash = hierarchical_topic.find_last_of("/");
+	return hierarchical_topic.substr(last_slash+1);
 }
 
 bool Daemon::CheckRange(double lowerRange, double upperRange, double value, std::string msg_name)
@@ -181,7 +187,7 @@ std::map<std::string,std::string> Daemon::ReadTopicParams(ros::NodeHandle *nh,st
 void Daemon::LinkErrorTopics(ros::NodeHandle *nh)
 {
 	std::string errorTopic;
-	ros::param::param<std::string>("~topic_error", errorTopic, DEFAULT_ERROR_TOPIC);
+	ros::param::param<std::string>("topic_error", errorTopic, DEFAULT_ERROR_TOPIC);
 	errorPublisher=nh->advertise<std_msgs::String>(errorTopic, 1000);
 	ROS_INFO_STREAM("Using "<< errorTopic << " as error topic");
 }
@@ -192,4 +198,3 @@ std::string Daemon::CreateTimestamp()
 	std::string isoTimeStr = boost::posix_time::to_iso_extended_string(posixTime);
 	return(isoTimeStr);
 }
-

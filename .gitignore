@@ -3,3 +3,9 @@ doc/html/
 doc/latex/
 build/
 .vscode/
+.catkin_tools/
+.devcontainer/
+devel/
+certificates/certificatePem.pem.crt
+certificates/certificatePrivateKey.pem.key
+certificates/rootCA.crt

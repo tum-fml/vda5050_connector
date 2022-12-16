@@ -1,6 +1,0 @@
-<launch>
-  <arg name="test_daemon" default="false" />
-  <node name="vda5050_connector_daemon_test" pkg="vda5050_connector" type="vda5050_connector_daemon_test" output="screen">
-    <rosparam command="load" file="$(find vda5050_connector)/config/test_params.yaml" />
-  </node>
-</launch>

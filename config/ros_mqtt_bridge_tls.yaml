@@ -1,0 +1,20 @@
+
+# TLS parameters
+tls:
+  ca_certs: <absolute_path_to_your_root_certificate>
+  certfile: <absolute_path_to_your_client_certificate>
+  keyfile: absolute_path_to_the_private_key_of_your_client_certificate>
+  tls_version: 5
+  tls_insecure: false
+  
+# Connection parameters
+connection:
+  host: <FQDN_of_your_MQTT_broker>
+  port: 8883
+  keepalive: 60
+
+# MQTT parameters
+client:
+  # User MQTT311
+  protocol: 4
+  client_id: <ID_of_your_client>

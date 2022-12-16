@@ -8,8 +8,10 @@
 #include "vda5050_msgs/ActionParameter.h"
 #include "vda5050_msgs/Trajectory.h"
 #include "vda5050_msgs/ControlPoint.h"
+#include "std_msgs/String.h"
 #include <string>
 #include <ctime>
+#include <random>
 
 using namespace std;
 
@@ -21,6 +23,40 @@ string getTimestamp()
     char buf[sizeof "2011-10-08T07:07:09Z"];
     strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
     return(buf);
+}
+
+namespace uuid {
+    static std::random_device              rd;
+    static std::mt19937                    gen(rd());
+    static std::uniform_int_distribution<> dis(0, 15);
+    static std::uniform_int_distribution<> dis2(8, 11);
+
+    std::string generate_uuid_v4() {
+        std::stringstream ss;
+        int i;
+        ss << std::hex;
+        for (i = 0; i < 8; i++) {
+            ss << dis(gen);
+        }
+        ss << "-";
+        for (i = 0; i < 4; i++) {
+            ss << dis(gen);
+        }
+        ss << "-4";
+        for (i = 0; i < 3; i++) {
+            ss << dis(gen);
+        }
+        ss << "-";
+        ss << dis2(gen);
+        for (i = 0; i < 3; i++) {
+            ss << dis(gen);
+        }
+        ss << "-";
+        for (i = 0; i < 12; i++) {
+            ss << dis(gen);
+        };
+        return ss.str();
+    }
 }
 
 /*
@@ -56,8 +92,8 @@ vda5050_msgs::ActionParameter createActionParams()
 vda5050_msgs::Action createAction()
 {
 	vda5050_msgs::Action action;
-	action.actionType="drive";
-	action.actionId="drive_to_goal";
+	action.actionType="lift_fork";
+	action.actionId="";
 	action.actionDescription="drive to goal and stop there";
 	action.blockingType="HARD";
 	action.actionParameters.push_back(createActionParams());
@@ -141,24 +177,36 @@ vda5050_msgs::Order createMessage()
 	
 }
 
-
 int main(int argc, char **argv)
 {
-	string topicPublish = "orderTopic";
-	if (argc > 1)
-		topicPublish=argv[1];
+	string topicPublishOrder = "orderTopic";
+	string topicPublishTrigger = "orderTrigger";
+	// if (argc > 1)
+	// 	topicPublishOrder=argv[1];
 	ros::init(argc, argv, "order_msg_test");
 	ros::NodeHandle nh;
 	ros::Rate loop_rate(1);
-	ros::Publisher publisherOrder = nh.advertise<vda5050_msgs::Order>(topicPublish, 1000);
+	ros::Publisher publisherOrder = nh.advertise<vda5050_msgs::Order>(topicPublishOrder, 1000);
+	ros::Publisher publisherTrigger = nh.advertise<std_msgs::String>(topicPublishTrigger, 1000);
 	vda5050_msgs::Order msg = createMessage();
-	cout << topicPublish << "\n";
+	cout << topicPublishOrder << "\n" << topicPublishTrigger << "\n";
 	while(ros::ok())
 	{
+		static random_device rd;
+    	static mt19937 gen(rd());
+		uniform_int_distribution<int> distribution(0,1);
+
+		string newuuid = uuid::generate_uuid_v4();
+		std_msgs::String triggermsg;
+		triggermsg.data = newuuid;
+
+		msg.nodes[0].actions[0].actionId = newuuid;
 		publisherOrder.publish(msg);
 		ros::spinOnce();
-		loop_rate.sleep();
 		msg.headerId+=1;
+		if(distribution(gen))
+			publisherTrigger.publish(triggermsg);
+		loop_rate.sleep();
 	}
 	return(0);
 };
