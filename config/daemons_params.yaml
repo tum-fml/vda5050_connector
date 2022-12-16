@@ -81,6 +81,9 @@ order_daemon:
 action_daemon:
     topics_publish:
         actionToAgv: /action_to_agv
+        agvActionCancel: /agvActionCancel
+        prActions: /prActions
+        prDriving: /prDriving
     topics_subscribe:
         instantAction: /instantAction
         agvActionState: /agvActionState

@@ -246,7 +246,7 @@ class StateDaemon: public Daemon
 	 * 
 	 * @param msg  Incoming message.
 	*/
-	void ActionStatesCallback(const vda5050_msgs::ActionStates::ConstPtr& msg);
+	void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
@@ -260,7 +260,7 @@ class StateDaemon: public Daemon
 	 * 
 	 * @param msg  Incoming message.
 	*/
-	void BatteryStateBattryHealthCallback(const std_msgs::Int8::ConstPtr& msg);
+	void BatteryStateBatteryHealthCallback(const std_msgs::Int8::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.

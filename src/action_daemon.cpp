@@ -92,7 +92,7 @@ void ActionDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 		// ROS_INFO("topic_index = %s",topic_index.c_str());
 		if (CheckTopic(elem.first, "actionToAgv"))
 			messagePublisher[elem.second] = nh->advertise<vda5050_msgs::Action>(elem.second, 1000);
-		if (CheckTopic(elem.first, "actionCancel"))
+		if (CheckTopic(elem.first, "agvActionCancel"))
 			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(elem.second, 1000);
 		if (CheckTopic(elem.first, "prActions"))
 			messagePublisher[elem.second] = nh->advertise<std_msgs::String>(elem.second, 1000);
@@ -137,6 +137,7 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstP
 void ActionDaemon::OrderTriggerCallback(const std_msgs::String &msg)
 {
 	shared_ptr<ActionElement> activeAction = findAction(msg.data);
+	ROS_INFO("Found Action to trigger: %s", msg.data.c_str());
 
 	// Sort out duplicates?#########################################################################debug 
 
@@ -196,7 +197,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 						/** Send action cancel request to AGV*/
 						std_msgs::String cancel_msg;
 						cancel_msg.data = cAction->getActionId();
-						messagePublisher["actionCancel"].publish(cancel_msg);
+						messagePublisher["/agvActionCancel"].publish(cancel_msg);
 					}
 					/** Action found in queue -> not sent to AGV so far*/
 					else
@@ -232,7 +233,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 					/** Send action cancel request to AGV*/
 					std_msgs::String cancel_msg;
 					cancel_msg.data = cAction->getActionId();
-					messagePublisher["actionCancel"].publish(cancel_msg);
+					messagePublisher["/agvActionCancel"].publish(cancel_msg);
 				}
 			}
 			/** Create new order to cancel*/
@@ -276,6 +277,8 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr &msg)
 {
 	shared_ptr<ActionElement> actionToUpdate = findAction(msg->actionID);
+	actionStatesPub.publish(msg);
+
 	if (actionToUpdate)
 	{
 		actionStatesPub.publish(*msg);

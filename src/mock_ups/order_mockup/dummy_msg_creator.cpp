@@ -47,8 +47,8 @@ void OrderMsg::create_nodes(int node_num, int node_released_num)
             subnode.released = false;
         }
 
-        subnode.nodePosition.x = 10.0;
-        subnode.nodePosition.y = 10.0;
+        subnode.nodePosition.x = 10.0+5*i;
+        subnode.nodePosition.y = 10.0+5*i;
         subnode.nodePosition.theta = 0.0;
         subnode.nodePosition.allowedDeviationXY = 100.0;
         subnode.nodePosition.allowedDeviationTheta = 100.0;

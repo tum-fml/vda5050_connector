@@ -21,7 +21,7 @@ StateDaemon::StateDaemon() : Daemon(&(this->nh), "state_daemon")
 	LinkSubscriptionTopics(&(this->nh));
 
 	// Initialize internal topics
-	actionStatesSub = nh.subscribe("actionStates", 1000, &StateDaemon::ActionStatesCallback, this);
+	actionStatesSub = nh.subscribe("actionStates", 1000, &StateDaemon::ActionStateCallback, this);
 
 	updateInterval=ros::Duration(30.0);
 	lastUpdateTimestamp=ros::Time::now();
@@ -110,13 +110,13 @@ void StateDaemon::LinkSubscriptionTopics(ros::NodeHandle *nh)
 		else if (CheckTopic(elem.first,"distanceSinceLastNode"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::DistanceSinceLastNodeCallback, this);
 		else if (CheckTopic(elem.first,"actionStates"))
-			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ActionStatesCallback, this);
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ActionStateCallback, this);
 		else if (CheckTopic(elem.first,"batteryState"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateCallback, this);
 		else if (CheckTopic(elem.first,"batteryCharge"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::ROSBatteryInfoCallback, this);
 		else if (CheckTopic(elem.first,"batteryHealth"))
-			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateBattryHealthCallback, this);
+			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateBatteryHealthCallback, this);
 		else if (CheckTopic(elem.first,"charging"))
 			subscribers[elem.first]=nh->subscribe(elem.second,1000,&StateDaemon::BatteryStateChargingCallback, this);
 		else if (CheckTopic(elem.first,"reach"))
@@ -270,9 +270,10 @@ void StateDaemon::DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPt
 {
 	stateMessage.distanceSinceLastNode=msg->data;
 }
-void StateDaemon::ActionStatesCallback(const vda5050_msgs::ActionStates::ConstPtr& msg)
+void StateDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg)
 {
-	stateMessage.actionStates=msg->actionStates;
+	/** TODO: Use single action states*/
+	// stateMessage.actionStates=msg->actionStates;
 }
 void StateDaemon::BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg)
 {
@@ -282,7 +283,7 @@ void StateDaemon::BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPt
 	stateMessage.batteryState.charging=msg->charging;
 	stateMessage.batteryState.reach=msg->reach;
 }
-void StateDaemon::BatteryStateBattryHealthCallback(const std_msgs::Int8::ConstPtr& msg)
+void StateDaemon::BatteryStateBatteryHealthCallback(const std_msgs::Int8::ConstPtr& msg)
 {
 	stateMessage.batteryState.batteryHealth=msg->data;
 }

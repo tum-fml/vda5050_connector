@@ -148,6 +148,8 @@ void CurrentOrder::sendNodeStates(ros::Publisher nodeStatesPublisher)
 
 		/** publish node states message*/
 		nodeStatesPublisher.publish(state_msg);
+
+		ROS_INFO("x: %f, y: %f", state_it.nodePosition.x, state_it.nodePosition.y);
 	}
 }
 
@@ -256,6 +258,7 @@ bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg)
 {
 	/** TODO: How to validation check?*/
 	/** Maybe depending on AGV's capabilities (e.g. track planning etc.)*/
+	/** Check if number edges is number nodes-1*/
 	return true;
 }
 
@@ -461,7 +464,7 @@ void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr 
 void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr &msg)
 {
 	agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
-	// ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
+	ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
 	if (!currentOrders.empty() && ordersToCancel.empty())
 	{
 		if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE")
@@ -495,7 +498,7 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr 
 		{
 			if (currentOrders.front().actionsFinished)
 			{
-				// ROS_INFO("Node passed through!");
+				ROS_INFO("Node passed through!");
 				/** reset actionsFinished flag*/
 				currentOrders.front().actionsFinished = false;
 
@@ -565,6 +568,14 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	/** send actions to action daemon*/
 	currentOrders.back().sendActions(orderActionPub);
 
+	/** trigger Actions in case of first node containing actions*/
+	if (!currentOrders.back().nodeStates.front().actions.empty())
+	{
+		triggerNewActions("NODE");
+		for (auto const &action : currentOrders.front().nodeStates.front().actions)
+			currentOrders.front().actionStates.push_back(action.actionId);
+	}
+
 	/** send node and edge states to state daemon*/
 	currentOrders.front().sendNodeStates(nodeStatesPub);
 	currentOrders.front().sendEdgeStates(edgeStatesPub);
@@ -579,7 +590,7 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
 	orderUpdateIdMsg.data = currentOrders.front().getOrderUpdateId();
 	orderUpdateIdPub.publish(orderUpdateIdMsg);
 
-	// ROS_INFO("Started new order: %s", msg->orderId.c_str());
+	ROS_INFO("Started new order: %s", msg->orderId.c_str());
 }
 
 void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg)
