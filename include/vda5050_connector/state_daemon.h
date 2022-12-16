@@ -27,7 +27,7 @@
 
 /**
  * Daemon for processing VDA 5050 state messages. This daemon gathers relevant
- * information from different sources of the robot's communication system, i. e.
+ * information from different sources of the robot's communication system, i.e.
  * different ROS topics. The collected information is then compiled into the
  * form which the VDA 5050 expects. State messages are repeatedly sent to the
  * MQTT bridge so that they can be transmitted to the fleet control system with
@@ -37,15 +37,27 @@ class StateDaemon: public Daemon
 {
 	private:
 	vda5050_msgs::State stateMessage;
+		/**< TODO: What is this used for? */
+	
 	ros::Publisher pub;
+		/**< Publisher object for state messages to the fleet controller. */
 
-	// Declare all ROS subscriber and publisher topics for internal communication
+	/* Declare all ROS subscriber and publisher topics for internal
+	 * communication.
+	 */
+
 	ros::Subscriber actionStatesSub;
 		/**< states of actions from action_daemon to state_daemon. */
 
 	ros::Duration updateInterval;
+		/**< Time interval for emitting state messages. */
+
 	ros::Time lastUpdateTimestamp;
+		/**< Timestamp of the last emitted state message. */
+
 	bool newPublishTrigger;
+		/**< Flag for initiating the emission of a new state message. */
+
 	
 	public:
 	 /**
@@ -93,9 +105,11 @@ class StateDaemon: public Daemon
 	void UpdateState();
 	
 	/**
-	 * Empty description.
+	 * Calculate the vehicle's orientation.
 	 * 
-	 * @return  Empty description.
+	 * @param msg  Odometry message containing implicit pose data.
+	 * 
+	 * @return     Orientation of the vehicle as theta angle.
 	 */
 	double CalculateAgvOrientation(const nav_msgs::Odometry::ConstPtr& msg);
 	
@@ -211,119 +225,126 @@ class StateDaemon: public Daemon
 	void ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for incoming Load messages.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for incoming messages about the vehicle's driving
+	 * status.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for notifying this daemon when the vehicle pauses or
+	 * resumes.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void PausedCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for notifying this daemon when a new base was
+	 * requested.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that receives the updated distance since the last node.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that receives new states of actions.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that receives new battery state messages.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that receives information about the battery health.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void BatteryStateBatteryHealthCallback(const std_msgs::Int8::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that is called when the vehicle starts or stops
+	 * charging its battery.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void BatteryStateChargingCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for incoming updates about the reach of the battery.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void BatteryStateReachCallback(const std_msgs::UInt32::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for incoming ROS battery information messages.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that is called when the operating mode of the vehicle
+	 * changes.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void OperatingModeCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that receives error messages.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that receives general information messages.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void InformationCallback(const vda5050_msgs::Information::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that is called when the safety state of the vehicle
+	 * changes.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function that is called when the emergency stop of the
+	 * vehicle was triggered.
 	 * 
 	 * @param msg  Incoming message.
 	 */
 	void SafetyStateEstopCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for notification about safety field violations.
 	 * 
 	 * @param msg  Incoming message.
 	 */

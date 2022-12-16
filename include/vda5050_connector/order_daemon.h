@@ -31,6 +31,7 @@ class CurrentOrder
 	string zoneSetId;
 		/**< ZoneSetID of the order object. */
 
+
 	public:
 	bool actionsFinished;
 		/**< All actions related to current edge or node finished? */
@@ -45,7 +46,7 @@ class CurrentOrder
 		/**< Contains all nodes which the AGV has not completed yet. */
 
 	vector<string> actionStates;
-		/**< Empty description. */
+		/**< Vector containing the states of all active actions. */
 	
 	/**
 	 * Constructor for a CurrentOrder object.
@@ -225,7 +226,11 @@ class OrderDaemon: public Daemon
 	AGVPosition agvPosition;
 		/**< Currently active order. */
 
-	/** declare all ROS subscriber and publisher topics for internal communication*/
+	/** 
+	 * Declare all ROS subscriber and publisher topics for internal
+	 * communication.
+	 */
+
 	ros::Subscriber orderCancelSub;
 		/**< Cancel request from action daemon. */
 
@@ -234,7 +239,8 @@ class OrderDaemon: public Daemon
 
 	ros::Subscriber allActionsCancelledSub;
 		/**< Response from action daemon if all actions of a order to cancel are
-		 *  successfully cancelled. */
+		 *   successfully cancelled.
+		 */
 
 	ros::Publisher orderActionPub;
 		/**< Ordinary order actions from order_daemon to action_daemon. */

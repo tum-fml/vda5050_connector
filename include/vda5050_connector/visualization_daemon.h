@@ -27,12 +27,12 @@
 #include "vda5050_msgs/Visualization.h"
 
 /**
- * Daemon for processing VDA 5050 visualziation messages. This daemon gathers relevant
- * information from different sources of the robot's communication system, i. e.
- * different ROS topics. The collected information is then compiled into the
- * form which the VDA 5050 expects. State messages are repeatedly sent to the
- * MQTT bridge so that they can be transmitted to the fleet control system with
- * the desired frequency.
+ * Daemon for processing VDA 5050 visualziation messages. This daemon gathers
+ * relevant information from different sources of the robot's communication
+ * system, i. e. different ROS topics. The collected information is then
+ * compiled into the form which the VDA 5050 expects. State messages are
+ * repeatedly sent to the MQTT bridge so that they can be transmitted to the
+ * fleet control system with the desired frequency.
  */
 class VisDaemon: public Daemon
 {
