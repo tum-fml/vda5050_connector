@@ -18,15 +18,27 @@ class ConnectionDaemon: public Daemon
 {
 	private:
 	vda5050_msgs::Connection connectionMessage;
+		/**< Message containing connection information. */
+
 	ros::Publisher connectionPublisher;
+		/**< Publisher for connection messages. */
+
 	ros::Subscriber connectionSubscriber;
+		/**< Subscriber for connection messages. */
+
 	ros::Duration updateInterval;
+		/**< Update interval to use for sending information about the connection
+		 *   status.
+		 */
+
 	ros::Time lastUpdateTimestamp;
+		/**< Last time the connection status was updated. */
 	
 	public:
 	/**
-	 * StateDaemon Constructor
-	 * @param *nh, pointer to nodehandler; daemonName, name of the daemon
+	 * Constructor for stateDaemon objects.
+	 * 
+	 * @param heartbeat  Time interval between connection updates.
 	 */
 	ConnectionDaemon(float heartbeat);
 
@@ -46,8 +58,8 @@ class ConnectionDaemon: public Daemon
 	bool CheckPassedTime();
 
 	/**
-	 * Fetches the header message and publishes the state message.
-	 * Updates timestamp since last publishing.
+	 * Fetches the header message and publishes the state message. Updates
+	 * timestamp since last publishing.
 	 */
 	void PublishConnection();
 

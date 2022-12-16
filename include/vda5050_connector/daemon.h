@@ -21,27 +21,62 @@ class Daemon
 {
 	private:
 	vda5050_msgs::Header messageHeader;
+		/**< TODO: is this variable even used? */
+
 	std::map<std::string,std::string> topicPublisherList;
+		/**< All topics to publish on. Map from topic keys to user-defined
+		 *   topic names.
+		 */
+		
 	std::map<std::string,std::string> topicSubscriberList;
+		/**< All topics to subscribe to. Map from topic keys to user-defined
+		 *   topic names.
+		 */
+
 	std::string mqttTopicStructurePrefix;
+		/**< Prefix that should be placed at the beginning of the MQTT topics.
+		 */
+
 	bool testMode;
+		/**< Toggle for test/debugging mode. */
 	
+
 	protected:
-	std::map<std::string,ros::Publisher> messagePublisher; /**< Dummy
-								 comment. */
-	std::map<std::string,ros::Subscriber> subscribers; /**< Dummy
-							     comment. */
-	ros::Publisher errorPublisher; /**< Dummy comment. */
-	ros::NodeHandle nh; /** ROS nodehandle to create a single node for each daemon */
+	std::map<std::string,ros::Publisher> messagePublisher;
+		/**< All publishers the daemon uses. Map from topic keys to ROS
+		 *   Publisher objects.
+		 */
+
+	std::map<std::string,ros::Subscriber> subscribers;
+		/**< All subscribers the daemon uses. Map from topic keys to ROS
+		 *   Subscriber objects.
+		 */
+
+	ros::Publisher errorPublisher;
+		/**< ROS Publisher for error messages. */
+
+	ros::NodeHandle nh;
+		/**< ROS node handle, needed to call ROS functions. */
+
 	
 	public:
 	
+	/**
+	 * Default constructor for daemon objects. TODO: Do we need this?
+	 */
 	Daemon();
+
+	/**
+	 * Constructor for daemon objects.
+	 * 
+	 * @param nh          ROS node handle object.
+	 * @param daemonName  Name of the daemon.
+	 */
 	Daemon(ros::NodeHandle *nh, std::string daemonName);
 
 	/**
-	 * Fetches the header message and publishes the state message.
-	 * Updates timestamp since last publishing.
+	 * Fetches the header message and publishes the state message. Updates
+	 * timestamp since last publishing.
 	 */
 	void PublishState();
 
@@ -52,26 +87,30 @@ class Daemon
 	void UpdateState();
 
 	/**
-         * Calculates the passed time between last update interval and now.
-         * @return      Returns true if passed time since last publish is
-         *              greater than 30 seconds, else returns false.
-         */
+	 * Calculates the passed time between last update interval and now.
+	 * 
+	 * @return  Returns true if passed time since last publish is greater than
+	 *          30 seconds, else returns false.
+	 */
 	bool CheckPassedTime();
 	
 	/**
 	 * Empty comment.
+	 * 
 	 * @return	Empty return comment.
 	 */
 	std::map<std::string,std::string> GetTopicPublisherList();
 	
 	/**
 	 * Empty comment.
+	 * 
 	 * @return	Empty return comment.
 	 */
 	std::map<std::string,std::string> GetTopicSubscriberList();
 	
 	/**
 	 * Empty comment.
+	 *
 	 * @param param	Empty param comment.
 	 * @return	Empty return comment.
 	 */
@@ -79,6 +118,7 @@ class Daemon
 	
 	/**
 	 * Empty comment.
+	 * 
 	 * @param param	Empty param comment.
 	 * @return	Empty return comment.
 	 */
@@ -86,6 +126,7 @@ class Daemon
 	
 	/**
 	 * Empty comment.
+	 *
 	 * @return	Empty return comment.
 	 */
 	std::string CreateTimestamp();
