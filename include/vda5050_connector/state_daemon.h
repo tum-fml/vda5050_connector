@@ -50,21 +50,24 @@ class StateDaemon: public Daemon
 	public:
 	 /**
 	  * Standard Constructor.
-	  * @param nh	Pointer to nodehandler.
-	  * @param daemonName	Name of the daemon.
+	  * 
+	  * @param nh          Pointer to nodehandler.
+	  * @param daemonName  Name of the daemon.
 	  * */
 	StateDaemon();
 
 	/**
-         * Calculates the passed time between last update interval and now.
-         * @return  Returns true if passed time since last publish is
-	 * 		greater than 30 seconds, else returns false.
-         */
+     * Calculates the passed time between last update interval and now.
+	 * 
+     * @return  Returns true if passed time since last publish is greater than
+	 *          30 seconds, else returns false.
+     */
 	bool CheckPassedTime();
 
 	/**
 	 * Creates the publisher for the required topics given from the config
 	 * file.
+	 * 
 	 * @param nh  Pointer to the node handler.
 	 */
 	void LinkPublishTopics(ros::NodeHandle *nh);
@@ -72,20 +75,21 @@ class StateDaemon: public Daemon
 	/**
 	 * Creates the subscribers for the required topics given from the config
 	 * file.
+	 * 
 	 * @param nh  Pointer to node handler.
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
-	 * Fetches the header message and publishes the state message.
-	 * Updates the timestamp since last publishing.
+	 * Fetches the header message and publishes the state message. Updates the
+	 * timestamp since last publishing.
 	 */
 	void PublishState();
 
 	/**
-         * Checks all the logic within the state daemon. For example, it checks
-         * if 30 seconds have passed without update.
-         */
+     * Checks all the logic within the state daemon. For example, it checks
+     * if 30 seconds have passed without update.
+     */
 	void UpdateState();
 	
 	/**
@@ -101,56 +105,56 @@ class StateDaemon: public Daemon
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void OrderIdCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderUpdateIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void OrderUpdateIdCallback(const std_msgs::UInt32::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming ZoneSetIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming LastNodeIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void LastNodeIdCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming LastNodeSequenceIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void LastNodeSequenceIdCallback(const std_msgs::UInt32::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming NodeStates.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming EdgeStates.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming AGV positions.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
 	
 	/**
@@ -158,7 +162,7 @@ class StateDaemon: public Daemon
 	 * initialized.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
@@ -166,7 +170,7 @@ class StateDaemon: public Daemon
 	 * of the AGV.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg);
 	
 	/**
@@ -174,21 +178,21 @@ class StateDaemon: public Daemon
 	 * the AGV's position.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void AGVPositionDeviationRangeCallback(const std_msgs::Float64::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming ROSAGVPosition messages.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming MapIDs of the AGV's position.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
@@ -196,133 +200,133 @@ class StateDaemon: public Daemon
 	 * position.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void AGVPositionMapDescriptionCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void PausedCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void BatteryStateBatteryHealthCallback(const std_msgs::Int8::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void BatteryStateChargingCallback(const std_msgs::Bool::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void BatteryStateReachCallback(const std_msgs::UInt32::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void OperatingModeCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void InformationCallback(const vda5050_msgs::Information::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void SafetyStateEstopCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
 	 * Callback function for incoming OrderIDs.
 	 * 
 	 * @param msg  Incoming message.
-	*/
+	 */
 	void SafetyStateFieldViolationCallback(const std_msgs::Bool::ConstPtr& msg);
 };
 #endif

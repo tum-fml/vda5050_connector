@@ -23,210 +23,292 @@ class CurrentOrder
 {
 	private:
 	string orderId;
-	int    orderUpdateId;
+		/**< Order ID of the order object. */
+
+	int orderUpdateId;
+		/**< Current Order update ID of the order object. */
+
 	string zoneSetId;
+		/**< ZoneSetID of the order object. */
 
 	public:
-	bool actionsFinished;					/** all actions related to current edge or node finished?*/
-	bool actionCancellationComplete;		/** all actions cancelled in case of order cancellation*/
-	deque<vda5050_msgs::Edge> edgeStates; 	/** contains all edges, the AGV has not completed, yet*/
-	deque<vda5050_msgs::Node> nodeStates; 	/** contains all nodes, the AGV has not completed, yet*/
+	bool actionsFinished;
+		/**< All actions related to current edge or node finished? */
+
+	bool actionCancellationComplete;
+		/**< All actions cancelled in case of order cancellation. */
+
+	deque<vda5050_msgs::Edge> edgeStates;
+		/**< Contains all edges which the AGV has not completed yet. */
+
+	deque<vda5050_msgs::Node> nodeStates;
+		/**< Contains all nodes which the AGV has not completed yet. */
+
 	vector<string> actionStates;
+		/**< Empty description. */
 	
+	/**
+	 * Constructor for a CurrentOrder object.
+	 * 
+	 * @param incomingOrder  Pointer to the order message.
+	 */
 	CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder);
 
+	/**
+	 * Check if the given OrderID belongs to the current order.
+	 * 
+	 * @param orderIdToCompare  OrderID string that should be compared against
+	 *                          
+	 */
 	bool compareOrderId(string orderIdToCompare);
 
 	/**
-	 * @brief Compares the incoming order update ID with the currently running order update ID.
+	 * Compares the incoming order update ID with the currently running order
+	 * update ID.
 	 * 
-	 * @param orderUpdateIdToCompare the order upsate ID of the incoming order
-	 * @return ["EQUAL", "HIGHER", "LOWER"] if the new order update ID is
-	 * equal, higher or lower compared to the running order update ID
+	 * @param orderUpdateIdToCompare  The order update ID of the incoming order.
+	 * 
+	 * @return                        ["EQUAL", "HIGHER", "LOWER"] if the new
+	 *                                order update ID is equal, higher or lower
+	 *                                compared to the running order update ID.
 	 */
 	string compareOrderUpdateId(int orderUpdateIdToCompare);
 
 	/**
-	 * @brief compares start of new base and end of current base
+	 * Compares start of new base and end of current base.
 	 * 
-	 * @param startOfNewBaseNodeId start of new base node ID
-	 * @param startOfNewBaseSequenceId start of new base sequence ID
-	 * @return true if start of new base equals end of current base
-	 * @return false if start of new base is not equal to end of current base
+	 * @param startOfNewBaseNodeId      Start of new base node ID.
+	 * @param startOfNewBaseSequenceId  Start of new base sequence ID.
+	 * 
+	 * @return                          true if start of new base equals end of
+	 *                                  current base.
+	 * @return                          false if start of new base is not equal
+	 *                                  to end of current base.
 	 */
 	bool compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId);
 
 	/**
-	 * @brief Get the order ID
+	 * Get the order ID.
 	 * 
-	 * @return string order ID
+	 * @return  Current order ID.
 	 */
 	string getOrderId();
 
 	/**
-	 * @brief Get the order update ID
+	 * Get the order update ID.
 	 * 
-	 * @return int order update ID
+	 * @return  Current order update ID.
 	 */
 	int getOrderUpdateId();
 
 	/**
-	 * @brief Set the Order Update Id object
+	 * Set the Order Update Id object.
 	 * 
-	 * @param incomingUpdateId incoming order update ID
+	 * @param incomingUpdateId  Incoming order update ID.
 	 */
 	void setOrderUpdateId(int incomingUpdateId);
 
 	/**
-	 * @brief decides whether or not the order is active
+	 * Tells us whether or not the order is active.
 	 * 
-	 * @return true if order is active
-	 * @return false if order is inactive
+	 * @return  true if order is active.
+	 * @return  false if order is inactive.
 	 */
 	bool isActive();
 
 	/**
-	 * @brief returns "NODE" or "EDGE" based on sequence ID
+	 * Returns "NODE" or "EDGE" based on the sequence ID.
 	 * 
-	 * @param currSequenceId current seuquence ID
-	 * @return string "NODE", when AGV is positioned on a node and
-	 * "EDGE", when AGV drives along an edge
+	 * @param currSequenceId  Current sequence ID.
+	 * @return                "NODE" if AGV is positioned on a node and "EDGE"
+	 *                        if AGV drives along an edge.
 	 */
 	string findNodeEdge(int currSequenceId);
 
 	/**
-	 * @brief Get the last released node (= last node in current base)
+	 * Get the last released node. The last released node means the last node in
+	 * current base.
 	 * 
-	 * @return vda5050_msgs::Node last node in current base
+	 * @return  Last node in current base.
 	 */
 	vda5050_msgs::Node getLastNodeInBase();
 
 	/**
-	 * @brief sends all new actions to action daemon
+	 * Sends all new actions to action daemon
 	 * 
-	 * @param actionPublisher ROS publisher to publish actions over
+	 * @param actionPublisher  ROS publisher to use for sending the actions.
 	 */
 	void sendActions(ros::Publisher actionPublisher);
 
 	/**
-	 * @brief sends all new node states to state daemon
+	 * Sends all new node states to state daemon.
 	 * 
-	 * @param nodeStatesPublisher ROS publisher to publish node states over
+	 * @param nodeStatesPublisher  ROS publisher to use for sending the node
+	 *                             states.
 	 */
 	void sendNodeStates(ros::Publisher nodeStatesPublisher);
 
 	/**
-	 * @brief sends all new edge states to state daemon
+	 * Sends all new edge states to state daemon.
 	 * 
-	 * @param edgeStatesPublisher ROS publisher to publish edge states over
+	 * @param edgeStatesPublisher  ROS publisher to use for sending the edge
+	 *                             states.
 	 */
 	void sendEdgeStates(ros::Publisher edgeStatesPublisher);
 };
 
 /**
- * @brief Current position of the AGV in map coordinates
+ * Current position of the AGV in map coordinates.
  * 
  */
 class AGVPosition
 {
 	private:
-	float x;		/**x position in map coordinates*/
-	float y;		/**y position in world coordinates*/
-	float theta;	/**theta angle in world coordinates*/
-	string mapId;	/**map id of the current map*/
+	float x;
+		/**< x position in map coordinates. */
+
+	float y;
+		/**< y position in world coordinates. */
+
+	float theta;
+		/**< theta angle in world coordinates. */
+
+	string mapId;
+		/**< Map ID of the current map. */
 
 	public:
+
+	/**
+	 * Constructor for AGV position objects.
+	 */
 	AGVPosition();
 	
 	/**
-	 * @brief updates last position data to new position
+	 * Updates last position data to new position.
 	 * 
+	 * @param new_x      New value for x coordinate.
+	 * @param new_y      New value for y coordinate.
+	 * @param new_theta  New value for angle theta.
+	 * @param new_mapId  New map ID.
 	 */
-	void updatePosition(float new_x, float new_y, float new_theta, string new_mapId);
+	void updatePosition(float new_x, float new_y, float new_theta,
+		string new_mapId);
 
 	/**
-	 * @brief computes the distance to the next node
+	 * Computes the distance to the next node.
 	 * 
-	 * @param node_x x position of the next node
-	 * @param node_y y position of the next node
-	 * @return float distance to the next node
+	 * @param node_x   x position of the next node.
+	 * @param node_y   y position of the next node.
+	 * 
+	 * @return         Distance to the next node.
 	 */
 	float nodeDistance(float node_x, float node_y);
 
 	/**
-	 * @brief Get theta angle
+	 * Get theta angle.
 	 * 
-	 * @return float theta angle
+	 * @return  Current theta angle.
 	 */
 	float getTheta();
 };
 
 /**
- * @brief Daemon for processing VDA 5050 order messages
+ * Daemon for processing VDA 5050 order messages.
  * 
  */
 class OrderDaemon: public Daemon
 {
 	private:
-	vector<CurrentOrder> currentOrders;	/** Current order*/
-	AGVPosition agvPosition; 			/** Currently active order*/
+	vector<CurrentOrder> currentOrders;
+		/**< Current order. */
+
+	AGVPosition agvPosition;
+		/**< Currently active order. */
 
 	/** declare all ROS subscriber and publisher topics for internal communication*/
-	ros::Subscriber orderCancelSub; 		/** cancel request from action daemon*/
-	ros::Subscriber agvPositionSub; 		/** position data from AGV*/
-	ros::Subscriber allActionsCancelledSub;	/** response from action daemon if all actions of a order to cancel are successfully cancelled*/
-	ros::Publisher  orderActionPub; 		/** ordinary order actions from order_daemon to action_daemon*/
-	ros::Publisher  orderCancelPub; 		/** response to cancel request*/
-	ros::Publisher  orderTriggerPub;		/** triggers actions when AGV arrives at edge or node*/
-	ros::Publisher  nodeStatesPub;			/** node state transfer topic (to state daemon)*/
-	ros::Publisher  edgeStatesPub;			/** edge state transfer topic (to state daemon)*/
-	ros::Publisher  lastNodeIdPub;			/**last node ID; changes when a node is left*/
-	ros::Publisher  lastNodeSequenceIdPub;	/** last node sequence ID; changes when a node is left*/
-	ros::Publisher  orderIdPub; 			/** order ID; changes when a new order is started*/
-	ros::Publisher  orderUpdateIdPub;		/** order ID; changes when a new order or order update is started*/
+	ros::Subscriber orderCancelSub;
+		/**< Cancel request from action daemon. */
+
+	ros::Subscriber agvPositionSub;
+		/**< Position data from AGV. */
+
+	ros::Subscriber allActionsCancelledSub;
+		/**< Response from action daemon if all actions of a order to cancel are
+		 *  successfully cancelled. */
+
+	ros::Publisher orderActionPub;
+		/**< Ordinary order actions from order_daemon to action_daemon. */
+
+	ros::Publisher orderCancelPub;
+		/**< Response to cancel request. */
+
+	ros::Publisher orderTriggerPub;
+		/**< Triggers actions when AGV arrives at edge or node. */
+		
+	ros::Publisher nodeStatesPub;
+		/**< Node state transfer topic (to state daemon). */
+
+	ros::Publisher edgeStatesPub;
+		/**< Edge state transfer topic (to state daemon). */
+
+	ros::Publisher lastNodeIdPub;
+		/**< Last node ID; changes when a node is left. */
+
+	ros::Publisher lastNodeSequenceIdPub;
+		/**< Last node sequence ID; changes when a node is left. */
+
+	ros::Publisher orderIdPub;
+		/**< Order ID; changes when a new order is started. */
+
+	ros::Publisher orderUpdateIdPub;
+		/**< Order ID; changes when a new order or order update is started. */
+
 
 	protected:
-	vector<string> ordersToCancel; 		/** stores all order IDs to cancel*/
-	bool isDriving; 					/** true if vehicle is driving*/
-	int currSequenceId; 				/** true, if the AGV currently moves on an edge*/
+	vector<string> ordersToCancel;
+		/**< Stores all order IDs to cancel. */
+
+	bool isDriving;
+		/**< true if vehicle is driving. */
+
+	int currSequenceId;
+		/**< true, if the AGV currently moves on an edge. */
+
 
 	public:
 	/**
-	 * OrderDaemon constructor
-	 * Links all internal and external ROS topics
-	 * 
-	 * @param nh          ROS node handle for order daemon
-	 * @param daemonName  Name specifies the daemon type
+	 * Constructor for OrderDaemon objects. Links all internal and external ROS
+	 * topics.
 	 */
 	OrderDaemon();
 
 	/**
-	 * Links all external publishing topics
+	 * Links all external publishing topics.
 	 * 
-	 * @param nh  ROS node handle for order daemon
+	 * @param nh  ROS node handle for order daemon.
 	 */
 	void LinkPublishTopics(ros::NodeHandle *nh);
 
 	/**
 	 * Links all external subscribing topics
 	 * 
-	 * @param nh  ROS node handle for order daemon
+	 * @param nh  ROS node handle for order daemon.
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
 	/**
-	 * @brief checks if the incoming order is valid
+	 * Checks if the incoming order is valid.
 	 * 
-	 * @param msg incoming order msg
+	 * @param msg  Incoming order message.
 	 *
-	 * @return true if order is valid
-	 * @return false if order is not valid
+	 * @return     true if order is valid.
+	 * @return     false if order is not valid.
 	 */
 	bool validationCheck(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
-	 * @brief decides whether the AGV position is within
-	 * the permissible deviation range of the given node
+	 * Decides whether the AGV position is within the permissible deviation
+	 * range of the given node.
 	 * 
 	 * @param node node to calculate the distance to
 	 * @return true if AGV position is in the deviation range
@@ -235,86 +317,86 @@ class OrderDaemon: public Daemon
 	bool inDevRange(vda5050_msgs::Node node);
 
 	/**
-	 * @brief triggers actions of the following node or edge
+	 * Triggers actions of the following node or edge.
 	 * 
 	 * @param nodeOrEdge is the AGV currently on a node or an edge?
 	 */
 	void triggerNewActions(string nodeOrEdge);
 
 	/**
-	 * @brief sends motion commands to the AGV
+	 * Sends motion commands to the AGV.
 	 * 
 	 */
 	void sendMotionCommand();
 
 	/**
-	 * @brief callback for incoming orders
-	 * decides if the incoming order should be appended or rejected
-	 * according to the flowchart in VDA5050
+	 * Callback for incoming orders. Decides if the incoming order should be
+	 * appended or rejected according to the flowchart in VDA 5050.
 	 * 
-	 * @param msg incoming order message
+	 * @param msg  Incoming order message.
 	 */
 	void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
     
     /**
-     * @brief callback for incoming cancel requests
-	 * In case, an instant message with an cancel request arrives at the action daemon,
-	 * the request is transferred to the order daemon by this topic.
+     * Callback for incoming cancel requests. When an instantAction message with
+	 * a cancel request arrives at the action daemon, the request is transferred
+	 * to the order daemon by this topic.
      * 
-     * @param msg 
+     * @param msg  Message containing the order cancel request.
      */
     void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
-	 * @brief sets flag in currentOrders in case all related actions
-	 * have been successfully cancelled in case of order cancellation
+	 * Callback for incoming information about the cancellation of all actions.
+	 * Sets flag in currentOrders in case all related actions have been
+	 * successfully cancelled in case of order cancellation.
 	 * 
-	 * @param msg order ID of the order to cancel
+	 * @param msg  Order ID of the order to cancel.
 	 */
 	void allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg);
 
 	/**
-	 * @brief tracks action states to decide if the current node/edge is finished
-	 * and can be left
+	 * Tracks action states to decide if the current node/edge is finished
+	 * and can be left.
 	 * 
-	 * @param msg incoming action state message
+	 * @param msg  Incoming action state message.
 	 */
     void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 
 	/**
-	 * @brief updates the saved position with the incoming position;
-	 * depending on position and action states it decides whether or not the
-	 * current node or edge is finished and the next one can be started
+	 * Updates the saved position with the incoming position. Depending on
+	 * position and action states it decides whether or not the current node or
+	 * edge is finished and the next one can be started.
 	 * 
-	 * @param msg incoming position update message
+	 * @param msg  Incoming position update message.
 	 */
     void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
 
 	/**
-	 * @brief keeps track of the driving state of the AGV
+	 * Keeps track of the driving state of the AGV.
 	 * 
-	 * @param msg driving state message from AGV
+	 * @param msg  Driving state message from AGV.
 	 */
     void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 
 	/**
-	 * creates a new order element if no order exists
+	 * Creates a new order element if no order exists.
 	 * 
-	 * @param msg  newly arrived order
+	 * @param msg  Newly arrived order.
 	 */
 	void startNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
 	/**
-	 * @brief appends the new order instead of the horizon
+	 * Appends the new order instead of the horizon.
 	 * 
-	 * @param msg newly arrived order
+	 * @param msg  Newly arrived order.
 	 */
 	void appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
 	
 	/**
-	 * @brief updates the existing order (i.e. release the horizon)
+	 * Updates the existing order (i.e. release the horizon).
 	 * 
-	 * @param msg newly arrived order
+	 * @param msg  Newly arrived order.
 	 */
 	void updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
@@ -330,22 +412,21 @@ class OrderDaemon: public Daemon
 	void UpdateOrders();
 
 	/**
-	 * @brief sends an order update error to the error topic
+	 * Sends an order update error to the error topic.
 	 * 
-	 * @param orderId orderId of the incoming order
-	 * @param orderUpdateId orderUpdateId of the incoming order
+	 * @param orderId        Order ID of the incoming order.
+	 * @param orderUpdateId  Order updeate ID of the incoming order.
 	 */
 	void orderUpdateError(string orderId, int orderUpdateId);
 
 	/**
-	 * @brief sends an order validation error to the error topic
+	 * Sends an order validation error to the error topic.
 	 * 
-	 * @param orderId orderId of the incoming order
-	 * @param orderUpdateId orderUpdateId of the incoming order
+	 * @param orderId        Order ID of the incoming order.
+	 * @param orderUpdateId  Order update ID of the incoming order.
 	 */
 	void orderValidationError(string orderId, int orderUpdateId);
 
 };
 
 #endif
-
