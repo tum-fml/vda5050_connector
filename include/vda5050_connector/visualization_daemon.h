@@ -38,35 +38,44 @@ class VisDaemon: public Daemon
 {
 	private:
 	vda5050_msgs::Visualization visMessage;
+		/**< ROS Message object for repeated use (sending visualization messages
+		 *   to the fleet controller. */
+
 	ros::Publisher pub;
+		/**< ROS Publisher for sending out visualization messages. */
+
 	ros::Duration updateInterval;
+		/**< Time interval for sending out visualization messages. */
+
 	ros::Time lastUpdateTimestamp;
+		/**< Timestamp of the last sent message. */
 	
+
 	public:
 	 /**
 	  * Standard Constructor.
-	  * @param nh	Pointer to nodehandler.
-	  * @param daemonName	Name of the daemon.
-	  * */
+	  */
 	VisDaemon();
 
 	/**
-         * Calculates the passed time between last update interval and now.
-         * @return      Returns true if passed time since last publish is
-	 * 		greater than 30 seconds, else returns false.
-         */
+	 * Calculates the passed time between last update interval and now.
+	 * 
+     * @return  Returns true if passed time since last publish is
+	 *          greater than 30 seconds, else returns false.
+     */
 	bool CheckPassedTime();
 
 	/**
-	 * Creates the publisher for the required topics given from the config
-	 * file.
-	 * @param nh	Pointer to the node handler.
+	 * Creates the publisher for the required topics. The list of topics is
+	 * extracted from the config file.
+	 * 
+	 * @param nh  Pointer to the node handler.
 	 */
 	void LinkPublishTopics(ros::NodeHandle *nh);
 
 	/**
-	 * Creates the subscribers for the required topics given from the config
-	 * file.
+	 * Creates the subscribers for the required topics. The list of topics is
+	 * extracted from the config file.
 	 * 
 	 * @param nh	Pointer to node handler.
 	 */
@@ -74,32 +83,82 @@ class VisDaemon: public Daemon
 
 	/**
 	 * Fetches the header message and publishes the state message.
-	 * Updates the timestamp since last publishing.
+	 * Also the timestamp since last publishing is updated.
 	 */
 	void PublishVisualization();
 
 	/**
-         * Checks all the logic within the state daemon. For example, it checks
-         * if 30 seconds have passed without update.
-         */
+     * Main loop of the vis daemon. Does all the processing between receiving
+     * and publishing messages.
+     */
 	void UpdateVisualization();
 	
 	/**
-	 * Empty comment.
+	 * Calculate the AGV's rotation from odometry data.
 	 * 
-	 * @param msg  Empty description.
+	 * @param msg  Odometry message that should be used for calculation.
 	 */
 	double CalculateAgvOrientation(const nav_msgs::Odometry::ConstPtr& msg);
 	
 	// ---- ALL THE CALLBACKS ----
-	
+	/**
+	 * Callback function for incoming position messages.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
+
+	/**
+	 * Callback function for the incoming notification when the AGV position was
+	 * initialized.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg);
+
+	/**
+	 * Callback function for incoming information about the localization score
+	 * of the AGV.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg);
+
+	/**
+	 * Callback function for incoming information about the deviation range of
+	 * the AGV's position.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void AGVPositionDeviationRangeCallback(const std_msgs::Float64::ConstPtr& msg);
+
+	/**
+	 * Callback function for incoming ROSAGVPosition messages.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg);
+
+	/**
+	 * Callback function for incoming MapIDs of the AGV's position.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg);
+
+	/**
+	 * Callback function for incoming map description strings of the AGV's
+	 * position.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void AGVPositionMapDescriptionCallback(const std_msgs::String::ConstPtr& msg);
+
+	/**
+	 * Callback function for incoming ROS velocity messages.
+	 * 
+	 * @param msg  Incoming message.
+	 */
 	void ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg);
 };
 #endif

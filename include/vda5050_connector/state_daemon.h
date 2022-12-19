@@ -218,7 +218,7 @@ class StateDaemon: public Daemon
 	void AGVPositionMapDescriptionCallback(const std_msgs::String::ConstPtr& msg);
 	
 	/**
-	 * Callback function for incoming OrderIDs.
+	 * Callback function for incoming ROS velocity messages.
 	 * 
 	 * @param msg  Incoming message.
 	 */

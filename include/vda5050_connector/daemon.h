@@ -95,51 +95,55 @@ class Daemon
 	bool CheckPassedTime();
 	
 	/**
-	 * Empty comment.
+	 * Get names of all published topics.
 	 * 
-	 * @return	Empty return comment.
+	 * @return	Map from topic keys to topic names.
 	 */
 	std::map<std::string,std::string> GetTopicPublisherList();
 	
 	/**
-	 * Empty comment.
+	 * Get names of all subscribed topics.
 	 * 
-	 * @return	Empty return comment.
+	 * @return	Map from topic keys to topic names.
 	 */
 	std::map<std::string,std::string> GetTopicSubscriberList();
 	
 	/**
-	 * Empty comment.
+	 * Get all message types. This is achieved by reading in the message keys
+	 * that are used in the topic config file.
 	 *
-	 * @param param	Empty param comment.
-	 * @return	Empty return comment.
+	 * @param topicList  All topic keys and names as a map.
+	 * 
+	 * @return           All message types as a vector of topic keys.
 	 */
-	std::vector<std::string> GetMsgList(std::map<std::string,std::string>);
+	std::vector<std::string> GetMsgList(
+		std::map<std::string,std::string> topicList);
 	
 	/**
-	 * Empty comment.
+	 * Read a parameter from the ROS parameter server.
 	 * 
-	 * @param param	Empty param comment.
-	 * @return	Empty return comment.
+	 * @param param  Key of the parameter.
+	 * 
+	 * @return	     Value of the parameter.
 	 */
 	std::string GetParameter(std::string param);
 	
 	/**
-	 * Empty comment.
+	 * Create a timestamp string of the current instant.
 	 *
-	 * @return	Empty return comment.
+	 * @return	Formatted timestamp.
 	 */
 	std::string CreateTimestamp();
 	
 	/**
-	 * Empty comment.
+	 * Create the prefix of the topic structure.
 	 */
 	void createTopicStructurePrefix();
 	
 	/**
-	 * Empty comment.
+	 * Get the prefix of the topic structure.
 	 * 
-	 * @return	Empty return comment.
+	 * @return	Topic structure prefix.
 	 */
 	std::string getTopicStructurePrefix();
 
@@ -153,7 +157,7 @@ class Daemon
 	bool CheckTopic(std::string str1,std::string str2);
 
 	/**
-	 * Empty description.
+	 * Extract a topic string from a fully-qualified topic name.
 	 */
 	std::string GetTopic(std::string hierarchical_topic);
 
@@ -166,19 +170,21 @@ class Daemon
 	bool CompareStrings(std::string str1, std::string str2);
 
 	/**
-	 * Empty description.
+	 * Initialize the message header. Message objects are used multiple times,
+	 * so this only needs to be done once at startup.
 	 */
 	void InitHeaderInfo();
 	
 	/**
-	 * Empty description.
+	 * Link the error topics.
 	 * 
 	 * @param nh  Pointer to the ROS node handle.
 	 */
 	void LinkErrorTopics(ros::NodeHandle *nh);
 
 	/**
-	 * Empty description.
+	 * Update the message header for the next publish. This includes updating
+	 * the timestamp of the message.
 	 */
 	void UpdateHeader();
 
@@ -204,12 +210,12 @@ class Daemon
 	vda5050_msgs::Header GetHeader();
 
 	/**
-	 * Empty description.
+	 * Check if a value is in given boundaries. If not, a warning is raised.
 	 * 
-	 * @param lowerRange  Empty description.
-	 * @param upperRange  Empty description.
-	 * @param value       Empty description.
-	 * @param msg_name    Empty description.
+	 * @param lowerRange  Lower limit of the variable.
+	 * @param upperRange  Upper limit of the variable.
+	 * @param value       Value to be checked.
+	 * @param msg_name    Name of the message type.
 	 */
 	bool CheckRange(double lowerRange, double upperRange, double value,
 		std::string msg_name);

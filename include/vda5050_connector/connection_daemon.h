@@ -43,9 +43,10 @@ class ConnectionDaemon: public Daemon
 	ConnectionDaemon(float heartbeat);
 
 	/**
-	 * Empty description.
+	 * Creates the subscribers for the required topics given from the config
+	 * file.
 	 * 
-	 * @param nh  Empty parameter description.
+	 * @param nh  Pointer to node handler.
 	 */
 	void LinkSubscriptionTopics(ros::NodeHandle *nh);
 
@@ -70,15 +71,18 @@ class ConnectionDaemon: public Daemon
 	void UpdateConnection();
 
 	/**
-	 * Empty comment.
+	 * Generates the name of the topic to publish. The topic name is built by
+	 * adding the VDA-5050 global topic 
 	 */
 	std::string createPublishTopic();
 	
 	/**
-	 * Empty comment.
+	 * Callback for receiving information about the connection status of the ROS
+	 * node.
+	 * 
+	 * @param msg  Incoming message.
 	 */
 	void ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr& msg);
-
 };
 #endif
 
