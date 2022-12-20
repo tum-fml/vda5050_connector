@@ -202,3 +202,15 @@ target_link_libraries(order_msg_mockup ${catkin_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+##################
+## Installation ##
+##################
+
+install(TARGETS action_daemon state_daemon connection_daemon visualization_daemon order_daemon vis_mockup state_mockup order_mockup position_mockup action_msg_mockup order_msg_mockup	
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
