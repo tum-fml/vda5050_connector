@@ -1,3 +1,12 @@
+/*
+ * Copyright 2022 Technical University of Munich, Chair of Materials Handling,
+ * Material Flow, Logistics – All Rights Reserved
+ * 
+ * You may use, distribute and modify this code under the terms of the 3-clause
+ * BSD license. You should have received a copy of that license with this file.
+ * If not, please write to {kontakt.fml@ed.tum.de}.
+ */
+
 #ifndef CONNECTION_DAEMON_H
 #define CONNECTION_DAEMON_H
 #include <ros/ros.h>
