@@ -1,0 +1,17 @@
+---
+BasedOnStyle: Google
+IndentWidth: 2
+---
+Language: Cpp
+BasedOnStyle: Google
+AlignAfterOpenBracket: DontAlign
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+ColumnLimit: 100
+DerivePointerAlignment: false
+ExperimentalAutoDetectBinPacking: false
+IndentWidth: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+PointerAlignment: Left
