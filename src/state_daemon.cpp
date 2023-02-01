@@ -60,15 +60,12 @@ void StateDaemon::UpdateState()
 void StateDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
 	std::map<std::string,std::string>topicList=GetTopicPublisherList();
-	std::stringstream ss;
-	ss << getTopicStructurePrefix();
 	
 	for(const auto& elem : topicList)
 	{
-		ss<< "/" << elem.second;
 		if (CheckTopic(elem.first,"state"))
 		{
-			messagePublisher[elem.second]=nh->advertise<vda5050_msgs::State>(ss.str(),1000);
+			messagePublisher[elem.second]=nh->advertise<vda5050_msgs::State>(elem.second,1000);
 		}
 	}	
 }
