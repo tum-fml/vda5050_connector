@@ -50,16 +50,13 @@ void VisDaemon::UpdateVisualization()
 void VisDaemon::LinkPublishTopics(ros::NodeHandle *nh)
 {
 	std::map<std::string,std::string>topicList = GetTopicPublisherList();
-	std::stringstream ss;
-	ss << getTopicStructurePrefix();
 
 	for(const auto& elem : topicList)
 	{
-		ss<< "/" << elem.second;
 		if (CheckTopic(elem.first,"visualization"))
 		{
 			messagePublisher[elem.second] =
-				nh->advertise<vda5050_msgs::Visualization>(ss.str(),1000);
+				nh->advertise<vda5050_msgs::Visualization>(elem.second,1000);
 		}
 	}	
 }
@@ -117,6 +114,7 @@ void VisDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg)
 	{
 		visMessage.agvPosition.theta=theta;
 	}
+	visMessage.agvPosition.positionInitialized=true;
 }
 void VisDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {	
