@@ -114,7 +114,6 @@ void VisDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg)
 	{
 		visMessage.agvPosition.theta=theta;
 	}
-	visMessage.agvPosition.positionInitialized=true;
 }
 void VisDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {	
