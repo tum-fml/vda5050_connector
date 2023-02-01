@@ -14,6 +14,10 @@ The VDA5050 connector only covers ROS communication, which means that all messag
 
 * This project was tested under Ubuntu 18.04 LTS + ROS Melodic (Python 2.7) and Ubuntu 20.04 LTS + ROS Noetic (Python 3.7).
 * ROS must be installed and a workspace (e.g., `catkin_ws`) must be initialized.
+* The python module Inject is required to run this project. Install by running the following command :
+```
+pip install Inject==3.5.4
+```
 
 Since the VDA5050 connector solely relies on ROS communication, any other communication protocol must be translated accordingly.
 VDA5050 specifies the use of MQTT as it is widely used for communication between the main control and AGVs. In the following we will describe a method for translating MQTT messages to ROS messages.
