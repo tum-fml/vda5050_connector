@@ -278,6 +278,8 @@ If the VDA5050 connector was started properly, the output should be similar to:
 The output gives an overview of all parameters read from the config file. Check if the topics are defined as required.
 If any parameters are not readable or not found on the parameter server, there is a warning output. Please check if there is a typo in your config file.
 
+## Interface Documentation
+An overview of the currently available channels and required message types is available [here](doc/README.md).
 ## Known Issues
 
 * Currently, the console output is done twice for some parameters due to the architecture.
