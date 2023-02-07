@@ -1,5 +1,6 @@
 <launch>
   <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
+  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${time}] [${node}]: ${message}"/>
   <node name="action_daemon" pkg="vda5050_connector" type="action_daemon" output="screen" >  </node>
   <node name="state_daemon" pkg="vda5050_connector" type="state_daemon" output="screen">  </node>
   <node name="connection_daemon" pkg="vda5050_connector" type="connection_daemon" output="screen">  </node>
