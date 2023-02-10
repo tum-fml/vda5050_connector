@@ -1,7 +1,7 @@
 /*
  * Copyright 2022 Technical University of Munich, Chair of Materials Handling,
  * Material Flow, Logistics – All Rights Reserved
- * 
+ *
  * You may use, distribute and modify this code under the terms of the 3-clause
  * BSD license. You should have received a copy of that license with this file.
  * If not, please write to {kontakt.fml@ed.tum.de}.
@@ -9,322 +9,310 @@
 
 #ifndef ACTION_DAEMON_H
 #define ACTION_DAEMON_H
-#include <string>
-#include <list>
-#include <deque>
-#include <memory>
 #include <ros/ros.h>
-#include "daemon.h"
-#include "vda5050_msgs/InstantActions.h"
-#include "vda5050_msgs/ActionState.h"
-#include "vda5050_msgs/OrderActions.h"
-#include "std_msgs/Bool.h"
-#include <string>
-#include <list>
 #include <deque>
+#include <list>
 #include <memory>
+#include <string>
+#include "daemon.h"
+#include "std_msgs/Bool.h"
+#include "vda5050_msgs/ActionState.h"
+#include "vda5050_msgs/InstantActions.h"
+#include "vda5050_msgs/OrderActions.h"
 
 using namespace std;
 
 /**
  * Stores information about a single action.
  */
-class ActionElement
-{
-private:
-    string orderId;
-		/**< Unique ID to identify the related order. */
+class ActionElement {
+ private:
+  string orderId;
+  /**< Unique ID to identify the related order. */
 
-    string actionId;
-		/**< Unique ID to identify the action. */
+  string actionId;
+  /**< Unique ID to identify the action. */
 
-    string actionType;
-		/**< Identifies the function of the action. */
+  string actionType;
+  /**< Identifies the function of the action. */
 
-    string actionDescription;
-		/**< Additional information on the action. */
+  string actionDescription;
+  /**< Additional information on the action. */
 
-    vector<vda5050_msgs::ActionParameter> actionParameters;
-		/**< Array of action parameters. */
+  vector<vda5050_msgs::ActionParameter> actionParameters;
+  /**< Array of action parameters. */
 
+ public:
+  string state;
+  /**< State of the action. */
 
-public:
-    string state;        
-        /**< State of the action. */
+  string blockingType;
+  /**< Blocking type of the action, Enum {NONE, SOFT, HARD}. */
 
-    string blockingType; 
-        /**< Blocking type of the action, Enum {NONE, SOFT, HARD}. */
+  bool sentToAgv;
+  /**< true if the action was sent to the AGV after being triggered. */
 
-    bool sentToAgv;
-		/**< true if the action was sent to the AGV after being triggered. */
+  bool operator==(const ActionElement& s) const { return actionId == s.actionId; }
+  bool operator!=(const ActionElement& s) const { return !operator==(s); }
 
-    bool operator==(const ActionElement &s) const { return actionId == s.actionId; }
-    bool operator!=(const ActionElement &s) const { return !operator==(s); }
+  /**
+   * Construct a new action element object.
+   *
+   * @param incomingAction   New incoming action.
+   * @param incomingOrderId  ID of the related order.
+   * @param state            State of the new action.
+   */
+  ActionElement(const vda5050_msgs::Action* incomingAction, string incomingOrderId, string state);
 
-    /**
-     * Construct a new action element object.
-     *
-     * @param incomingAction   New incoming action.
-     * @param incomingOrderId  ID of the related order.
-     * @param state            State of the new action.
-     */
-    ActionElement(const vda5050_msgs::Action *incomingAction, string incomingOrderId, string state);
+  /**
+   * Checks if this Action's ID equals the given one.
+   *
+   * @param actionId2comp  ID to compare.
+   *
+   * @return               true if IDs are equal.
+   * @return               false if IDs are not equal.
+   */
+  bool compareActionId(string actionId2comp);
 
-    /**
-     * Checks if this Action's ID equals the given one.
-     *
-     * @param actionId2comp  ID to compare.
-     * 
-     * @return               true if IDs are equal.
-     * @return               false if IDs are not equal.
-     */
-    bool compareActionId(string actionId2comp);
+  /**
+   * Checks if this Action's order ID equals the given one.
+   *
+   * @param orderId2comp  ID to compare.
+   *
+   * @return              true if IDs are equal.
+   * @return              false if IDs are not equal.
+   */
+  bool compareOrderId(string orderId2comp);
 
-    /**
-     * Checks if this Action's order ID equals the given one.
-     *
-     * @param orderId2comp  ID to compare.
-     * 
-     * @return              true if IDs are equal.
-     * @return              false if IDs are not equal.
-     */
-    bool compareOrderId(string orderId2comp);
+  /**
+   * Get the Action ID object.
+   *
+   * @return  This Action's ID.
+   */
+  string getActionId() const;
 
-    /**
-     * Get the Action ID object.
-     *
-     * @return  This Action's ID.
-     */
-    string getActionId() const;
+  /**
+   * Get the Action type object
+   *
+   * @return string Action type
+   */
+  string getActionType() const;
 
-    /**
-     * Get the Action type object
-     *
-     * @return string Action type
-     */
-    string getActionType() const;
-
-    /**
-     * Returns an action message composed of an ActionElement.
-     *
-     * @return New action message.
-     */
-    vda5050_msgs::Action packAction();
+  /**
+   * Returns an action message composed of an ActionElement.
+   *
+   * @return New action message.
+   */
+  vda5050_msgs::Action packAction();
 };
 
 /**
  * Struct to connect actions to cancel with their respective order ID.
  */
-struct orderToCancel
-{
-    string orderIdToCancel;
-        /**< Order (order ID) which should be deleted. */
+struct orderToCancel {
+  string orderIdToCancel;
+  /**< Order (order ID) which should be deleted. */
 
-    string iActionId;
-        /**< ID of the instant action that contains the cancel action. */
+  string iActionId;
+  /**< ID of the instant action that contains the cancel action. */
 
-    vector<weak_ptr<ActionElement>> actionsToCancel;
-        /**< List of active actions to cancel. */
+  vector<weak_ptr<ActionElement>> actionsToCancel;
+  /**< List of active actions to cancel. */
 
-    bool allActionsCancelledSent;
-        /**< Flag to ensure that the "all actions cancelled" message is sent
-         *   only once. */
+  bool allActionsCancelledSent;
+  /**< Flag to ensure that the "all actions cancelled" message is sent
+   *   only once. */
 };
 
 /**
  * Daemon for processing of VDA 5050 action messages.
  */
-class ActionDaemon : public Daemon
-{
-private:
-    vector<shared_ptr<ActionElement>> activeActionsList;
-		/**< List of actions to track all active actions. */
+class ActionDaemon : public Daemon {
+ private:
+  vector<shared_ptr<ActionElement>> activeActionsList;
+  /**< List of actions to track all active actions. */
 
-    vector<orderToCancel> orderCancellations;
-		/**< List of all orders to cancel and their respective order ID. */
+  vector<orderToCancel> orderCancellations;
+  /**< List of all orders to cancel and their respective order ID. */
 
+  /**
+   * Declare all ROS subscriber and publisher topics for internal
+   * communication
+   */
 
-    /** 
-     * Declare all ROS subscriber and publisher topics for internal
-     * communication
-     */
+  ros::Subscriber orderActionSub;
+  /**< Ordinary order actions from order_daemon to action_daemon. */
 
-    ros::Subscriber orderActionSub;        
-        /**< Ordinary order actions from order_daemon to action_daemon. */
+  ros::Subscriber orderTriggerSub;
+  /**< Order daemon triggers actions. */
 
-    ros::Subscriber orderTriggerSub;       
-        /**< Order daemon triggers actions. */
+  ros::Subscriber orderCancelSub;
+  /**< Order daemon sends response to order cancel request. */
 
-    ros::Subscriber orderCancelSub;        
-        /**< Order daemon sends response to order cancel request. */
+  ros::Publisher actionStatesPub;
+  /**< States of actions from action_daemon to state_daemon. */
 
-    ros::Publisher actionStatesPub;        
-        /**< States of actions from action_daemon to state_daemon. */
+  ros::Publisher orderCancelPub;
+  /**< Cancelled actions from action_daemon to order_daemon. */
 
-    ros::Publisher orderCancelPub;         
-        /**< Cancelled actions from action_daemon to order_daemon. */
+  ros::Publisher allActionsCancelledPub;
+  /**< All actions of one order to cancel cancelled from action_daemon to
+   *   order_daemon. */
 
-    ros::Publisher allActionsCancelledPub; 
-        /**< All actions of one order to cancel cancelled from action_daemon to
-         *   order_daemon. */
+  bool isDriving;
+  /**< True, if the vehicle is driving. */
 
+ protected:
+  deque<vda5050_msgs::Action> orderActionQueue;
+  /**< Queue for keeping track of order actions. */
 
-    bool isDriving;
-		/**< True, if the vehicle is driving. */
+  deque<vda5050_msgs::Action> instantActionQueue;
+  /**< Queue for keeping track of instant actions. */
 
+  vector<string> ordersSucCancelled;
+  /**< List of all orders cancelled by order daemon. */
 
-protected:
-    deque<vda5050_msgs::Action> orderActionQueue;   
-        /**< Queue for keeping track of order actions. */
+ public:
+  /**
+   * Constructor for the action daemon.
+   */
+  ActionDaemon();
 
-    deque<vda5050_msgs::Action> instantActionQueue; 
-        /**< Queue for keeping track of instant actions. */
+  /**
+   * Links all external publishing topics.
+   *
+   * @param nh  ROS node handle for action daemon.
+   */
+  void LinkPublishTopics(ros::NodeHandle* nh);
 
-    vector<string> ordersSucCancelled;              
-        /**< List of all orders cancelled by order daemon. */
+  /**
+   * Links all external subscribing topics
+   *
+   * @param nh  ROS node handle for action daemon.
+   */
+  void LinkSubscriptionTopics(ros::NodeHandle* nh);
 
+  /**
+   * Callback for order actions topic from order_daemon. This callback is
+   * called when a new message arrives at the /orderAction topic. Actions are
+   * queued into a FIFO queue. The first element of that queue is sent to the
+   * AGV for execution.
+   *
+   * @param msg  Message including the incoming order action.
+   */
+  void OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr& msg);
 
-public:
-    /**
-     * Constructor for the action daemon.
-     */
-    ActionDaemon();
+  /**
+   * Callback for order trigger topic from order daemon. This callback is
+   * called when a new message arrives at the /orderTrigger topic. A trigger
+   * contains the ID of an action and triggers adding the corresponding action
+   * to the order action queue.
+   *
+   * @param msg  Message including the action ID to trigger.
+   */
+  void OrderTriggerCallback(const std_msgs::String& msg);
 
-    /**
-	 * Links all external publishing topics.
-	 * 
-	 * @param nh  ROS node handle for action daemon.
-	 */
-    void LinkPublishTopics(ros::NodeHandle *nh);
+  /**
+   * Callback to process response to order cancel request from order daemon.
+   * This callback is called when a new message arrives at the
+   * /orderCancelResponse topic. When a order cancel request was sent to the
+   * order daemon, it sends the corresponding order id to cancel via the
+   * /orderCancelResponse topic back to the action daemon to confirm the
+   * cancellation.
+   *
+   * @param msg  Message including the ID of the cancelled order.
+   */
+  void OrderCancelCallback(const std_msgs::String& msg);
 
-    /**
-	 * Links all external subscribing topics
-	 * 
-	 * @param nh  ROS node handle for action daemon.
-	 */
-    void LinkSubscriptionTopics(ros::NodeHandle *nh);
+  /**
+   * Callback for instant Actions topic from the fleet controller. This
+   * callback is called when a new message arrives at the /instantActions
+   * topic. Actions are queued into a FIFO queue. The first element of that
+   * queue is sent to the AGV for execution.
+   *
+   * @param msg  Message including the incoming instant action.
+   */
+  void InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg);
 
-    /**
-     * Callback for order actions topic from order_daemon. This callback is
-     * called when a new message arrives at the /orderAction topic. Actions are
-     * queued into a FIFO queue. The first element of that queue is sent to the
-     * AGV for execution.
-     *
-     * @param msg  Message including the incoming order action.
-     */
-    void OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr &msg);
+  /**
+   * Callback for agvActionState topic from AGV. This callback runs when a new
+   * message arrives at the /agvActionState topic. The message contains the
+   * state of a single action. The state is used to fill the actionStates sent
+   * to the state daemon and to track the current state for action blocking
+   * evaluation.
+   *
+   * @param msg  Message including the state of an action.
+   */
+  void AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 
-    /**
-     * Callback for order trigger topic from order daemon. This callback is
-     * called when a new message arrives at the /orderTrigger topic. A trigger
-     * contains the ID of an action and triggers adding the corresponding action
-     * to the order action queue.
-     *
-     * @param msg  Message including the action ID to trigger.
-     */
-    void OrderTriggerCallback(const std_msgs::String &msg);
+  /**
+   * Callback for driving topic from AGV. This callback runs when a new
+   * message arrives at the /driving topic. The message contains the driving
+   * state of the AGV.
+   * - “true”: indicates that the AGV is driving and/or rotating. Other
+   *   movements of the AGV (e.g. lift movements) are not included here.
+   * - “false”: indicates that the AGV is neither driving nor rotating.
+   *
+   * @param msg  Message including the driving state of the AGV.
+   */
+  void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
 
-    /**
-     * Callback to process response to order cancel request from order daemon.
-     * This callback is called when a new message arrives at the
-     * /orderCancelResponse topic. When a order cancel request was sent to the
-     * order daemon, it sends the corresponding order id to cancel via the
-     * /orderCancelResponse topic back to the action daemon to confirm the
-     * cancellation.
-     *
-     * @param msg  Message including the ID of the cancelled order.
-     */
-    void OrderCancelCallback(const std_msgs::String &msg);
+  /**
+   * Adds a new action to the activeActionsList list.
+   *
+   * @param incomingAction  Incoming action
+   * @param orderId         ID of the related order.
+   * @param state           State of the incoming action.
+   */
+  void AddActionToList(const vda5050_msgs::Action* incomingAction, string orderId, string state);
 
-    /**
-     * Callback for instant Actions topic from the fleet controller. This
-     * callback is called when a new message arrives at the /instantActions
-     * topic. Actions are queued into a FIFO queue. The first element of that
-     * queue is sent to the AGV for execution.
-     *
-     * @param msg  Message including the incoming instant action.
-     */
-    void InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr &msg);
+  /**
+   * Checks if the AGV is driving and stops driving if so.
+   *
+   * @return  true if vehicle is not driving.
+   * @return  false if vehicle is driving.
+   */
+  bool checkDriving();
 
-    /**
-     * Callback for agvActionState topic from AGV. This callback runs when a new
-     * message arrives at the /agvActionState topic. The message contains the
-     * state of a single action. The state is used to fill the actionStates sent
-     * to the state daemon and to track the current state for action blocking
-     * evaluation.
-     *
-     * @param msg  Message including the state of an action.
-     */
-    void AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr &msg);
+  /**
+   * Get all running actions.
+   *
+   * @return  List of running actions.
+   */
+  vector<shared_ptr<ActionElement>> GetRunningActions();
 
-    /**
-     * Callback for driving topic from AGV. This callback runs when a new
-     * message arrives at the /driving topic. The message contains the driving
-     * state of the AGV.
-     * - “true”: indicates that the AGV is driving and/or rotating. Other
-     *   movements of the AGV (e.g. lift movements) are not included here.
-     * - “false”: indicates that the AGV is neither driving nor rotating.
-     * 
-     * @param msg  Message including the driving state of the AGV.
-     */
-    void DrivingCallback(const std_msgs::Bool::ConstPtr &msg);
+  /**
+   * Get all running or paused actions.
+   *
+   * @return  List of running or paused actions.
+   */
+  vector<shared_ptr<ActionElement>> GetRunningPausedActions();
 
-    /**
-     * Adds a new action to the activeActionsList list.
-     *
-     * @param incomingAction  Incoming action
-     * @param orderId         ID of the related order.
-     * @param state           State of the incoming action.
-     */
-    void AddActionToList(const vda5050_msgs::Action *incomingAction, string orderId, string state);
+  /**
+   * Get all actions from activeActionsList which should be cancelled.
+   *
+   * @param orderIdToCancel  ID of the order to cancel.
+   * @return                 List of pointers to actions to cancel.
+   */
+  vector<shared_ptr<ActionElement>> GetActionsToCancel(string orderIdToCancel);
 
-    /**
-     * Checks if the AGV is driving and stops driving if so.
-     *
-     * @return  true if vehicle is not driving.
-     * @return  false if vehicle is driving.
-     */
-    bool checkDriving();
+  /**
+   * Finds and returns the action with the requested ID. Finds the action in
+   * the activeActionsList list which has the requested ID. The corresponding
+   * action is returned.
+   *
+   * @param actionId  ID of the action to find within the active Actions.
+   * @return          Shared pointer to found action element.
+   */
+  shared_ptr<ActionElement> findAction(string actionId);
 
-    /**
-     * Get all running actions.
-     *
-     * @return  List of running actions.
-     */
-    vector<shared_ptr<ActionElement>> GetRunningActions();
-
-    /**
-     * Get all running or paused actions.
-     *
-     * @return  List of running or paused actions.
-     */
-    vector<shared_ptr<ActionElement>> GetRunningPausedActions();
-
-    /**
-     * Get all actions from activeActionsList which should be cancelled.
-     *
-     * @param orderIdToCancel  ID of the order to cancel.
-     * @return                 List of pointers to actions to cancel.
-     */
-    vector<shared_ptr<ActionElement>> GetActionsToCancel(string orderIdToCancel);
-
-    /**
-     * Finds and returns the action with the requested ID. Finds the action in
-     * the activeActionsList list which has the requested ID. The corresponding
-     * action is returned.
-     *
-     * @param actionId  ID of the action to find within the active Actions.
-     * @return          Shared pointer to found action element.
-     */
-    shared_ptr<ActionElement> findAction(string actionId);
-
-    /**
-     * Processes actions based on their type. The UpdateActions() method
-     * represents the main event loop. Based on the order and instan action
-     * queues, the method processes incoming actions and pauses driving state
-     * and pauses/resumes other actions.
-     */
-    void UpdateActions();
+  /**
+   * Processes actions based on their type. The UpdateActions() method
+   * represents the main event loop. Based on the order and instan action
+   * queues, the method processes incoming actions and pauses driving state
+   * and pauses/resumes other actions.
+   */
+  void UpdateActions();
 };
 
 #endif
