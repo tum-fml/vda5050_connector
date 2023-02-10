@@ -1,8 +1,12 @@
 # How to contribute to the VDA-5050-Connector
 ## Coding guideline
-* We use tabs for indentation and assume a tab with of 4 spaces.
-* We do not use tabs after text / code to avoid layout issues in editors with other tab widths.
-* Lines must not exceed a length of 80 characters.
+* We are using clang-format for our project formatting.
+* The .clang-format file includes the format settings.
+* Make sure you have clang-format server installed using the following command : 
+```
+sudo apt-get install clang-format
+```
+* Check for your IDE on how to enable the clang-format for the project.
 
 ## Documenting the code
 We use Doxygen for generating the code documentation. Please refer to the documentation for syntax rules. Note that the first sentence (i.e. the words until the first full stop) of each documentation block should be a concise wrap-up of the following text.
