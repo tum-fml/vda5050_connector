@@ -40,6 +40,8 @@ add_message_files(
     NodeState.msg
     NodeStates.msg
     Order.msg
+    OrderActions.msg
+    OrderMotion.msg
     OrderInformation.msg
     SafetyState.msg
     State.msg
