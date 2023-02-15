@@ -74,7 +74,7 @@ $(function() {
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> * Copyright 2022 Technical University of Munich, Chair of Materials Handling,</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Material Flow, Logistics – All Rights Reserved</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * </span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * You may use, distribute and modify this code under the terms of the 3-clause</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * BSD license. You should have received a copy of that license with this file.</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * If not, please write to {kontakt.fml@ed.tum.de}.</span></div>
@@ -82,52 +82,49 @@ $(function() {
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#ifndef CONNECTION_DAEMON_H</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#define CONNECTION_DAEMON_H</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;ros/ros.h&gt;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;ros/console.h&gt;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;std_msgs/Bool.h&gt;</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &quot;daemon.h&quot;</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;std_msgs/String.h&quot;</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;boost/date_time/posix_time/posix_time.hpp&quot;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;ros/console.h&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;ros/ros.h&gt;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;std_msgs/Bool.h&gt;</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &quot;boost/date_time/posix_time/posix_time.hpp&quot;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;daemon.h&quot;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;std_msgs/String.h&quot;</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;vda5050_msgs/Connection.h&quot;</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="classConnectionDaemon.html">   26</a></span>&#160;<span class="keyword">class </span><a class="code" href="classConnectionDaemon.html">ConnectionDaemon</a>: <span class="keyword">public</span> <a class="code" href="classDaemon.html">Daemon</a></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;{</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;        <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        vda5050_msgs::Connection connectionMessage;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;        ros::Publisher connectionPublisher;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        ros::Subscriber connectionSubscriber;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        ros::Duration updateInterval;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        ros::Time lastUpdateTimestamp;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <a class="code" href="classConnectionDaemon.html#a3a74ce3ac4beeac0cd66460aba24800c">ConnectionDaemon</a>(<span class="keywordtype">float</span> heartbeat);</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a370585b256d527ce55ee73b6cc354a4d">LinkSubscriptionTopics</a>(ros::NodeHandle *<a class="code" href="classDaemon.html#af6006ed33f72db34e360456ccfcc97d0">nh</a>);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="classConnectionDaemon.html#a3e88e80ea16b2be96ffeb05b7e4bba90">CheckPassedTime</a>();</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a6223c24f867302f8d92f114b418691e8">PublishConnection</a>();</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a907ee85f448b1fac24c84a34633d0872">UpdateConnection</a>();</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        std::string <a class="code" href="classConnectionDaemon.html#a8f2a2676c01a1f6956de20b7a60da0e0">createPublishTopic</a>();</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        </div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a34f06a8fc137ce90175d5b369abcd2a9">ROSConnectionStateCallback</a>(<span class="keyword">const</span> std_msgs::Bool::ConstPtr&amp; msg);</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;};</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
-<div class="ttc" id="aclassConnectionDaemon_html"><div class="ttname"><a href="classConnectionDaemon.html">ConnectionDaemon</a></div><div class="ttdoc">Daemon for processing VDA 5050 connection messages.</div><div class="ttdef"><b>Definition:</b> connection_daemon.h:27</div></div>
-<div class="ttc" id="aclassConnectionDaemon_html_a34f06a8fc137ce90175d5b369abcd2a9"><div class="ttname"><a href="classConnectionDaemon.html#a34f06a8fc137ce90175d5b369abcd2a9">ConnectionDaemon::ROSConnectionStateCallback</a></div><div class="ttdeci">void ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr &amp;msg)</div><div class="ttdoc">Callback for receiving information about the connection status of the ROS node.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:71</div></div>
-<div class="ttc" id="aclassConnectionDaemon_html_a370585b256d527ce55ee73b6cc354a4d"><div class="ttname"><a href="classConnectionDaemon.html#a370585b256d527ce55ee73b6cc354a4d">ConnectionDaemon::LinkSubscriptionTopics</a></div><div class="ttdeci">void LinkSubscriptionTopics(ros::NodeHandle *nh)</div><div class="ttdoc">Creates the subscribers for the required topics given from the config file.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:28</div></div>
+<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classConnectionDaemon.html">   25</a></span>&#160;<span class="keyword">class </span><a class="code" href="classConnectionDaemon.html">ConnectionDaemon</a> : <span class="keyword">public</span> <a class="code" href="classDaemon.html">Daemon</a> {</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  vda5050_msgs::Connection connectionMessage;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  ros::Publisher connectionPublisher;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  ros::Subscriber connectionSubscriber;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  ros::Duration updateInterval;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  ros::Time lastUpdateTimestamp;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <a class="code" href="classConnectionDaemon.html#a3a74ce3ac4beeac0cd66460aba24800c">ConnectionDaemon</a>(<span class="keywordtype">float</span> heartbeat);</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a370585b256d527ce55ee73b6cc354a4d">LinkSubscriptionTopics</a>(ros::NodeHandle* <a class="code" href="classDaemon.html#af6006ed33f72db34e360456ccfcc97d0">nh</a>);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classConnectionDaemon.html#a3e88e80ea16b2be96ffeb05b7e4bba90">CheckPassedTime</a>();</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a6223c24f867302f8d92f114b418691e8">PublishConnection</a>();</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a907ee85f448b1fac24c84a34633d0872">UpdateConnection</a>();</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  std::string <a class="code" href="classConnectionDaemon.html#a8f2a2676c01a1f6956de20b7a60da0e0">createPublishTopic</a>();</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classConnectionDaemon.html#a34f06a8fc137ce90175d5b369abcd2a9">ROSConnectionStateCallback</a>(<span class="keyword">const</span> std_msgs::Bool::ConstPtr&amp; msg);</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;};</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="ttc" id="aclassConnectionDaemon_html"><div class="ttname"><a href="classConnectionDaemon.html">ConnectionDaemon</a></div><div class="ttdoc">Daemon for processing VDA 5050 connection messages.</div><div class="ttdef"><b>Definition:</b> connection_daemon.h:25</div></div>
+<div class="ttc" id="aclassConnectionDaemon_html_a34f06a8fc137ce90175d5b369abcd2a9"><div class="ttname"><a href="classConnectionDaemon.html#a34f06a8fc137ce90175d5b369abcd2a9">ConnectionDaemon::ROSConnectionStateCallback</a></div><div class="ttdeci">void ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr &amp;msg)</div><div class="ttdoc">Callback for receiving information about the connection status of the ROS node.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:64</div></div>
+<div class="ttc" id="aclassConnectionDaemon_html_a370585b256d527ce55ee73b6cc354a4d"><div class="ttname"><a href="classConnectionDaemon.html#a370585b256d527ce55ee73b6cc354a4d">ConnectionDaemon::LinkSubscriptionTopics</a></div><div class="ttdeci">void LinkSubscriptionTopics(ros::NodeHandle *nh)</div><div class="ttdoc">Creates the subscribers for the required topics given from the config file.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:27</div></div>
 <div class="ttc" id="aclassConnectionDaemon_html_a3a74ce3ac4beeac0cd66460aba24800c"><div class="ttname"><a href="classConnectionDaemon.html#a3a74ce3ac4beeac0cd66460aba24800c">ConnectionDaemon::ConnectionDaemon</a></div><div class="ttdeci">ConnectionDaemon(float heartbeat)</div><div class="ttdoc">Constructor for stateDaemon objects.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:19</div></div>
-<div class="ttc" id="aclassConnectionDaemon_html_a3e88e80ea16b2be96ffeb05b7e4bba90"><div class="ttname"><a href="classConnectionDaemon.html#a3e88e80ea16b2be96ffeb05b7e4bba90">ConnectionDaemon::CheckPassedTime</a></div><div class="ttdeci">bool CheckPassedTime()</div><div class="ttdoc">Calculates the passed time between last update interval and now.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:45</div></div>
-<div class="ttc" id="aclassConnectionDaemon_html_a6223c24f867302f8d92f114b418691e8"><div class="ttname"><a href="classConnectionDaemon.html#a6223c24f867302f8d92f114b418691e8">ConnectionDaemon::PublishConnection</a></div><div class="ttdeci">void PublishConnection()</div><div class="ttdoc">Fetches the header message and publishes the state message.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:51</div></div>
-<div class="ttc" id="aclassConnectionDaemon_html_a8f2a2676c01a1f6956de20b7a60da0e0"><div class="ttname"><a href="classConnectionDaemon.html#a8f2a2676c01a1f6956de20b7a60da0e0">ConnectionDaemon::createPublishTopic</a></div><div class="ttdeci">std::string createPublishTopic()</div><div class="ttdoc">Generates the name of the topic to publish.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:38</div></div>
-<div class="ttc" id="aclassConnectionDaemon_html_a907ee85f448b1fac24c84a34633d0872"><div class="ttname"><a href="classConnectionDaemon.html#a907ee85f448b1fac24c84a34633d0872">ConnectionDaemon::UpdateConnection</a></div><div class="ttdeci">void UpdateConnection()</div><div class="ttdoc">Checks all the logic within the state daemon.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:63</div></div>
-<div class="ttc" id="aclassDaemon_html"><div class="ttname"><a href="classDaemon.html">Daemon</a></div><div class="ttdoc">Model for all daemons.</div><div class="ttdef"><b>Definition:</b> daemon.h:30</div></div>
-<div class="ttc" id="aclassDaemon_html_af6006ed33f72db34e360456ccfcc97d0"><div class="ttname"><a href="classDaemon.html#af6006ed33f72db34e360456ccfcc97d0">Daemon::nh</a></div><div class="ttdeci">ros::NodeHandle nh</div><div class="ttdoc">ROS node handle, needed to call ROS functions.</div><div class="ttdef"><b>Definition:</b> daemon.h:67</div></div>
+<div class="ttc" id="aclassConnectionDaemon_html_a3e88e80ea16b2be96ffeb05b7e4bba90"><div class="ttname"><a href="classConnectionDaemon.html#a3e88e80ea16b2be96ffeb05b7e4bba90">ConnectionDaemon::CheckPassedTime</a></div><div class="ttdeci">bool CheckPassedTime()</div><div class="ttdoc">Calculates the passed time between last update interval and now.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:42</div></div>
+<div class="ttc" id="aclassConnectionDaemon_html_a6223c24f867302f8d92f114b418691e8"><div class="ttname"><a href="classConnectionDaemon.html#a6223c24f867302f8d92f114b418691e8">ConnectionDaemon::PublishConnection</a></div><div class="ttdeci">void PublishConnection()</div><div class="ttdoc">Fetches the header message and publishes the state message.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:47</div></div>
+<div class="ttc" id="aclassConnectionDaemon_html_a8f2a2676c01a1f6956de20b7a60da0e0"><div class="ttname"><a href="classConnectionDaemon.html#a8f2a2676c01a1f6956de20b7a60da0e0">ConnectionDaemon::createPublishTopic</a></div><div class="ttdeci">std::string createPublishTopic()</div><div class="ttdoc">Generates the name of the topic to publish.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:36</div></div>
+<div class="ttc" id="aclassConnectionDaemon_html_a907ee85f448b1fac24c84a34633d0872"><div class="ttname"><a href="classConnectionDaemon.html#a907ee85f448b1fac24c84a34633d0872">ConnectionDaemon::UpdateConnection</a></div><div class="ttdeci">void UpdateConnection()</div><div class="ttdoc">Checks all the logic within the state daemon.</div><div class="ttdef"><b>Definition:</b> connection_daemon.cpp:58</div></div>
+<div class="ttc" id="aclassDaemon_html"><div class="ttname"><a href="classDaemon.html">Daemon</a></div><div class="ttdoc">Model for all daemons.</div><div class="ttdef"><b>Definition:</b> daemon.h:28</div></div>
+<div class="ttc" id="aclassDaemon_html_af6006ed33f72db34e360456ccfcc97d0"><div class="ttname"><a href="classDaemon.html#af6006ed33f72db34e360456ccfcc97d0">Daemon::nh</a></div><div class="ttdeci">ros::NodeHandle nh</div><div class="ttdoc">ROS node handle, needed to call ROS functions.</div><div class="ttdef"><b>Definition:</b> daemon.h:64</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
