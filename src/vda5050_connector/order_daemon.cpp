@@ -8,22 +8,10 @@
  */
 
 #include "vda5050_connector/order_daemon.h"
-#include <iostream>
-#include <string>
-#include <vector>
-#include "std_msgs/Bool.h"
-#include "std_msgs/Int32.h"
-#include "std_msgs/String.h"
-#include "vda5050_msgs/AGVPosition.h"
-#include "vda5050_msgs/Action.h"
-#include "vda5050_msgs/ActionState.h"
-#include "vda5050_msgs/EdgeState.h"
-#include "vda5050_msgs/NodeState.h"
-#include "vda5050_msgs/Order.h"
-#include "vda5050_msgs/OrderActions.h"
-#include "vda5050_msgs/OrderMotion.h"
+
 
 using namespace std;
+using namespace connector_utils;
 
 /*-------------------------------------CurrentOrder--------------------------------------------*/
 
@@ -222,13 +210,11 @@ void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   map<string, string> topicList = GetTopicSubscriberList();
   for (const auto& elem : topicList) {
     if (CheckTopic(elem.first, "orderFromMc"))
-      subscribers[elem.first] = nh->subscribe(elem.second, 1000, &OrderDaemon::OrderCallback, this);
+      nh->subscribe(elem.second, 1000, &OrderDaemon::OrderCallback, this);
     if (CheckTopic(elem.first, "actionStates"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &OrderDaemon::ActionStateCallback, this);
+      nh->subscribe(elem.second, 1000, &OrderDaemon::ActionStateCallback, this);
     if (CheckTopic(elem.first, "driving"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &OrderDaemon::DrivingCallback, this);
+      nh->subscribe(elem.second, 1000, &OrderDaemon::DrivingCallback, this);
   }
 }
 

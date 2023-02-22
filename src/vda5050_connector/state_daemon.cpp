@@ -8,17 +8,15 @@
  */
 
 #include "vda5050_connector/state_daemon.h"
-#include <iostream>
-#include <vector>
 
+using namespace connector_utils;
 /**
  * TODO: publish to topicPub, if following requirements are met:
  * - received order
  * - received order update
- * - change of load status										Done
- * in Callback
- * - error														Done
- * in Callback
+ * - change of load status Done in Callback
+ * - error
+ * Done in Callback
  * - driving over an node
  * - change in operationMode									Done
  * in Callback
@@ -46,7 +44,7 @@ bool StateDaemon::CheckPassedTime() {
 }
 
 void StateDaemon::PublishState() {
-  stateMessage.header = GetHeader();
+  stateMessage.headerId++;
   messagePublisher["/state"].publish(stateMessage);
   lastUpdateTimestamp = ros::Time::now();
   newPublishTrigger = false;
@@ -68,103 +66,79 @@ void StateDaemon::LinkPublishTopics(ros::NodeHandle* nh) {
 
 void StateDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   std::map<std::string, std::string> topicList = GetTopicSubscriberList();
+
+  for(const auto & elem : topicList){
+
+  std::cout << elem.first << " -- " << elem.second << std::endl;
+  }
+
+  exit(1);
   for (const auto& elem : topicList) {
     // TODO make shorter via switch/case or a map from string to callback function
     if (CheckTopic(elem.first, "orderId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::OrderIdCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::OrderIdCallback, this);
     else if (CheckTopic(elem.first, "orderUpdateId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::OrderUpdateIdCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::OrderUpdateIdCallback, this);
     else if (CheckTopic(elem.first, "zoneSetId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::ZoneSetIdCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::ZoneSetIdCallback, this);
     else if (CheckTopic(elem.first, "lastNodeId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::LastNodeIdCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::LastNodeIdCallback, this);
     else if (CheckTopic(elem.first, "lastNodeSequenceId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::LastNodeSequenceIdCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::LastNodeSequenceIdCallback, this);
     else if (CheckTopic(elem.first, "nodeStates"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::NodeStatesCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::NodeStatesCallback, this);
     else if (CheckTopic(elem.first, "edgeStates"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::EdgeStatesCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::EdgeStatesCallback, this);
     else if (CheckTopic(elem.first, "agvPosition"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionCallback, this);
     else if (CheckTopic(elem.first, "positionInitialized"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionInitializedCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionInitializedCallback, this);
     else if (CheckTopic(elem.first, "localizationScore"))
-      subscribers[elem.first] = nh->subscribe(
-          elem.second, 1000, &StateDaemon::AGVPositionLocalizationScoreCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionLocalizationScoreCallback, this);
     else if (CheckTopic(elem.first, "deviationRange"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionDeviationRangeCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionDeviationRangeCallback, this);
     else if (CheckTopic(elem.first, "pose"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::ROSAGVPositionCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::ROSAGVPositionCallback, this);
     else if (CheckTopic(elem.first, "mapId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionMapIdCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionMapIdCallback, this);
     else if (CheckTopic(elem.first, "mapDescription"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionMapDescriptionCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::AGVPositionMapDescriptionCallback, this);
     else if (CheckTopic(elem.first, "velocity"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::ROSVelocityCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::ROSVelocityCallback, this);
     else if (CheckTopic(elem.first, "loads"))
-      subscribers[elem.first] = nh->subscribe(elem.second, 1000, &StateDaemon::LoadsCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::LoadsCallback, this);
     else if (CheckTopic(elem.first, "driving"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::DrivingCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::DrivingCallback, this);
     else if (CheckTopic(elem.first, "paused"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::PausedCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::PausedCallback, this);
     else if (CheckTopic(elem.first, "newBaseRequest"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::NewBaseRequestCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::NewBaseRequestCallback, this);
     else if (CheckTopic(elem.first, "distanceSinceLastNode"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::DistanceSinceLastNodeCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::DistanceSinceLastNodeCallback, this);
     else if (CheckTopic(elem.first, "actionStates"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::ActionStateCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::ActionStateCallback, this);
     else if (CheckTopic(elem.first, "batteryState"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateCallback, this);
     else if (CheckTopic(elem.first, "batteryCharge"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::ROSBatteryInfoCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::ROSBatteryInfoCallback, this);
     else if (CheckTopic(elem.first, "batteryHealth"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateBatteryHealthCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateBatteryHealthCallback, this);
     else if (CheckTopic(elem.first, "charging"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateChargingCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateChargingCallback, this);
     else if (CheckTopic(elem.first, "reach"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateReachCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::BatteryStateReachCallback, this);
     else if (CheckTopic(elem.first, "operatingMode"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::OperatingModeCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::OperatingModeCallback, this);
     else if (CheckTopic(elem.first, "errors"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::ErrorsCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::ErrorsCallback, this);
     else if (CheckTopic(elem.first, "information"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::InformationCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::InformationCallback, this);
     else if (CheckTopic(elem.first, "safetyState"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::SafetyStateCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::SafetyStateCallback, this);
     else if (CheckTopic(elem.first, "eStop"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::SafetyStateEstopCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::SafetyStateEstopCallback, this);
     else if (CheckTopic(elem.first, "fieldViolation"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &StateDaemon::SafetyStateFieldViolationCallback, this);
+      nh->subscribe(elem.second, 1000, &StateDaemon::SafetyStateFieldViolationCallback, this);
   }
 }
 
@@ -188,7 +162,7 @@ void StateDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg
   stateMessage.agvPosition.x = msg->pose.pose.position.x;
   stateMessage.agvPosition.y = msg->pose.pose.position.y;
   theta = CalculateAgvOrientation(msg);
-  if (CheckRange(-M_PI, M_PI, theta, "theta")) {
+  if (CheckRange(-M_PI, M_PI, theta)) {
     stateMessage.agvPosition.theta = theta;
   }
 }
@@ -198,9 +172,7 @@ void StateDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg) {
   double omega;
   stateMessage.velocity.vx = msg->twist.twist.linear.x;
   stateMessage.velocity.vy = msg->twist.twist.linear.y;
-  if (CheckRange(-M_PI, M_PI, omega, "omega")) {
-    stateMessage.velocity.omega = msg->twist.twist.angular.z;
-  }
+  stateMessage.velocity.omega = msg->twist.twist.angular.z;
 }
 
 void StateDaemon::ROSBatteryInfoCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
@@ -244,7 +216,7 @@ void StateDaemon::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr&
   stateMessage.agvPosition.positionInitialized = msg->data;
 }
 void StateDaemon::AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg) {
-  if (CheckRange(0.0, 1.0, msg->data, "AGV Position Localization Score")) {
+  if (CheckRange(0.0, 1.0, msg->data)) {
     stateMessage.agvPosition.localizationScore = msg->data;
   }
 }

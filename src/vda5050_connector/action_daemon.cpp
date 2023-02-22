@@ -8,18 +8,10 @@
  */
 
 #include "vda5050_connector/action_daemon.h"
-#include <iostream>
-#include <list>
-#include <memory>
-#include <string>
-#include <vector>
-#include "std_msgs/Bool.h"
-#include "std_msgs/String.h"
-#include "vda5050_msgs/Action.h"
-#include "vda5050_msgs/ActionState.h"
-#include "vda5050_msgs/OrderActions.h"
+
 
 using namespace std;
+using namespace connector_utils;
 
 /** TODO: Send orderCancel to order daemon (2 cases: instantAction, failed action)*/
 /** TODO: Implement instantAction routine*/
@@ -99,14 +91,11 @@ void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   map<string, string> topicList = GetTopicSubscriberList();
   for (const auto& elem : topicList) {
     if (CheckTopic(elem.first, "instantAction"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &ActionDaemon::InstantActionsCallback, this);
+      nh->subscribe(elem.second, 1000, &ActionDaemon::InstantActionsCallback, this);
     if (CheckTopic(elem.first, "agvActionState"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &ActionDaemon::AgvActionStateCallback, this);
+      nh->subscribe(elem.second, 1000, &ActionDaemon::AgvActionStateCallback, this);
     if (CheckTopic(elem.first, "driving"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &ActionDaemon::DrivingCallback, this);
+      nh->subscribe(elem.second, 1000, &ActionDaemon::DrivingCallback, this);
   }
 }
 
@@ -117,18 +106,17 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstP
     ActionDaemon::AddActionToList(&action, msg->orderId, actionStatus);
 
     /** Create and publish action state msg*/
-    vda5050_msgs::ActionState state_msg;
-    state_msg.header = ActionDaemon::GetHeader();
-    state_msg.actionID = action.actionId;
-    state_msg.actionType = action.actionType;
-    state_msg.actionStatus = actionStatus;
-    state_msg.resultDescription = ""; /** Description necessary?*/
-    actionStatesPub.publish(state_msg);
+    vda5050_msgs::ActionState action_state_msg;
+    action_state_msg.actionID = action.actionId;
+    action_state_msg.actionType = action.actionType;
+    action_state_msg.actionStatus = actionStatus;
+    action_state_msg.resultDescription = ""; /** Description necessary?*/
+    actionStatesPub.publish(action_state_msg);
   }
 }
 
 void ActionDaemon::OrderTriggerCallback(const std_msgs::String& msg) {
-  shared_ptr<ActionElement> activeAction = findAction(msg.data);
+  shared_ptr<ActionElement> activeAction = FindAction(msg.data);
 
   // Sort out
   // duplicates?#########################################################################debug
@@ -199,7 +187,6 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 
             /** send failed state to state daemon*/
             vda5050_msgs::ActionState state_msg;
-            state_msg.header = ActionDaemon::GetHeader();
             state_msg.actionID = cAction->get()->getActionId();
             state_msg.actionType = cAction->get()->getActionType();
             state_msg.actionStatus = "FAILED";
@@ -255,7 +242,6 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
       instantActionQueue.push_back(iaction);
       /** Create and publish action state msg*/
       vda5050_msgs::ActionState state_msg;
-      state_msg.header = ActionDaemon::GetHeader();
       state_msg.actionID = iaction.actionId;
       state_msg.actionType = iaction.actionType;
       state_msg.actionStatus = "WAITING";
@@ -266,7 +252,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 }
 
 void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
-  shared_ptr<ActionElement> actionToUpdate = findAction(msg->actionID);
+  shared_ptr<ActionElement> actionToUpdate = FindAction(msg->actionID);
   actionStatesPub.publish(msg);
 
   if (actionToUpdate) {
@@ -311,7 +297,7 @@ void ActionDaemon::AddActionToList(
   activeActionsList.push_back(newAction);
 }
 
-bool ActionDaemon::checkDriving() {
+bool ActionDaemon::CheckDriving() {
   if (isDriving) {
     std_msgs::String pauseMsg;
     pauseMsg.data = "PAUSE";
@@ -355,7 +341,7 @@ vector<shared_ptr<ActionElement>> ActionDaemon::GetActionsToCancel(string orderI
   return actionsToCancel;
 }
 
-shared_ptr<ActionElement> ActionDaemon::findAction(string actionId) {
+shared_ptr<ActionElement> ActionDaemon::FindAction(string actionId) {
   vector<shared_ptr<ActionElement>>::iterator it =
       find_if(activeActionsList.begin(), activeActionsList.end(),
           [&actionId](shared_ptr<ActionElement> const& p) { return p->compareActionId(actionId); });
@@ -403,7 +389,6 @@ void ActionDaemon::UpdateActions() {
           if (actAct_it != activeActionsList.end()) {
             /** Create and publish action state msg*/
             vda5050_msgs::ActionState state_msg;
-            state_msg.header = ActionDaemon::GetHeader();
             state_msg.actionID = (**actAct_it).getActionId();
             state_msg.actionType = (**actAct_it).getActionType();
             state_msg.actionStatus = "FINISHED";
@@ -450,9 +435,9 @@ void ActionDaemon::UpdateActions() {
         string& nextBlockType = instantActionQueue.front().blockingType;
 
         if (nextBlockType == "HARD") {
-          if (checkDriving()) {
+          if (CheckDriving()) {
             /** set sentToAgv to true*/
-            auto sentAction = findAction(instantActionQueue.front().actionId);
+            auto sentAction = FindAction(instantActionQueue.front().actionId);
             sentAction->sentToAgv = true;
 
             /** send action*/
@@ -465,9 +450,9 @@ void ActionDaemon::UpdateActions() {
           pause_msg.data = "PAUSE";
           messagePublisher["prActions"].publish(pause_msg);
         } else if (nextBlockType == "SOFT") {
-          if (checkDriving()) {
+          if (CheckDriving()) {
             /** set sentToAgv to true*/
-            auto sentAction = findAction(instantActionQueue.front().actionId);
+            auto sentAction = FindAction(instantActionQueue.front().actionId);
             sentAction->sentToAgv = true;
 
             /** send action*/
@@ -477,7 +462,7 @@ void ActionDaemon::UpdateActions() {
           }
         } else if (nextBlockType == "NONE") {
           /** set sentToAgv to true*/
-          auto sentAction = findAction(instantActionQueue.front().actionId);
+          auto sentAction = FindAction(instantActionQueue.front().actionId);
           sentAction->sentToAgv = true;
 
           /** send action*/
@@ -497,7 +482,7 @@ void ActionDaemon::UpdateActions() {
     /** no action running*/
     else {
       /** set sentToAgv to true*/
-      auto sentAction = findAction(instantActionQueue.front().actionId);
+      auto sentAction = FindAction(instantActionQueue.front().actionId);
       sentAction->sentToAgv = true;
 
       /** send action to AGV*/
@@ -535,9 +520,9 @@ void ActionDaemon::UpdateActions() {
             if (nextBlockType == "HARD") {
               /** TODO: Check if last action still running*/
               /** If driving -> stop, else publish action*/
-              if (ActionDaemon::checkDriving()) {
+              if (ActionDaemon::CheckDriving()) {
                 /** set sentToAgv to true*/
-                auto sentAction = findAction(orderActionQueue.front().actionId);
+                auto sentAction = FindAction(orderActionQueue.front().actionId);
                 sentAction->sentToAgv = true;
 
                 /** send action to AGV*/
@@ -549,9 +534,9 @@ void ActionDaemon::UpdateActions() {
             /** new action blocking soft*/
             else if (nextBlockType == "SOFT") {
               /** If driving -> stop, else publish action*/
-              if (checkDriving()) {
+              if (CheckDriving()) {
                 /** set sentToAgv to true*/
-                auto sentAction = findAction(orderActionQueue.front().actionId);
+                auto sentAction = FindAction(orderActionQueue.front().actionId);
                 sentAction->sentToAgv = true;
 
                 /** send action to AGV*/
@@ -563,7 +548,7 @@ void ActionDaemon::UpdateActions() {
             /** new action not blocking*/
             else if (nextBlockType == "NONE") {
               /** set sentToAgv to true*/
-              auto sentAction = findAction(orderActionQueue.front().actionId);
+              auto sentAction = FindAction(orderActionQueue.front().actionId);
               sentAction->sentToAgv = true;
 
               /** send action to AGV*/
@@ -579,7 +564,7 @@ void ActionDaemon::UpdateActions() {
     /** no action running*/
     else {
       /** set sentToAgv to true*/
-      auto sentAction = findAction(orderActionQueue.front().actionId);
+      auto sentAction = FindAction(orderActionQueue.front().actionId);
       sentAction->sentToAgv = true;
 
       /** send action to AGV*/
