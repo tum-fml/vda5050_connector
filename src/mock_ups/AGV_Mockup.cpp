@@ -36,11 +36,11 @@ string getTimestamp() {
 // creates the order msg
 vda5050_msgs::State createMessage() {
   vda5050_msgs::State msg;
-  msg.header.headerId = 1;
-  msg.header.timestamp = getTimestamp();
-  msg.header.version = "1.1";
-  msg.header.manufacturer = "fml Enterprise";
-  msg.header.serialNumber = "ajf894ajc";
+  msg.headerId = 1;
+  msg.timestamp = getTimestamp();
+  msg.version = "1.1";
+  msg.manufacturer = "fml Enterprise";
+  msg.serialNumber = "ajf894ajc";
   msg.orderId = "pass nr 3.5";
   msg.orderUpdateId = 876324;
   msg.zoneSetId = "fml hall of fame";
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     publisherState.publish(msg);
     ros::spinOnce();
     loop_rate.sleep();
-    msg.header.headerId += 1;
+    msg.headerId += 1;
     msg = updateMessage(msg, angle, r, mx, my);
     angle += 0.05;
     if (angle >= M_PI) angle = -M_PI;
