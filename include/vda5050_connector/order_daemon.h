@@ -9,18 +9,25 @@
 
 #ifndef ORDER_DAEMON_H
 #define ORDER_DAEMON_H
+
 #include <ros/ros.h>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "daemon.h"
 #include "std_msgs/Bool.h"
+#include "std_msgs/Int32.h"
 #include "std_msgs/String.h"
 #include "vda5050_msgs/AGVPosition.h"
+#include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/Edge.h"
+#include "vda5050_msgs/EdgeState.h"
 #include "vda5050_msgs/Node.h"
+#include "vda5050_msgs/NodeState.h"
 #include "vda5050_msgs/Order.h"
-
-using namespace std;
+#include "vda5050_msgs/OrderActions.h"
+#include "vda5050_msgs/OrderMotion.h"
 
 /**
  * Daemon for processing of VDA 5050 action messages. The order daemon consists

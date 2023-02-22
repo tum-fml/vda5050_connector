@@ -17,24 +17,13 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
 #include <std_msgs/UInt32.h>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "daemon.h"
 #include "std_msgs/String.h"
-
-#include "vda5050_msgs/AGVPosition.h"
-#include "vda5050_msgs/ActionStates.h"
-#include "vda5050_msgs/EdgeState.h"
-#include "vda5050_msgs/EdgeStates.h"
-#include "vda5050_msgs/Errors.h"
-#include "vda5050_msgs/Information.h"
-#include "vda5050_msgs/Loads.h"
-#include "vda5050_msgs/NodeState.h"
-#include "vda5050_msgs/NodeStates.h"
-#include "vda5050_msgs/SafetyState.h"
-#include "vda5050_msgs/State.h"
 #include "vda5050_msgs/Visualization.h"
-
 /**
  * Daemon for processing VDA 5050 visualziation messages. This daemon gathers
  * relevant information from different sources of the robot's communication

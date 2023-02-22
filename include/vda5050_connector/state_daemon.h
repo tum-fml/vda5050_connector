@@ -18,7 +18,9 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
 #include <std_msgs/UInt32.h>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "daemon.h"
 #include "std_msgs/String.h"

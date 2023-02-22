@@ -11,11 +11,15 @@
 #define ACTION_DAEMON_H
 #include <ros/ros.h>
 #include <deque>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <string>
+#include <vector>
 #include "daemon.h"
 #include "std_msgs/Bool.h"
+#include "std_msgs/String.h"
+#include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/InstantActions.h"
 #include "vda5050_msgs/OrderActions.h"

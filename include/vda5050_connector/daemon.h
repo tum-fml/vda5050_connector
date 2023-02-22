@@ -12,11 +12,13 @@
 #include <ros/console.h>
 #include <ros/ros.h>
 #include <tf/tf.h>
+#include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "std_msgs/String.h"
-#include "vda5050_msgs/Header.h"
+#include "utils/utils.h"
 
 #define DEFAULT_ERROR_TOPIC "/internal_errors"
 

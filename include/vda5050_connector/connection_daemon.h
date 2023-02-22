@@ -9,10 +9,13 @@
 
 #ifndef CONNECTION_DAEMON_H
 #define CONNECTION_DAEMON_H
+
 #include <ros/console.h>
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "daemon.h"
 #include "std_msgs/String.h"
