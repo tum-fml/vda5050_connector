@@ -37,30 +37,30 @@
  */
 class CurrentOrder {
  private:
-  string orderId;
-  /**< Order ID of the order object. */
+  // Order ID of the order object.
+  std::string orderId;
 
+  // Current Order update ID of the order object.
   int orderUpdateId;
-  /**< Current Order update ID of the order object. */
 
-  string zoneSetId;
-  /**< ZoneSetID of the order object. */
+  // ZoneSetID of the order object.
+  std::string zoneSetId;
 
  public:
+  // All actions related to current edge or node finished?
   bool actionsFinished;
-  /**< All actions related to current edge or node finished? */
 
+  // All actions cancelled in case of order cancellation.
   bool actionCancellationComplete;
-  /**< All actions cancelled in case of order cancellation. */
 
-  deque<vda5050_msgs::Edge> edgeStates;
-  /**< Contains all edges which the AGV has not completed yet. */
+  // Contains all edges which the AGV has not completed yet.
+  std::deque<vda5050_msgs::Edge> edgeStates;
 
-  deque<vda5050_msgs::Node> nodeStates;
-  /**< Contains all nodes which the AGV has not completed yet. */
+  // Contains all nodes which the AGV has not completed yet.
+  std::deque<vda5050_msgs::Node> nodeStates;
 
-  vector<string> actionStates;
-  /**< Vector containing the states of all active actions. */
+  // Vector containing the states of all active actions.
+  std::vector<std::string> actionStates;
 
   /**
    * Constructor for a CurrentOrder object.
@@ -75,7 +75,7 @@ class CurrentOrder {
    * @param orderIdToCompare  OrderID string that should be compared against
    *
    */
-  bool compareOrderId(string orderIdToCompare);
+  bool compareOrderId(std::string orderIdToCompare);
 
   /**
    * Compares the incoming order update ID with the currently running order
@@ -87,7 +87,7 @@ class CurrentOrder {
    *                                order update ID is equal, higher or lower
    *                                compared to the running order update ID.
    */
-  string compareOrderUpdateId(int orderUpdateIdToCompare);
+  std::string compareOrderUpdateId(int orderUpdateIdToCompare);
 
   /**
    * Compares start of new base and end of current base.
@@ -100,14 +100,14 @@ class CurrentOrder {
    * @return                          false if start of new base is not equal
    *                                  to end of current base.
    */
-  bool compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId);
+  bool compareBase(std::string startOfNewBaseNodeId, int startOfNewBaseSequenceId);
 
   /**
    * Get the order ID.
    *
    * @return  Current order ID.
    */
-  string getOrderId();
+  std::string getOrderId();
 
   /**
    * Get the order update ID.
@@ -138,7 +138,7 @@ class CurrentOrder {
    * @return                "NODE" if AGV is positioned on a node and "EDGE"
    *                        if AGV drives along an edge.
    */
-  string findNodeEdge(int currSequenceId);
+  std::string findNodeEdge(int currSequenceId);
 
   /**
    * Get the last released node. The last released node means the last node in
@@ -178,17 +178,17 @@ class CurrentOrder {
  */
 class AGVPosition {
  private:
+  // x position in map coordinates.
   float x;
-  /**< x position in map coordinates. */
 
+  // y position in world coordinates.
   float y;
-  /**< y position in world coordinates. */
 
+  // theta angle in world coordinates.
   float theta;
-  /**< theta angle in world coordinates. */
 
-  string mapId;
-  /**< Map ID of the current map. */
+  // Map ID of the current map.
+  std::string mapId;
 
  public:
   /**
@@ -204,7 +204,7 @@ class AGVPosition {
    * @param new_theta  New value for angle theta.
    * @param new_mapId  New map ID.
    */
-  void updatePosition(float new_x, float new_y, float new_theta, string new_mapId);
+  void updatePosition(float new_x, float new_y, float new_theta, std::string new_mapId);
 
   /**
    * Computes the distance to the next node.
@@ -230,64 +230,62 @@ class AGVPosition {
  */
 class OrderDaemon : public Daemon {
  private:
-  vector<CurrentOrder> currentOrders;
-  /**< Current order. */
+  // Current order.
+  std::vector<CurrentOrder> currentOrders;
 
+  // Currently active order.
   AGVPosition agvPosition;
-  /**< Currently active order. */
 
   /**
    * Declare all ROS subscriber and publisher topics for internal
    * communication.
    */
 
+  // Cancel request from action daemon.
   ros::Subscriber orderCancelSub;
-  /**< Cancel request from action daemon. */
 
+  // Position data from AGV.
   ros::Subscriber agvPositionSub;
-  /**< Position data from AGV. */
 
+  // Response from action daemon if all actions of a order to cancel are successfully cancelled.
   ros::Subscriber allActionsCancelledSub;
-  /**< Response from action daemon if all actions of a order to cancel are
-   *   successfully cancelled.
-   */
 
+  // Ordinary order actions from order_daemon to action_daemon.
   ros::Publisher orderActionPub;
-  /**< Ordinary order actions from order_daemon to action_daemon. */
 
+  // Response to cancel request.
   ros::Publisher orderCancelPub;
-  /**< Response to cancel request. */
 
+  // Triggers actions when AGV arrives at edge or node.
   ros::Publisher orderTriggerPub;
-  /**< Triggers actions when AGV arrives at edge or node. */
 
+  // Node state transfer topic (to state daemon).
   ros::Publisher nodeStatesPub;
-  /**< Node state transfer topic (to state daemon). */
 
+  // Edge state transfer topic (to state daemon).
   ros::Publisher edgeStatesPub;
-  /**< Edge state transfer topic (to state daemon). */
 
+  // Last node ID; changes when a node is left.
   ros::Publisher lastNodeIdPub;
-  /**< Last node ID; changes when a node is left. */
 
+  // Last node sequence ID; changes when a node is left.
   ros::Publisher lastNodeSequenceIdPub;
-  /**< Last node sequence ID; changes when a node is left. */
 
+  // Order ID; changes when a new order is started.
   ros::Publisher orderIdPub;
-  /**< Order ID; changes when a new order is started. */
 
+  // Order ID; changes when a new order or order update is started.
   ros::Publisher orderUpdateIdPub;
-  /**< Order ID; changes when a new order or order update is started. */
 
  protected:
-  vector<string> ordersToCancel;
-  /**< Stores all order IDs to cancel. */
+  // Stores all order IDs to cancel.
+  std::vector<std::string> ordersToCancel;
 
+  // true if vehicle is driving.
   bool isDriving;
-  /**< true if vehicle is driving. */
 
+  // Current SequenceId of the node/edge being traversed in the order.
   int currSequenceId;
-  /**< true, if the AGV currently moves on an edge. */
 
  public:
   /**
@@ -335,7 +333,7 @@ class OrderDaemon : public Daemon {
    *
    * @param nodeOrEdge is the AGV currently on a node or an edge?
    */
-  void triggerNewActions(string nodeOrEdge);
+  void triggerNewActions(std::string nodeOrEdge);
 
   /**
    * Sends motion commands to the AGV.
@@ -431,7 +429,7 @@ class OrderDaemon : public Daemon {
    * @param orderId        Order ID of the incoming order.
    * @param orderUpdateId  Order updeate ID of the incoming order.
    */
-  void orderUpdateError(string orderId, int orderUpdateId);
+  void orderUpdateError(std::string orderId, int orderUpdateId);
 
   /**
    * Sends an order validation error to the error topic.
@@ -439,7 +437,7 @@ class OrderDaemon : public Daemon {
    * @param orderId        Order ID of the incoming order.
    * @param orderUpdateId  Order update ID of the incoming order.
    */
-  void orderValidationError(string orderId, int orderUpdateId);
+  void orderValidationError(std::string orderId, int orderUpdateId);
 };
 
 #endif

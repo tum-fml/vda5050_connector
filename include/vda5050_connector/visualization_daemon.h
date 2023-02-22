@@ -34,23 +34,20 @@
  */
 class VisDaemon : public Daemon {
  private:
+  // Visualization messages to the fleet controller.
   vda5050_msgs::Visualization visMessage;
-  /**< ROS Message object for repeated use (sending visualization messages
-   *   to the fleet controller. */
 
+  // ROS Publisher for sending out visualization messages.
   ros::Publisher pub;
-  /**< ROS Publisher for sending out visualization messages. */
 
+  // Time interval for sending out visualization messages.
   ros::Duration updateInterval;
-  /**< Time interval for sending out visualization messages. */
 
+  // Timestamp of the last sent message.
   ros::Time lastUpdateTimestamp;
-  /**< Timestamp of the last sent message. */
 
  public:
-  /**
-   * Standard Constructor.
-   */
+  // Standard Constructor.
   VisDaemon();
 
   /**

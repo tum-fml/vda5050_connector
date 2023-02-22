@@ -31,30 +31,30 @@ using namespace std;
  */
 class ActionElement {
  private:
+  // Unique ID to identify the related order.
   string orderId;
-  /**< Unique ID to identify the related order. */
 
+  // Unique ID to identify the action.
   string actionId;
-  /**< Unique ID to identify the action. */
 
+  // Identifies the function of the action.
   string actionType;
-  /**< Identifies the function of the action. */
 
+  // Additional information on the action.
   string actionDescription;
-  /**< Additional information on the action. */
 
+  // Array of action parameters.
   vector<vda5050_msgs::ActionParameter> actionParameters;
-  /**< Array of action parameters. */
 
  public:
+  // State of the action.
   string state;
-  /**< State of the action. */
 
+  // Blocking type of the action, Enum {NONE, SOFT, HARD}.
   string blockingType;
-  /**< Blocking type of the action, Enum {NONE, SOFT, HARD}. */
 
+  // True if the action was sent to the AGV after being triggered.
   bool sentToAgv;
-  /**< true if the action was sent to the AGV after being triggered. */
 
   bool operator==(const ActionElement& s) const { return actionId == s.actionId; }
   bool operator!=(const ActionElement& s) const { return !operator==(s); }
@@ -114,18 +114,17 @@ class ActionElement {
  * Struct to connect actions to cancel with their respective order ID.
  */
 struct orderToCancel {
+  // Order (order ID) which should be deleted.
   string orderIdToCancel;
-  /**< Order (order ID) which should be deleted. */
 
+  // ID of the instant action that contains the cancel action.
   string iActionId;
-  /**< ID of the instant action that contains the cancel action. */
 
+  // List of active actions to cancel.
   vector<weak_ptr<ActionElement>> actionsToCancel;
-  /**< List of active actions to cancel. */
 
+  // Flag to ensure that the "all actions cancelled" message is sent only once.
   bool allActionsCancelledSent;
-  /**< Flag to ensure that the "all actions cancelled" message is sent
-   *   only once. */
 };
 
 /**
@@ -133,53 +132,50 @@ struct orderToCancel {
  */
 class ActionDaemon : public Daemon {
  private:
+  // List of actions to track all active actions.
   vector<shared_ptr<ActionElement>> activeActionsList;
-  /**< List of actions to track all active actions. */
 
+  // List of all orders to cancel and their respective order ID.
   vector<orderToCancel> orderCancellations;
-  /**< List of all orders to cancel and their respective order ID. */
 
   /**
    * Declare all ROS subscriber and publisher topics for internal
    * communication
    */
 
+  // Ordinary order actions from order_daemon to action_daemon.
   ros::Subscriber orderActionSub;
-  /**< Ordinary order actions from order_daemon to action_daemon. */
 
+  // Order daemon triggers actions.
   ros::Subscriber orderTriggerSub;
-  /**< Order daemon triggers actions. */
 
+  // Order daemon sends response to order cancel request.
   ros::Subscriber orderCancelSub;
-  /**< Order daemon sends response to order cancel request. */
 
+  // States of actions from action_daemon to state_daemon.
   ros::Publisher actionStatesPub;
-  /**< States of actions from action_daemon to state_daemon. */
 
+  // Cancelled actions from action_daemon to order_daemon.
   ros::Publisher orderCancelPub;
-  /**< Cancelled actions from action_daemon to order_daemon. */
 
+  // All actions of one order to cancel cancelled from action_daemon to order_daemon.
   ros::Publisher allActionsCancelledPub;
-  /**< All actions of one order to cancel cancelled from action_daemon to
-   *   order_daemon. */
 
+  // True, if the vehicle is driving.
   bool isDriving;
-  /**< True, if the vehicle is driving. */
 
  protected:
+  // Queue for keeping track of order actions.
   deque<vda5050_msgs::Action> orderActionQueue;
-  /**< Queue for keeping track of order actions. */
 
+  // Queue for keeping track of instant actions.
   deque<vda5050_msgs::Action> instantActionQueue;
-  /**< Queue for keeping track of instant actions. */
 
+  // List of all orders cancelled by order daemon.
   vector<string> ordersSucCancelled;
-  /**< List of all orders cancelled by order daemon. */
 
  public:
-  /**
-   * Constructor for the action daemon.
-   */
+  // Constructor for the action daemon.
   ActionDaemon();
 
   /**
@@ -276,7 +272,7 @@ class ActionDaemon : public Daemon {
    * @return  true if vehicle is not driving.
    * @return  false if vehicle is driving.
    */
-  bool checkDriving();
+  bool CheckDriving();
 
   /**
    * Get all running actions.
@@ -308,7 +304,7 @@ class ActionDaemon : public Daemon {
    * @param actionId  ID of the action to find within the active Actions.
    * @return          Shared pointer to found action element.
    */
-  shared_ptr<ActionElement> findAction(string actionId);
+  shared_ptr<ActionElement> FindAction(string actionId);
 
   /**
    * Processes actions based on their type. The UpdateActions() method

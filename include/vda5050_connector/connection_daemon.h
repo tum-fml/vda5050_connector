@@ -19,7 +19,6 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "daemon.h"
 #include "std_msgs/String.h"
-
 #include "vda5050_msgs/Connection.h"
 
 /**
@@ -27,22 +26,20 @@
  */
 class ConnectionDaemon : public Daemon {
  private:
+  // Message containing connection information.
   vda5050_msgs::Connection connectionMessage;
-  /**< Message containing connection information. */
 
+  // Publisher for connection messages.
   ros::Publisher connectionPublisher;
-  /**< Publisher for connection messages. */
 
+  // Subscriber for connection messages.
   ros::Subscriber connectionSubscriber;
-  /**< Subscriber for connection messages. */
 
+  // Update interval to use for sending information about the connection status.
   ros::Duration updateInterval;
-  /**< Update interval to use for sending information about the connection
-   *   status.
-   */
 
+  // Last time the connection status was updated.
   ros::Time lastUpdateTimestamp;
-  /**< Last time the connection status was updated. */
 
  public:
   /**
