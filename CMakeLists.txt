@@ -106,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES vda5050_connector
+  LIBRARIES vda5050_connector utils
   CATKIN_DEPENDS roscpp rospy std_msgs
   # DEPENDS system_lib
 )
@@ -136,11 +136,11 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/vda5050_connector_node.cpp)
-add_executable(action_daemon src/action_daemon.cpp src/daemon.cpp)
-add_executable(state_daemon src/state_daemon.cpp src/daemon.cpp)
-add_executable(connection_daemon src/connection_daemon.cpp src/daemon.cpp)
-add_executable(visualization_daemon src/visualization_daemon.cpp src/daemon.cpp)
-add_executable(order_daemon src/order_daemon.cpp src/daemon.cpp)
+add_executable(action_daemon src/vda5050_connector/action_daemon.cpp src/vda5050_connector/daemon.cpp src/utils/utils.cpp)
+add_executable(state_daemon src/vda5050_connector/state_daemon.cpp src/vda5050_connector/daemon.cpp src/utils/utils.cpp)
+add_executable(connection_daemon src/vda5050_connector/connection_daemon.cpp src/vda5050_connector/daemon.cpp src/utils/utils.cpp)
+add_executable(visualization_daemon src/vda5050_connector/visualization_daemon.cpp src/vda5050_connector/daemon.cpp src/utils/utils.cpp)
+add_executable(order_daemon src/vda5050_connector/order_daemon.cpp src/vda5050_connector/daemon.cpp src/utils/utils.cpp)
 add_executable(vis_mockup src/mock_ups/vis_mockup.cpp)
 add_executable(state_mockup src/mock_ups/state_mockup.cpp)
 add_executable(order_mockup src/mock_ups/order_mockup/order_mockup.cpp)
@@ -195,7 +195,7 @@ target_link_libraries(order_msg_mockup ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
- catkin_add_gtest(${PROJECT_NAME}_daemon_test test/daemon.cpp src/daemon.cpp)
+ catkin_add_gtest(${PROJECT_NAME}_daemon_test test/daemon.cpp src/vda5050_connector/daemon.cpp src/utils/utils.cpp)
  if(TARGET ${PROJECT_NAME}_daemon_test)
    target_link_libraries(${PROJECT_NAME}_daemon_test ${catkin_LIBRARIES})
  endif()
