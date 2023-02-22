@@ -17,11 +17,11 @@
 #       !!! e. g. defining a topic for safetystate and the two childs is not possible
 
 AGV_Data:
-    interfaceName: uagv
-    majorVersion: v2
-    version: 1.1.03
-    manufacturer: "template_1"
-    serialNumber: "AGV721"
+    interfaceName: "uagv"
+    majorVersion: "v2"
+    version: "Test-Version1"
+    manufacturer: "Test-Manufacturer"
+    serialNumber: "Test-AGV"
 
 state_daemon:
     topics_publish:
@@ -41,19 +41,17 @@ state_daemon:
 # #            y: "/TBD14"                         #ROS msg -> nav_msgs/Odometry Message.pose.pose.position.y, float64
 # #            theta: "/TBD15"
         mapId: "/mapId"                     #VDA5050 specific, string
-#             mapDescription: "/mapDescription"            #VDA5050 specific, string
+        mapDescription: "/mapDescription"            #VDA5050 specific, string
         velocity: "/rosVelocity"                            #ROS msg -> nav_msgs/Odometry Message.twist, covered by ROS msg
 #            vx: "/TBD19"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.x, float64
 #            vy: "/TBD20"                        #ROS msg -> nav_msgs/Odometry Message.twist.twist.linear.y, float64
 #            omega: "/TBD21"
         loads: "/loads"                         #VDA5050 specific, array
-            # ADD loads
         driving: "/driving"                       #VDA5050 specific, boolean
         paused: "/paused"                        #VDA5050 specific, boolean
         newBaseRequest: "/newBaseRequest"                #VDA5050 specific, boolean
         distanceSinceLastNode: "/distanceSinceLastNode"         #VDA5050 specific, float64
         actionStates: "/actionStates"                  #VDA5050 specific, array
-            # ADD actionStates
         batteryState:                           #VDA5050 specific + partially covered by ROS common msg, JSON
             batteryCharge: "/batteryCharge"             #ROS msg -> sensor_msgs/Batterystate Message.percentage
             batteryVoltage: "/batteryVoltage"            #ROS msg -> sensor_msgs/Batterystate Message.voltage
@@ -62,9 +60,7 @@ state_daemon:
             reach: "/reach"                     #VDA5050 specific, uint32
         operatingMode: "/operatingMode"                #VDA5050 specific, string
         errors: "/errors"                    #VDA5050 specific, array
-            # ADD error
         information: "/information"                   #VDA5050 specific, array
-            # ADD info
         safetyState:                            #VDA5050 specific, JSON
             eStop: "/eStop"                    #VDA5050 specific, String
             fieldViolation: "/fieldViolation"           #VDA5050 specific, bool
