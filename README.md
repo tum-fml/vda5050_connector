@@ -53,16 +53,8 @@ git clone https://github.com/idealworks/VDA-5050-Connector.git
 Clone the `vda5050_msgs` repository:
 
 ```bash
-git clone https://github.com/ipa320/vda5050_msgs.git
+git clone https://github.com/frothm/vda5050_msgs.git
 ```
-
->**NOTE**\
-Although the `vda5050_msgs` repository provides most of the required message types, some additional message types must be defined in order to provide the full functionality of VDA5050.\
-Since we have not send a merge request to the vda5050_msgs repository yet, do the following after cloning the vda5050_msgs repository:
->
->* copy all .msg files in /msg of the `VDA-5050-Connector` repository into the /msg folder of the `vda5050_msgs` repository
->
->* replace the CmakeLists.txt in the `vda5050_msgs` repository with the one within the /msg/CmakeLists of the `VDA-5050-Connector` repository
 
 After cloning all required repositories, build your catkin workspace.
 
@@ -216,7 +208,7 @@ As soon as the ROS MQTT bridge is connected to the server, the VDA5050 connector
 Open a new terminal and type:
 
 ```bash
-roslaunch vda_5050_connector vda5050_connector.launch
+roslaunch vda5050_connector vda5050_connector.launch
 ```
 
 If the VDA5050 connector was started properly, the output should be similar to:

@@ -18,11 +18,12 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
 #include <std_msgs/UInt32.h>
+#include <iostream>
 #include <string>
+#include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "daemon.h"
 #include "std_msgs/String.h"
-
 #include "vda5050_msgs/AGVPosition.h"
 #include "vda5050_msgs/ActionStates.h"
 #include "vda5050_msgs/EdgeState.h"
@@ -45,27 +46,27 @@
  */
 class StateDaemon : public Daemon {
  private:
+  // State message sent to the fleet controller.
   vda5050_msgs::State stateMessage;
-  /**< TODO: What is this used for? */
 
+  // Publisher object for state messages to the fleet controller.
   ros::Publisher pub;
-  /**< Publisher object for state messages to the fleet controller. */
 
   /* Declare all ROS subscriber and publisher topics for internal
    * communication.
    */
 
+  // States of actions from action_daemon to state_daemon.
   ros::Subscriber actionStatesSub;
-  /**< states of actions from action_daemon to state_daemon. */
 
+  // Time interval for emitting state messages.
   ros::Duration updateInterval;
-  /**< Time interval for emitting state messages. */
 
+  // Timestamp of the last emitted state message.
   ros::Time lastUpdateTimestamp;
-  /**< Timestamp of the last emitted state message. */
 
+  // Flag for initiating the emission of a new state message.
   bool newPublishTrigger;
-  /**< Flag for initiating the emission of a new state message. */
 
  public:
   /**

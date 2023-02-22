@@ -8,8 +8,8 @@
  */
 
 #include "vda5050_connector/visualization_daemon.h"
-#include <iostream>
-#include <vector>
+
+using namespace connector_utils;
 
 /*
  * TODO: publish to topicPub, if requirements are met
@@ -18,6 +18,12 @@
 VisDaemon::VisDaemon() : Daemon(&(this->nh), "visualization_daemon") {
   LinkPublishTopics(&(this->nh));
   LinkSubscriptionTopics(&(this->nh));
+
+  // TODO : Read header info from config.
+  visMessage.version = "";
+  visMessage.manufacturer = "";
+  visMessage.serialNumber = "";
+
   updateInterval = ros::Duration(1.0);
   lastUpdateTimestamp = ros::Time::now();
 }
@@ -28,11 +34,8 @@ bool VisDaemon::CheckPassedTime() {
 }
 
 void VisDaemon::PublishVisualization() {
-  visMessage.headerId = GetHeader().headerId;
-  visMessage.timestamp = GetHeader().timestamp;
-  visMessage.version = GetHeader().version;
-  visMessage.manufacturer = GetHeader().manufacturer;
-  visMessage.serialNumber = GetHeader().serialNumber;
+  visMessage.headerId++;
+  visMessage.timestamp = GetISOCurrentTimestamp();
   messagePublisher["/viz_to_mc"].publish(visMessage);
   lastUpdateTimestamp = ros::Time::now();
 }
@@ -55,29 +58,21 @@ void VisDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   std::map<std::string, std::string> topicList = GetTopicSubscriberList();
   for (const auto& elem : topicList) {
     if (CheckTopic(elem.first, "agvPosition"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionCallback, this);
     else if (CheckTopic(elem.first, "positionInitialized"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionInitializedCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionInitializedCallback, this);
     else if (CheckTopic(elem.first, "localizationScore"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionLocalizationScoreCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionLocalizationScoreCallback, this);
     else if (CheckTopic(elem.first, "deviationRange"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionDeviationRangeCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionDeviationRangeCallback, this);
     else if (CheckTopic(elem.first, "rosPose"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::ROSAGVPositionCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::ROSAGVPositionCallback, this);
     else if (CheckTopic(elem.first, "mapId"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionMapIdCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionMapIdCallback, this);
     else if (CheckTopic(elem.first, "mapDescription"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionMapDescriptionCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::AGVPositionMapDescriptionCallback, this);
     else if (CheckTopic(elem.first, "velocity"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &VisDaemon::ROSVelocityCallback, this);
+      nh->subscribe(elem.second, 1000, &VisDaemon::ROSVelocityCallback, this);
   }
 }
 
@@ -101,7 +96,7 @@ void VisDaemon::ROSAGVPositionCallback(const nav_msgs::Odometry::ConstPtr& msg) 
   visMessage.agvPosition.x = msg->pose.pose.position.x;
   visMessage.agvPosition.y = msg->pose.pose.position.y;
   theta = CalculateAgvOrientation(msg);
-  if (CheckRange(-M_PI, M_PI, theta, "theta")) {
+  if (CheckRange(-M_PI, M_PI, theta)) {
     visMessage.agvPosition.theta = theta;
   }
 }
@@ -111,9 +106,7 @@ void VisDaemon::ROSVelocityCallback(const nav_msgs::Odometry::ConstPtr& msg) {
   double omega;
   visMessage.velocity.vx = msg->twist.twist.linear.x;
   visMessage.velocity.vy = msg->twist.twist.linear.y;
-  if (CheckRange(-M_PI, M_PI, omega, "omega")) {
-    visMessage.velocity.omega = msg->twist.twist.angular.z;
-  }
+  visMessage.velocity.omega = msg->twist.twist.angular.z;
 }
 
 void VisDaemon::AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
@@ -130,7 +123,7 @@ void VisDaemon::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& m
   visMessage.agvPosition.positionInitialized = msg->data;
 }
 void VisDaemon::AGVPositionLocalizationScoreCallback(const std_msgs::Float64::ConstPtr& msg) {
-  if (CheckRange(0.0, 1.0, msg->data, "AGV Position Localization Score")) {
+  if (CheckRange(0.0, 1.0, msg->data)) {
     visMessage.agvPosition.localizationScore = msg->data;
   }
 }

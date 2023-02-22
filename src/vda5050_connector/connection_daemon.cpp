@@ -8,8 +8,8 @@
  */
 
 #include "vda5050_connector/connection_daemon.h"
-#include <iostream>
-#include <vector>
+
+using namespace connector_utils;
 
 /*
  * TODO: update documentation
@@ -18,6 +18,11 @@
 
 ConnectionDaemon::ConnectionDaemon(float heartbeat) : Daemon(&(this->nh), "connection_daemon") {
   LinkSubscriptionTopics(&(this->nh));
+
+  // Get version,
+  connectionMessage.version = "";
+  connectionMessage.manufacturer = "";
+  connectionMessage.serialNumber = "";
 
   connectionPublisher = this->nh.advertise<vda5050_msgs::Connection>(createPublishTopic(), 1000);
   updateInterval = ros::Duration(heartbeat);
@@ -28,14 +33,13 @@ void ConnectionDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   std::map<std::string, std::string> topicList = GetTopicSubscriberList();
   for (const auto& elem : topicList) {
     if (CheckTopic(elem.first, "connectionState"))
-      subscribers[elem.first] =
-          nh->subscribe(elem.second, 1000, &ConnectionDaemon::ROSConnectionStateCallback, this);
+      nh->subscribe(elem.second, 1000, &ConnectionDaemon::ROSConnectionStateCallback, this);
   }
 }
 
 std::string ConnectionDaemon::createPublishTopic() {
   std::stringstream ss;
-  ss << getTopicStructurePrefix() << "/connection";
+  ss << "/connection";
   return (ss.str());
 }
 
@@ -45,12 +49,8 @@ bool ConnectionDaemon::CheckPassedTime() {
 }
 
 void ConnectionDaemon::PublishConnection() {
-  vda5050_msgs::Header header = GetHeader();
-  connectionMessage.headerId = header.headerId;
-  connectionMessage.timestamp = header.timestamp;
-  connectionMessage.version = header.version;
-  connectionMessage.manufacturer = header.manufacturer;
-  connectionMessage.serialNumber = header.serialNumber;
+  connectionMessage.headerId++;
+  connectionMessage.timestamp = GetISOCurrentTimestamp();
   connectionPublisher.publish(connectionMessage);
   lastUpdateTimestamp = ros::Time::now();
 }
