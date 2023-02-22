@@ -29,48 +29,25 @@
  */
 class Daemon {
  private:
-  vda5050_msgs::Header messageHeader;
-  /**< TODO: is this variable even used? */
-
+  // All topics to publish on. Map from topic keys to user-defined topic names.
   std::map<std::string, std::string> topicPublisherList;
-  /**< All topics to publish on. Map from topic keys to user-defined
-   *   topic names.
-   */
 
+  // All topics to subscribe to. Map from topic keys to user-defined topic names.
   std::map<std::string, std::string> topicSubscriberList;
-  /**< All topics to subscribe to. Map from topic keys to user-defined
-   *   topic names.
-   */
-
-  std::string mqttTopicStructurePrefix;
-  /**< Prefix that should be placed at the beginning of the MQTT topics.
-   */
-
-  bool testMode;
-  /**< Toggle for test/debugging mode. */
 
  protected:
+  // All publishers the daemon uses. Map from topic keys to ROS Publisher objects.
   std::map<std::string, ros::Publisher> messagePublisher;
-  /**< All publishers the daemon uses. Map from topic keys to ROS
-   *   Publisher objects.
-   */
 
-  std::map<std::string, ros::Subscriber> subscribers;
-  /**< All subscribers the daemon uses. Map from topic keys to ROS
-   *   Subscriber objects.
-   */
-
+  // ROS Publisher for error messages.
   ros::Publisher errorPublisher;
-  /**< ROS Publisher for error messages. */
 
+  // ROS node handle, needed to call ROS functions.
   ros::NodeHandle nh;
-  /**< ROS node handle, needed to call ROS functions. */
 
  public:
-  /**
-   * Default constructor for daemon objects. TODO: Do we need this?
-   */
-  Daemon();
+  // Delete default constructor for daemon objects.
+  Daemon() = delete;
 
   /**
    * Constructor for daemon objects.
@@ -79,18 +56,6 @@ class Daemon {
    * @param daemonName  Name of the daemon.
    */
   Daemon(ros::NodeHandle* nh, std::string daemonName);
-
-  /**
-   * Fetches the header message and publishes the state message. Updates
-   * timestamp since last publishing.
-   */
-  void PublishState();
-
-  /**
-   * Checks all the logic within the state daemon. For example, it checks
-   * if 30 seconds have passed without update.
-   */
-  void UpdateState();
 
   /**
    * Calculates the passed time between last update interval and now.
@@ -134,51 +99,12 @@ class Daemon {
   std::string GetParameter(std::string param);
 
   /**
-   * Create a timestamp string of the current instant.
+   * @brief Extract a topic string from a fully-qualified topic name.
    *
-   * @return	Formatted timestamp.
-   */
-  std::string CreateTimestamp();
-
-  /**
-   * Create the prefix of the topic structure.
-   */
-  void createTopicStructurePrefix();
-
-  /**
-   * Get the prefix of the topic structure.
-   *
-   * @return	Topic structure prefix.
-   */
-  std::string getTopicStructurePrefix();
-
-  /**
-   * Checks if the second topic is a child topic of the first topic.
-   *
-   * @param str1  Name of the first topic.
-   * @param str2  Name of the topic that might be a child topic of the other
-   *              topic.
-   */
-  bool CheckTopic(std::string str1, std::string str2);
-
-  /**
-   * Extract a topic string from a fully-qualified topic name.
+   * @param hierarchical_topic
+   * @return std::string
    */
   std::string GetTopic(std::string hierarchical_topic);
-
-  /**
-   * Checks if the second string is contained in the first string.
-   *
-   * @param str1  Some string.
-   * @param str2  Second string that might be a substring of the other string.
-   */
-  bool CompareStrings(std::string str1, std::string str2);
-
-  /**
-   * Initialize the message header. Message objects are used multiple times,
-   * so this only needs to be done once at startup.
-   */
-  void InitHeaderInfo();
 
   /**
    * Link the error topics.
@@ -188,41 +114,18 @@ class Daemon {
   void LinkErrorTopics(ros::NodeHandle* nh);
 
   /**
-   * Update the message header for the next publish. This includes updating
-   * the timestamp of the message.
-   */
-  void UpdateHeader();
-
-  /**
-   * Read in the user-specified topic names. The user can specify names for
+   * @brief Read in the user-specified topic names. The user can specify names for
    * the topics that contain the needed information. For mapping the contents
    * to the topic names, this method scans the parameter server.
    *
    * @param nh              Pointer to the ROS node handle.
    * @param paramTopicName  Name of the param family to scan through.
    *
-   * @return                Map from topic descriptor to user-defined topic
-   *                        name.
+   * @return  Map from topic descriptor to user-defined topic name.
+   *
    */
   std::map<std::string, std::string> ReadTopicParams(
       ros::NodeHandle* nh, std::string paramTopicName);
-
-  /**
-   * Get the header of a ROS message. TODO which message is processed?
-   *
-   * @return  Header of the message.
-   */
-  vda5050_msgs::Header GetHeader();
-
-  /**
-   * Check if a value is in given boundaries. If not, a warning is raised.
-   *
-   * @param lowerRange  Lower limit of the variable.
-   * @param upperRange  Upper limit of the variable.
-   * @param value       Value to be checked.
-   * @param msg_name    Name of the message type.
-   */
-  bool CheckRange(double lowerRange, double upperRange, double value, std::string msg_name);
 };
 
 #endif
