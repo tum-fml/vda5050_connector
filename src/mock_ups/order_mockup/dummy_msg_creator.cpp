@@ -94,7 +94,7 @@ void OrderMsg::create_edges(int node_num, int node_released_num) {
     subedge.rotationAllowed = false;
     subedge.maxRotationSpeed = 0.0;
     subedge.trajectory.degree = 0.0;
-    subedge.trajectory.knotVector = std::vector<_Float64>{};
+    subedge.trajectory.knotVector = std::vector<double>{};
     subedge.trajectory.controlPoints = std::vector<vda5050_msgs::ControlPoint>{};
     subedge.length = 0.0;
     subedge.actions = std::vector<vda5050_msgs::Action>{};
