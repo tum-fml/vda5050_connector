@@ -67,12 +67,6 @@ void StateDaemon::LinkPublishTopics(ros::NodeHandle* nh) {
 void StateDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   std::map<std::string, std::string> topicList = GetTopicSubscriberList();
 
-  for(const auto & elem : topicList){
-
-  std::cout << elem.first << " -- " << elem.second << std::endl;
-  }
-
-  exit(1);
   for (const auto& elem : topicList) {
     // TODO make shorter via switch/case or a map from string to callback function
     if (CheckTopic(elem.first, "orderId"))
