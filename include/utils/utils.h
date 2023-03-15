@@ -22,21 +22,13 @@ namespace connector_utils {
 bool CheckRange(double lowerRange, double upperRange, double value);
 
 /**
- * Checks if the second string is contained in the first string.
- *
- * @param str1  Some string.
- * @param str2  Second string that might be a substring of the other string.
- */
-bool CompareStrings(std::string str1, std::string str2);
-
-/**
  * Checks if the second topic is a child topic of the first topic.
  *
  * @param str1  Name of the first topic.
  * @param str2  Name of the topic that might be a child topic of the other
  *              topic.
  */
-bool CheckTopic(std::string str1, std::string str2);
+bool CheckParamIncludes(std::string str1, std::string str2);
 
 /**
  * Create a timestamp string of the current instant.

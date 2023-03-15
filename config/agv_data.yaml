@@ -1,0 +1,5 @@
+interfaceName: "uagv"
+majorVersion: "v2"
+version: "Test-Version"
+manufacturer: "Test-Manufacturer"
+serialNumber: "Test-AGV"

@@ -7,7 +7,7 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#include "vda5050_connector/daemon.h"
+#include "vda5050_connector/vda5050node.h"
 
 using namespace connector_utils;
 
@@ -24,23 +24,22 @@ using namespace connector_utils;
  * - every 30 seconds if nothing changed
  */
 
-Daemon::Daemon(ros::NodeHandle* nh, std::string daemonName) {
-  LinkErrorTopics(nh);
-  topicPublisherList = ReadTopicParams(nh, daemonName + "/topics_publish");
-  topicSubscriberList = ReadTopicParams(nh, daemonName + "/topics_subscribe");
+VDA5050Node::VDA5050Node(ros::NodeHandle* nh, std::string nodeName) {
+  topicPublisherList = ReadTopicParams(nh, nodeName + "/topics_publish");
+  topicSubscriberList = ReadTopicParams(nh, nodeName + "/topics_subscribe");
 }
 
-std::map<std::string, std::string> Daemon::GetTopicPublisherList() { return topicPublisherList; }
+std::map<std::string, std::string> VDA5050Node::GetTopicPublisherList() { return topicPublisherList; }
 
-std::map<std::string, std::string> Daemon::GetTopicSubscriberList() { return topicSubscriberList; }
+std::map<std::string, std::string> VDA5050Node::GetTopicSubscriberList() { return topicSubscriberList; }
 
-std::vector<std::string> Daemon::GetMsgList(std::map<std::string, std::string> topicList) {
+std::vector<std::string> VDA5050Node::GetMsgList(std::map<std::string, std::string> topicList) {
   std::vector<std::string> msgList;
   for (const auto& elem : topicList) msgList.push_back(elem.first);
   return msgList;
 }
 
-std::string Daemon::GetParameter(std::string paramName) {
+std::string VDA5050Node::GetParameter(std::string paramName) {
   std::string paramValue = "";
   if (ros::param::has(paramName)) {
     ros::param::get(paramName, paramValue);
@@ -52,35 +51,24 @@ std::string Daemon::GetParameter(std::string paramName) {
   return paramValue;
 }
 
-std::string Daemon::GetTopic(std::string hierarchical_topic) {
+std::string VDA5050Node::GetTopic(std::string hierarchical_topic) {
   size_t last_slash = hierarchical_topic.find_last_of("/");
   return hierarchical_topic.substr(last_slash + 1);
 }
 
-std::map<std::string, std::string> Daemon::ReadTopicParams(
+std::map<std::string, std::string> VDA5050Node::ReadTopicParams(
     ros::NodeHandle* nh, std::string paramName) {
   std::map<std::string, std::string> paramResults;
   std::vector<std::string> keys;
   nh->getParamNames(keys);
 
   for (std::size_t i = 0; i < keys.size(); ++i) {
-    if (CompareStrings(keys[i], paramName)) {
+    if (keys[i].find(paramName)!=std::string::npos) {
       std::string returnValue;
       if (ros::param::get(keys[i], returnValue)) {
         paramResults[keys[i]] = returnValue;
       }
     }
   }
-  ROS_INFO_STREAM("For " << paramName << " use :");
-  for (const auto& elem : paramResults) {
-    ROS_INFO_STREAM("    - " << elem.first << " : " << elem.second);
-  }
   return (paramResults);
-}
-
-void Daemon::LinkErrorTopics(ros::NodeHandle* nh) {
-  std::string errorTopic;
-  ros::param::param<std::string>("topic_error", errorTopic, DEFAULT_ERROR_TOPIC);
-  errorPublisher = nh->advertise<std_msgs::String>(errorTopic, 1000);
-  ROS_INFO_STREAM("Using " << errorTopic << " as error topic");
 }

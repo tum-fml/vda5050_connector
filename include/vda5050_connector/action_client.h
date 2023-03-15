@@ -7,8 +7,8 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#ifndef ACTION_DAEMON_H
-#define ACTION_DAEMON_H
+#ifndef ACTION_CLIENT_H
+#define ACTION_CLIENT_H
 #include <ros/ros.h>
 #include <deque>
 #include <iostream>
@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "daemon.h"
+#include "vda5050node.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Action.h"
@@ -130,7 +130,7 @@ struct orderToCancel {
 /**
  * Daemon for processing of VDA 5050 action messages.
  */
-class ActionDaemon : public Daemon {
+class ActionClient : public VDA5050Node {
  private:
   // List of actions to track all active actions.
   vector<shared_ptr<ActionElement>> activeActionsList;
@@ -176,7 +176,7 @@ class ActionDaemon : public Daemon {
 
  public:
   // Constructor for the action daemon.
-  ActionDaemon();
+  ActionClient();
 
   /**
    * Links all external publishing topics.
