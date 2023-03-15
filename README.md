@@ -15,7 +15,8 @@ The VDA5050 connector only covers ROS communication, which means that all messag
 * This project was tested under Ubuntu 18.04 LTS + ROS Melodic (Python 2.7) and Ubuntu 20.04 LTS + ROS Noetic (Python 3.7).
 * ROS must be installed and a workspace (e.g., `catkin_ws`) must be initialized.
 * The python module Inject is required to run this project. Install by running the following command :
-```
+
+``` bash
 pip install Inject==3.5.4
 ```
 
@@ -26,6 +27,12 @@ Of course, any other solution can be used as well. Names of outgoing and incomin
 
 ## Installation of the ROS MQTT bridge
 
+Go to your catkin workspace and cd into the src directory:
+
+```bash
+cd ./src
+```
+
 Clone the `mqtt_bridge` repository and install the additional requirements to run the bridge (see <https://github.com/groove-x/mqtt_bridge#prerequisites>).
 
 ```console
@@ -33,24 +40,18 @@ git clone https://github.com/groove-x/mqtt_bridge.git
 ```
 
 >**NOTE**\
-Be careful to choose the correct branch. If you plan to use ROS melodic, checkout the branch called "python2.7".\
+Be careful to choose the correct branch. If you plan to use ROS melodic, checkout the branch "python2.7".\
 >The master branch will only work with ROS noetic.
 
 ## Installation of the VDA5050 connector
 
-Go to your catkin workspace and cd into the src folder:
-
-```bash
-cd ./src
-```
-
-Clone the `VDA-5050-Connector` repository:
+In the same src folder where you cloned the MQTT Bridge, clone the `VDA-5050-Connector` repository:
 
 ```bash
 git clone https://github.com/idealworks/VDA-5050-Connector.git
 ```
 
-Clone the `vda5050_msgs` repository:
+Then clone the `vda5050_msgs` repository:
 
 ```bash
 git clone https://github.com/frothm/vda5050_msgs.git
@@ -60,11 +61,14 @@ After cloning all required repositories, build your catkin workspace.
 
 ## Customization of the configuration
 
-There are three distinct parts of the configuration that must be customized to fulfill your connection requirements.
+There are distinct parts of the configuration that must be customized to fulfill your connection requirements. Each configuration file is named after the node that it affects. Currently, there are 6 configuration files for 5 nodes, one configuration file is common to all of them. The nodes being :
 
-1. ROS MQTT bridge server connection ("mqtt_bridge_tls.yaml")
-2. ROS MQTT bridge topic configuration ("mqtt_bridge_topics.yaml")
-3. VDA5050 connector topic configuration ("vda5050_connector_topics.yaml")
+1. ROS MQTT bridge.
+2. State Aggregator.
+3. Connection Publisher.
+4. Order Manager.
+5. Action Client.
+6. AGV Data.
 
 Each of them is represented by a single configuration file in the /config folder.
 In the following sections we will go through them step by step.
@@ -73,142 +77,96 @@ In the following sections we will go through them step by step.
 Since we wanted to use the ROS MQTT bridge out of the box with no further customization,\
 all required parameters configuration files can be found in the /config folder in the `VDA-5050-Connector` repository (and not in the `mqtt_bridge` repository).
 
-### ROS MQTT bridge server connection
+### ROS MQTT Bridge Configuration
 
-To make the ROS MQTT bridge work with TLS, complete the "mqtt_bridge_tls.yaml" configuration file in the /config folder.
+To make the ROS MQTT bridge work with TLS, complete the "mqtt_bridge.yaml" configuration file in the /config folder.
 
 <details>
 
-<summary>TLS configuration</summary>
+<summary>MQTT Bridge configuration</summary>
+
 ```text
-tls:
-  ca_certs: <path_to_your_root_certificate>
-  certfile: <path_to_your_key_certificate>
-  keyfile: <your_path_to_private_key"
-  tls_version: 5
-  tls_insecure: false
-connection:
-  host: <your_hostname>
-  port: 8883
-  keepalive: 60
-client:
-  protocol: 4
-  client_id: <your_client_id>
+mqtt:
+  # TLS parameters.
+  tls:
+    ca_certs: <path_to_your_root_certificate>
+    certfile: <path_to_your_key_certificate>
+    keyfile: <your_path_to_private_key>
+    tls_version: 5
+    tls_insecure: false
+    
+  # Connection parameters.
+  connection:
+    host: <your_hostname>
+    port: 8883
+    keepalive: 60
+
+  # MQTT parameters.
+  client:
+    protocol: 4
+    client_id: <your_client_id>
+
+bridge:
+  # Bridge from ROS to MQTT.
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:State
+    topic_from: /state
+    topic_to: qa/<your_client_id>/state
+    
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:Visualization
+    topic_from: /visualization
+    topic_to: qa/<your_client_id>/visualization
+
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:Connection
+    topic_from: /connection
+    topic_to: qa/<your_client_id>/connection
+    
+  # Bridge from MQTT to ROS.
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:Action
+    topic_from: qa/<your_client_id>/instantActions
+    topic_to: /instantActions
+    
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:Order
+    topic_from: qa/<your_client_id>/order
+    topic_to: /order_from_mc
 ```
 
 </details>
-
 Specifically, add the paths to the required certificates and the private key and enter your host address as well as your client id. Do not forget to use the correct port in your network.
 
-### ROS MQTT bridge topic configuration
-
-Use the file "mqtt_bridge_topics.yaml" to adapt topic names and message types according to your needs.\
-Make sure to use ROS and MQTT topic names at the correct position in the configuration.
-
-<details>
-
-<summary>Topic example</summary>
-
-```text
-##### bridge from ROS to MQTT#####
-topic_from: <ROS topic>
-topic to: <MQTT topic>
-
-##### bridge from MQTT to ROS #####
-topic_from: <MQTT topic>
-topic to: <ROS topic>
-
-```
-
-</details>
-
-```msg_type``` always describes the ROS message type.
-
-After configuring the ROS MQTT bridge, we can go on with the VDA5050-Connector.
+Adapt topic names and message types according to your needs.
 
 ### VDA5050 connector topic configuration
 
 <img src="https://user-images.githubusercontent.com/44091826/190145851-21905821-ce19-40af-8b82-f1853193f7fe.png" width="500">
 
-The VDA5050 connector consists of five different daemons each represented by a single ROS node.
+The VDA5050 connector consists of 4 different nodes each represented by a single ROS node.
 In order to allow easy access to the topics, you can change all subscribing (from master control and AGV) and publishing (to master control and AGV) topic names.
 
-To do so, open the "vda5050_connector_topics.yaml" in the /config folder and change the topic names to fit your requirements.
+To do so, open the corresponding config file of the node in the /config folder and change the topic names to fit your requirements.
 
 >**NOTE**\
 >Don't change the key. Only change the value.\
 >Example:
+>
 >```yaml
 >orderId: "/orderID"
 >```
+>
 >```orderId``` is used for internal reference and must not be altered. To change the topic's name, change the value on the right ```"/orderId"```.
+
+Check the [Interface Section](#interface-documentation) section for more information about each node.
 
 ## Run the connector
 
-### Launch the ROS MQTT bridge
-
-Before starting the VDA5050 connector, the ROS MQTT bridge must be up and running.
-To this end, open a terminal and launch the ROS MQTT bridge:
+The VDA5050 Connector launches the MQTT Bridge and the connector nodes together. To start the connector, run the following command :
 
 ```bash
-roslaunch vda5050_connector ros_mqtt_bridge.launch
-```
-
-The output should be similar to the following:
-
-<details>
-
-<summary>ROS MQTT bridge output</summary>
-
-```console
-
-started roslaunch server http://<your_server>
-
-SUMMARY
-========
-
-PARAMETERS
- * /mqtt_bridge/bridge: [{'topic_from': '...
- * /mqtt_bridge/mqtt/client/client_id: <your_ID>
- * /mqtt_bridge/mqtt/client/protocol: 4
- * /mqtt_bridge/mqtt/connection/host: <your_hostname>
- * /mqtt_bridge/mqtt/connection/keepalive: 60
- * /mqtt_bridge/mqtt/connection/port: 8883
- * /mqtt_bridge/mqtt/tls/ca_certs: <your_root_path>
- * /mqtt_bridge/mqtt/tls/certfile: <your_cert_path>
- * /mqtt_bridge/mqtt/tls/keyfile: <your_private_keyfile_path>
- * /mqtt_bridge/mqtt/tls/tls_insecure: False
- * /mqtt_bridge/mqtt/tls/tls_version: 5
- * /rosdistro: melodic
- * /rosversion: 1.14.12
-
-NODES
-  /
-    mqtt_bridge (mqtt_bridge/mqtt_bridge_node.py)
-
-auto-starting new master
-process[master]: started with pid [23084]
-ROS_MASTER_URI=http://localhost:11311
-
-setting /run_id to cd2855b8-fd29-11ec-bfbb-080027dacaf0
-process[rosout-1]: started with pid [23095]
-started core service [/rosout]
-process[mqtt_bridge-2]: started with pid [23098]
-[INFO] [1657111653.836246]: MQTT connected
-```
-
-</details>
-
->**NOTE**\
->The ROS MQTT bridge tells if it is connected to the server by printing ```MQTT connected``` as last line. If anything went wrong, it prints ```MQTT disconnected```
-
-### Launch the VDA5050 connector
-
-As soon as the ROS MQTT bridge is connected to the server, the VDA5050 connector can be launched.
-Open a new terminal and type:
-
-```bash
-roslaunch vda5050_connector vda5050_connector.launch
+roslaunch vda5050_connector vda5050_connector.launch 
 ```
 
 If the VDA5050 connector was started properly, the output should be similar to:
@@ -218,64 +176,34 @@ If the VDA5050 connector was started properly, the output should be similar to:
 <summary>VDA5050 connector output</summary>
 
 ```console
-[ INFO] [1656490735.862272168]: Using 1.1.03 for parameter ~AGV_Data/version
-[ INFO] [1656490735.863479005]: Using template_1 for parameter ~AGV_Data/manufacturer
-[ INFO] [1656490735.864071660]: Using AGV721 for parameter ~AGV_Data/serialNumber
-[ INFO] [1656490735.865060948]: Using /error_1 as error topic
-[ INFO] [1656490735.866858541]: for connection_daemon/topics_publish use:
-[ INFO] [1656490735.868006928]: for connection_daemon/topics_subscribe use:
-[ INFO] [1656490735.868029030]:     - parameter: /supervisor/connection_daemon/topics_subscribe/connectionState value: /connected
-[ INFO] [1656490735.868595221]: Using uagv for parameter ~AGV_Data/interfaceName
-[ INFO] [1656490735.869125729]: Using v2 for parameter ~AGV_Data/majorVersion
-[ INFO] [1656490735.869653581]: Using /connected for parameter ~connection_daemon/topics_subscribe/connectionState
-[ INFO] [1656490735.872009204]: Using 1.1.03 for parameter ~AGV_Data/version
-[ INFO] [1656490735.872491504]: Using template_1 for parameter ~AGV_Data/manufacturer
-[ INFO] [1656490735.872921588]: Using AGV721 for parameter ~AGV_Data/serialNumber
-[ INFO] [1656490735.873329962]: Using /error_1 as error topic
-[ INFO] [1656490735.874538560]: for state_daemon/topics_publish use:
-[ INFO] [1656490735.874560377]:     - parameter: /supervisor/state_daemon/topics_publish/state value: /state
-[ INFO] [1656490735.893055466]: for state_daemon/topics_subscribe use:
-[ INFO] [1656490735.893084950]:     - parameter: /supervisor/state_daemon/topics_subscribe/actionStates value: /actionStates
-[ INFO] [1656490735.893092672]:     - parameter: /supervisor/state_daemon/topics_subscribe/agvPosition/deviationRange value: /deviationRange
-[ INFO] [1656490735.893108816]:     - parameter: /supervisor/state_daemon/topics_subscribe/agvPosition/localizationScore value: /localizationScore
-[ INFO] [1656490735.893114964]:     - parameter: /supervisor/state_daemon/topics_subscribe/agvPosition/mapDescription value: /mapDescription
-[ INFO] [1656490735.893126128]:     - parameter: /supervisor/state_daemon/topics_subscribe/agvPosition/mapId value: /mapId
-[ INFO] [1656490735.893138406]:     - parameter: /supervisor/state_daemon/topics_subscribe/agvPosition/pose value: /odometry
-[ INFO] [1656490735.893146836]:     - parameter: /supervisor/state_daemon/topics_subscribe/agvPosition/positionInitialized value: /positionInitialized
-[ INFO] [1656490735.893154395]:     - parameter: /supervisor/state_daemon/topics_subscribe/batteryState/batteryCharge value: /batteryCharge
-[ INFO] [1656490735.893162173]:     - parameter: /supervisor/state_daemon/topics_subscribe/batteryState/batteryHealth value: /batteryHealth
-[ INFO] [1656490735.893169512]:     - parameter: /supervisor/state_daemon/topics_subscribe/batteryState/batteryVoltage value: /batteryVoltage
-[ INFO] [1656490735.893177634]:     - parameter: /supervisor/state_daemon/topics_subscribe/batteryState/charging value: /charging
-[ INFO] [1656490735.893185112]:     - parameter: /supervisor/state_daemon/topics_subscribe/batteryState/reach value: /reach
-[ INFO] [1656490735.893192605]:     - parameter: /supervisor/state_daemon/topics_subscribe/distanceSinceLastNode value: /distanceSinceLastNode
-[ INFO] [1656490735.893200330]:     - parameter: /supervisor/state_daemon/topics_subscribe/driving value: /driving
-[ INFO] [1656490735.893207638]:     - parameter: /supervisor/state_daemon/topics_subscribe/edgeStates value: /edgeState
-[ INFO] [1656490735.893216187]:     - parameter: /supervisor/state_daemon/topics_subscribe/errors value: /errors
-[ INFO] [1656490735.893224128]:     - parameter: /supervisor/state_daemon/topics_subscribe/information value: /information
-[ INFO] [1656490735.893231756]:     - parameter: /supervisor/state_daemon/topics_subscribe/lastNodeId value: /lastNodeId
-[ INFO] [1656490735.893239590]:     - parameter: /supervisor/state_daemon/topics_subscribe/lastNodeSequenceId value: /lastNodeSequenceId
-[ INFO] [1656490735.893246911]:     - parameter: /supervisor/state_daemon/topics_subscribe/loads value: /loads
-[ INFO] [1656490735.893255322]:     - parameter: /supervisor/state_daemon/topics_subscribe/newBaseRequest value: /newBaseRequest
-[ INFO] [1656490735.893262908]:     - parameter: /supervisor/state_daemon/topics_subscribe/nodeStates value: /nodeState
-[ INFO] [1656490735.893272540]:     - parameter: /supervisor/state_daemon/topics_subscribe/operatingMode value: /operatingMode
-[ INFO] [1656490735.893280114]:     - parameter: /supervisor/state_daemon/topics_subscribe/orderId value: /orderId
-[ INFO] [1656490735.893287369]:     - parameter: /supervisor/state_daemon/topics_subscribe/orderUpdateId value: /orderUpdateId
-[ INFO] [1656490735.893296333]:     - parameter: /supervisor/state_daemon/topics_subscribe/paused value: /paused
-[ INFO] [1656490735.893304115]:     - parameter: /supervisor/state_daemon/topics_subscribe/safetyState/eStop value: /eStop
-[ INFO] [1656490735.893311934]:     - parameter: /supervisor/state_daemon/topics_subscribe/safetyState/fieldViolation value: /fieldViolation
-[ INFO] [1656490735.893320184]:     - parameter: /supervisor/state_daemon/topics_subscribe/velocity value: /rosVelocity
-[ INFO] [1656490735.893327443]:     - parameter: /supervisor/state_daemon/topics_subscribe/zoneSetId value: /zoneSetId
-[ INFO] [1656490735.893811918]: Using uagv for parameter ~AGV_Data/interfaceName
-[ INFO] [1656490735.894266591]: Using v2 for parameter ~AGV_Data/majorVersion
+NODES
+  /
+    action_client (vda5050_connector/action_client)
+    connection_publisher (vda5050_connector/connection_publisher)
+    mqtt_bridge (mqtt_bridge/mqtt_bridge_node.py)
+    order_manager (vda5050_connector/order_manager)
+    state_aggregator (vda5050_connector/state_aggregator)
+
+ROS_MASTER_URI=http://localhost:11311
+
+process[mqtt_bridge-1]: started with pid [22954]
+process[action_client-2]: started with pid [22955]
+process[state_aggregator-3]: started with pid [22956]
+process[connection_publisher-4]: started with pid [22957]
+process[order_manager-5]: started with pid [22967]
+[INFO] [1678911895.153781] [/mqtt_bridge]: MQTT connected
+
 ```
 
 </details>
 
-The output gives an overview of all parameters read from the config file. Check if the topics are defined as required.
+The output also gives an overview of all parameters read from the config file. Check if the topics are defined as required.
 If any parameters are not readable or not found on the parameter server, there is a warning output. Please check if there is a typo in your config file.
 
 ## Interface Documentation
-An overview of the currently available channels and required message types is available [here](doc/README.md).
+
+An overview of the node configuration, channels and required message types is available [here](doc/README.md).
+
 ## Known Issues
 
 * Currently, the console output is done twice for some parameters due to the architecture.
@@ -289,13 +217,14 @@ An overview of the currently available channels and required message types is av
 ```
 
 ## Comments on VDA 5050 specification
+
 ### Assumptions in unclear situations
+
 **Situation:** Vehicle is processing an order and receives a new one (= differing order ID).
 
 **Our Solution:** The new order is rejected if it doesn't begin at the end of the base of the previous (= currently running) order.
 
 **Alternative:** The new order could be accepted if it begins at the end of the horizon of the previous order. Would lead to potential detours if the destination of the current order changes in the meantime.
-
 
 **Situation:** The order message definition in the vda_msgs repository contains a boolean field called "replace". According to the commentary, this should be used if the base of an order is to be replaced by a new set of nodes/edges. However, the guideline does not define this procedure.
 
@@ -303,13 +232,11 @@ An overview of the currently available channels and required message types is av
 
 **Alternative:** A replacement procedure could be added to the routine of receiving a message on the order topic. See the according documentation and flow diagrams.
 
-
 **Situation:** A new order is received. The guideline tells us to "validate" the order, but does not state how to achieve this.
 
 **Our Solution:** We postpone the implementation of validations and expect the fleet controller to send conform order messages.
 
 **Alternative:** Order messages should be validated to avoid undeterministic behavior, waiting and errors. The validation should at least check if the number of edges equals the number of nodes minus one.
-
 
 ## About
 
