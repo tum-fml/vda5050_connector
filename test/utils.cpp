@@ -12,15 +12,9 @@
 
 using namespace connector_utils;
 
-TEST(Utils, CompareStrings) {
-  EXPECT_TRUE(CompareStrings("test_string_alpha", "_string_"));
-  EXPECT_TRUE(CompareStrings("test_string_alpha", "test_string_alpha"));
-  EXPECT_FALSE(CompareStrings("test_string_beta", "not_included"));
-  EXPECT_FALSE(CompareStrings("string", "longer_string"));
-}
-TEST(Utils, CheckTopic) {
-  EXPECT_TRUE(CheckTopic("test_string_alpha/substring", "substring"));
-  EXPECT_FALSE(CheckTopic("test_string_alpha/substring", "string_alpha"));
+TEST(Utils, CheckParamIncludes) {
+  EXPECT_TRUE(CheckParamIncludes("test_string_alpha/substring", "substring"));
+  EXPECT_FALSE(CheckParamIncludes("test_string_alpha/substring", "string_alpha"));
 }
 TEST(Utils, CheckRange) {
   double upperRange = 1.0;
