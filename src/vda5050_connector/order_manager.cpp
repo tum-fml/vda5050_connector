@@ -7,8 +7,7 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#include "vda5050_connector/order_daemon.h"
-
+#include "vda5050_connector/order_manager.h"
 
 using namespace std;
 using namespace connector_utils;
@@ -167,71 +166,71 @@ float AGVPosition::nodeDistance(float node_x, float node_y) {
 
 float AGVPosition::getTheta() { return theta; }
 
-/*-------------------------------------OrderDaemon--------------------------------------------*/
+/*-------------------------------------OrderManager--------------------------------------------*/
 
-OrderDaemon::OrderDaemon() : Daemon(&(this->nh), "order_daemon") {
+OrderManager::OrderManager() : VDA5050Node(&(this->nh), ros::this_node::getName()) {
   /** Initialize external ROS topics*/
   LinkPublishTopics(&(this->nh));
   LinkSubscriptionTopics(&(this->nh));
 
   /** Initialize internal ROS topics*/
+  // TODO : Remove this.
   orderCancelSub =
-      nh.subscribe("orderCancelRequest", 1000, &OrderDaemon::OrderCancelRequestCallback, this);
-  agvPositionSub = nh.subscribe("agvPosition", 1000, &OrderDaemon::AgvPositionCallback, this);
+      nh.subscribe("orderCancelRequest", 1000, &OrderManager::OrderCancelRequestCallback, this);
+  agvPositionSub = nh.subscribe("/agvPosition", 1000, &OrderManager::AgvPositionCallback, this);
   allActionsCancelledSub =
-      nh.subscribe("allActionsCancelled", 1000, &OrderDaemon::allActionsCancelledCallback, this);
+      nh.subscribe("allActionsCancelled", 1000, &OrderManager::allActionsCancelledCallback, this);
   orderActionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
   orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
   orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
-  nodeStatesPub = nh.advertise<vda5050_msgs::NodeState>("nodeStates", 1000);
-  edgeStatesPub = nh.advertise<vda5050_msgs::EdgeState>("edgeStates", 1000);
+  nodeStatesPub = nh.advertise<vda5050_msgs::NodeStates>("nodeStates", 1000);
+  edgeStatesPub = nh.advertise<vda5050_msgs::EdgeStates>("edgeStates", 1000);
   lastNodeIdPub = nh.advertise<std_msgs::String>("lastNodeId", 1000);
-  lastNodeSequenceIdPub = nh.advertise<std_msgs::Int32>("lastNodeSequenceId", 1000);
+  lastNodeSequenceIdPub = nh.advertise<std_msgs::UInt32>("lastNodeSequenceId", 1000);
   orderIdPub = nh.advertise<std_msgs::String>("orderId", 1000);
-  orderUpdateIdPub = nh.advertise<std_msgs::Int32>("orderUpdateId", 1000);
+  orderUpdateIdPub = nh.advertise<std_msgs::UInt32>("orderUpdateId", 1000);
 }
 
-void OrderDaemon::LinkPublishTopics(ros::NodeHandle* nh) {
+void OrderManager::LinkPublishTopics(ros::NodeHandle* nh) {
   map<string, string> topicList = GetTopicPublisherList();
   std::string topic_index;
 
   for (const auto& elem : topicList) {
     topic_index = GetTopic(elem.first);
-    ROS_INFO("topic_index = %s", topic_index.c_str());
-    if (CheckTopic(elem.first, "orderMotion"))
+    if (CheckParamIncludes(elem.first, "orderMotion"))
       messagePublisher[topic_index] = nh->advertise<vda5050_msgs::OrderMotion>(elem.second, 1000);
-    if (CheckTopic(elem.first, "prDriving")) {
+    if (CheckParamIncludes(elem.first, "prDriving")) {
       messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
     }
   }
 }
 
-void OrderDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
+void OrderManager::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   map<string, string> topicList = GetTopicSubscriberList();
   for (const auto& elem : topicList) {
-    if (CheckTopic(elem.first, "orderFromMc"))
-      nh->subscribe(elem.second, 1000, &OrderDaemon::OrderCallback, this);
-    if (CheckTopic(elem.first, "actionStates"))
-      nh->subscribe(elem.second, 1000, &OrderDaemon::ActionStateCallback, this);
-    if (CheckTopic(elem.first, "driving"))
-      nh->subscribe(elem.second, 1000, &OrderDaemon::DrivingCallback, this);
+    if (CheckParamIncludes(elem.first, "orderFromMc"))
+      nh->subscribe(elem.second, 1000, &OrderManager::OrderCallback, this);
+    else if (CheckParamIncludes(elem.first, "actionStates"))
+      nh->subscribe(elem.second, 1000, &OrderManager::ActionStateCallback, this);
+    else if (CheckParamIncludes(elem.first, "driving"))
+      nh->subscribe(elem.second, 1000, &OrderManager::DrivingCallback, this);
   }
 }
 
-bool OrderDaemon::validationCheck(const vda5050_msgs::Order::ConstPtr& msg) {
+bool OrderManager::validationCheck(const vda5050_msgs::Order::ConstPtr& msg) {
   /** TODO: How to validation check?*/
   /** Maybe depending on AGV's capabilities (e.g. track planning etc.)*/
   /** Check if number edges is number nodes-1*/
   return true;
 }
 
-bool OrderDaemon::inDevRange(vda5050_msgs::Node node) {
+bool OrderManager::inDevRange(vda5050_msgs::Node node) {
   return ((agvPosition.nodeDistance(node.nodePosition.x, node.nodePosition.y)) <=
              node.nodePosition.allowedDeviationXY) &&
          (agvPosition.getTheta() <= node.nodePosition.allowedDeviationTheta);
 }
 
-void OrderDaemon::triggerNewActions(string nodeOrEdge) {
+void OrderManager::triggerNewActions(string nodeOrEdge) {
   if (nodeOrEdge == "NODE") {
     if (this->currentOrders.front().nodeStates.front().released) {
       if (!this->currentOrders.front().nodeStates.front().actions.empty()) {
@@ -258,7 +257,7 @@ void OrderDaemon::triggerNewActions(string nodeOrEdge) {
     ROS_ERROR("Neither node nor edge matching sequence ID!");
 }
 
-void OrderDaemon::sendMotionCommand() {
+void OrderManager::sendMotionCommand() {
   vda5050_msgs::Edge edge = currentOrders.front().edgeStates.front();
   vda5050_msgs::OrderMotion msg;
   if (edge.released) {
@@ -282,7 +281,7 @@ void OrderDaemon::sendMotionCommand() {
     ROS_ERROR("Neither node nor edge matching sequence ID!");
 }
 
-void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
+void OrderManager::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
   if (validationCheck(msg)) {
     if (!currentOrders.empty()) {
       if (currentOrders.back().compareOrderId(msg->orderId)) {
@@ -328,7 +327,7 @@ void OrderDaemon::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
   }
 }
 
-void OrderDaemon::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg) {
+void OrderManager::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg) {
   ROS_INFO("Received cancel request for order: %s", msg.get()->data.c_str());
   auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
       [&msg](CurrentOrder order) { return order.compareOrderId(msg.get()->data); });
@@ -343,7 +342,7 @@ void OrderDaemon::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& m
     ROS_ERROR("Order to cancel not found: %s", msg.get()->data.c_str());
 }
 
-void OrderDaemon::allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg) {
+void OrderManager::allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg) {
   auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
       [&msg](CurrentOrder order) { return order.compareOrderId(msg.get()->data); });
   if (orderToCancel != currentOrders.end()) {
@@ -351,7 +350,7 @@ void OrderDaemon::allActionsCancelledCallback(const std_msgs::String::ConstPtr& 
   }
 }
 
-void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
+void OrderManager::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
   for (auto& order : currentOrders) {
     auto it = find(order.actionStates.begin(), order.actionStates.end(), msg.get()->actionID);
     if (it != order.actionStates.end()) {
@@ -366,9 +365,9 @@ void OrderDaemon::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr&
   }
 }
 
-void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
+void OrderManager::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
   agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
-  ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
+  // ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
   if (!currentOrders.empty() && ordersToCancel.empty()) {
     if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE") {
       if (inDevRange(currentOrders.front().nodeStates.front())) {
@@ -440,9 +439,9 @@ void OrderDaemon::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr&
   }
 }
 
-void OrderDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr& msg) { isDriving = msg->data; }
+void OrderManager::DrivingCallback(const std_msgs::Bool::ConstPtr& msg) { isDriving = msg->data; }
 
-void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
+void OrderManager::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   /** create new order element*/
   CurrentOrder newOrder(msg);
   currentOrders.push_back(newOrder);
@@ -480,7 +479,7 @@ void OrderDaemon::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   ROS_INFO("Started new order: %s", msg->orderId.c_str());
 }
 
-void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
+void OrderManager::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   /** clear horizon*/
   currentOrders.front().edgeStates.erase(
       remove_if(currentOrders.front().edgeStates.begin(), currentOrders.front().edgeStates.end(),
@@ -499,7 +498,7 @@ void OrderDaemon::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   currentOrders.front().sendEdgeStates(edgeStatesPub);
 }
 
-void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) {
+void OrderManager::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   /** clear horizon*/
   currentOrders.front().edgeStates.erase(
       remove_if(currentOrders.front().edgeStates.begin(), currentOrders.front().edgeStates.end(),
@@ -530,7 +529,7 @@ void OrderDaemon::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) 
   orderUpdateIdPub.publish(orderUpdateMsg);
 }
 
-void OrderDaemon::UpdateOrders() {
+void OrderManager::UpdateOrders() {
   if (!ordersToCancel.empty()) {
     if (!isDriving) {
       for (vector<string>::iterator orderIdIt = ordersToCancel.begin();
@@ -561,7 +560,7 @@ void OrderDaemon::UpdateOrders() {
   }
 }
 
-void OrderDaemon::orderUpdateError(string orderId, int orderUpdateId) {
+void OrderManager::orderUpdateError(string orderId, int orderUpdateId) {
   std_msgs::String rejectMsg;
   stringstream ss;
   ss << "orderUpdateError: " << orderId << ", " << orderUpdateId;
@@ -569,7 +568,7 @@ void OrderDaemon::orderUpdateError(string orderId, int orderUpdateId) {
   errorPublisher.publish(rejectMsg);
 }
 
-void OrderDaemon::orderValidationError(string orderId, int orderUpdateId) {
+void OrderManager::orderValidationError(string orderId, int orderUpdateId) {
   std_msgs::String rejectMsg;
   stringstream ss;
   ss << "orderValidationError: " << orderId << ", " << orderUpdateId;
@@ -580,10 +579,10 @@ void OrderDaemon::orderValidationError(string orderId, int orderUpdateId) {
 int main(int argc, char** argv) {
   ros::init(argc, argv, "order_daemon");
 
-  OrderDaemon orderDaemon;
+  OrderManager OrderManager;
 
   while (ros::ok()) {
-    orderDaemon.UpdateOrders();
+    OrderManager.UpdateOrders();
     ros::spinOnce();
   }
   return 0;

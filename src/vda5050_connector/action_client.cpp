@@ -7,13 +7,13 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#include "vda5050_connector/action_daemon.h"
+#include "vda5050_connector/action_client.h"
 
 
 using namespace std;
 using namespace connector_utils;
 
-/** TODO: Send orderCancel to order daemon (2 cases: instantAction, failed action)*/
+/** TODO: Send orderCancel to order manager (2 cases: instantAction, failed action)*/
 /** TODO: Implement instantAction routine*/
 /** TODO: Implement orderAction routine*/
 /** TODO: Implement difference between paused by instantAction and paused by AGV*/
@@ -53,57 +53,57 @@ vda5050_msgs::Action ActionElement::packAction() {
   return msg;
 }
 
-/*--------------------------------ActionDaemon--------------------------------------------------------------*/
+/*--------------------------------ActionClient--------------------------------------------------------------*/
 
-ActionDaemon::ActionDaemon() : Daemon(&(this->nh), "action_daemon") {
+ActionClient::ActionClient() : VDA5050Node(&(this->nh), ros::this_node::getName()) {
   LinkPublishTopics(&(this->nh));
   LinkSubscriptionTopics(&(this->nh));
 
   /** Initialize internal topics*/
-  orderActionSub = nh.subscribe("orderAction", 1000, &ActionDaemon::OrderActionsCallback, this);
-  orderTriggerSub = nh.subscribe("orderTrigger", 1000, &ActionDaemon::OrderTriggerCallback, this);
+  orderActionSub = nh.subscribe("orderAction", 1000, &ActionClient::OrderActionsCallback, this);
+  orderTriggerSub = nh.subscribe("orderTrigger", 1000, &ActionClient::OrderTriggerCallback, this);
   orderCancelSub =
-      nh.subscribe("orderCancelResponse", 1000, &ActionDaemon::OrderCancelCallback, this);
+      nh.subscribe("orderCancelResponse", 1000, &ActionClient::OrderCancelCallback, this);
   actionStatesPub = nh.advertise<vda5050_msgs::ActionState>("actionStates", 1000);
   orderCancelPub = nh.advertise<std_msgs::String>("orderCancelRequest", 1000);
   allActionsCancelledPub = nh.advertise<std_msgs::String>("allActionsCancelled", 1000);
 }
 
-void ActionDaemon::LinkPublishTopics(ros::NodeHandle* nh) {
+void ActionClient::LinkPublishTopics(ros::NodeHandle* nh) {
   map<string, string> topicList = GetTopicPublisherList();
   std::string topic_index;
 
   for (const auto& elem : topicList) {
     topic_index = GetTopic(elem.first);
     // ROS_INFO("topic_index = %s",topic_index.c_str());
-    if (CheckTopic(elem.first, "actionToAgv"))
+    if (CheckParamIncludes(elem.first, "actionToAgv"))
       messagePublisher[topic_index] = nh->advertise<vda5050_msgs::Action>(elem.second, 1000);
-    if (CheckTopic(elem.first, "agvActionCancel"))
+    if (CheckParamIncludes(elem.first, "agvActionCancel"))
       messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
-    if (CheckTopic(elem.first, "prActions"))
+    if (CheckParamIncludes(elem.first, "prActions"))
       messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
-    if (CheckTopic(elem.first, "prDriving"))
+    if (CheckParamIncludes(elem.first, "prDriving"))
       messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
   }
 }
 
-void ActionDaemon::LinkSubscriptionTopics(ros::NodeHandle* nh) {
+void ActionClient::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   map<string, string> topicList = GetTopicSubscriberList();
   for (const auto& elem : topicList) {
-    if (CheckTopic(elem.first, "instantAction"))
-      nh->subscribe(elem.second, 1000, &ActionDaemon::InstantActionsCallback, this);
-    if (CheckTopic(elem.first, "agvActionState"))
-      nh->subscribe(elem.second, 1000, &ActionDaemon::AgvActionStateCallback, this);
-    if (CheckTopic(elem.first, "driving"))
-      nh->subscribe(elem.second, 1000, &ActionDaemon::DrivingCallback, this);
+    if (CheckParamIncludes(elem.first, "instantAction"))
+      nh->subscribe(elem.second, 1000, &ActionClient::InstantActionsCallback, this);
+    if (CheckParamIncludes(elem.first, "agvActionState"))
+      nh->subscribe(elem.second, 1000, &ActionClient::AgvActionStateCallback, this);
+    if (CheckParamIncludes(elem.first, "driving"))
+      nh->subscribe(elem.second, 1000, &ActionClient::DrivingCallback, this);
   }
 }
 
-void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr& msg) {
+void ActionClient::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr& msg) {
   for (const auto& action : msg->orderActions) {
     /** Add action to active actions list*/
     string actionStatus = "WAITING";
-    ActionDaemon::AddActionToList(&action, msg->orderId, actionStatus);
+    ActionClient::AddActionToList(&action, msg->orderId, actionStatus);
 
     /** Create and publish action state msg*/
     vda5050_msgs::ActionState action_state_msg;
@@ -115,7 +115,7 @@ void ActionDaemon::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstP
   }
 }
 
-void ActionDaemon::OrderTriggerCallback(const std_msgs::String& msg) {
+void ActionClient::OrderTriggerCallback(const std_msgs::String& msg) {
   shared_ptr<ActionElement> activeAction = FindAction(msg.data);
 
   // Sort out
@@ -130,15 +130,15 @@ void ActionDaemon::OrderTriggerCallback(const std_msgs::String& msg) {
     ROS_WARN("Action to trigger not found!");
 }
 
-void ActionDaemon::OrderCancelCallback(const std_msgs::String& msg) {
+void ActionClient::OrderCancelCallback(const std_msgs::String& msg) {
   ordersSucCancelled.push_back(msg.data);
 }
 
-void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg) {
+void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg) {
   // Iterate over all actions in the instantActions msg
   for (auto& iaction : msg->instantActions) {
     /** Add action to active actions list*/
-    ActionDaemon::AddActionToList(&iaction, "Instant", "WAITING");
+    ActionClient::AddActionToList(&iaction, "Instant", "WAITING");
     /** Initialize order ID variable*/
     string orderIdToCancel;
 
@@ -251,7 +251,7 @@ void ActionDaemon::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
   }
 }
 
-void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
+void ActionClient::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
   shared_ptr<ActionElement> actionToUpdate = FindAction(msg->actionID);
   actionStatesPub.publish(msg);
 
@@ -289,15 +289,15 @@ void ActionDaemon::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
     ROS_WARN("Action to update not found!");
 }
 
-void ActionDaemon::DrivingCallback(const std_msgs::Bool::ConstPtr& msg) { isDriving = msg->data; }
+void ActionClient::DrivingCallback(const std_msgs::Bool::ConstPtr& msg) { isDriving = msg->data; }
 
-void ActionDaemon::AddActionToList(
+void ActionClient::AddActionToList(
     const vda5050_msgs::Action* incomingAction, string orderId, string state) {
   shared_ptr<ActionElement> newAction = make_shared<ActionElement>(incomingAction, orderId, state);
   activeActionsList.push_back(newAction);
 }
 
-bool ActionDaemon::CheckDriving() {
+bool ActionClient::CheckDriving() {
   if (isDriving) {
     std_msgs::String pauseMsg;
     pauseMsg.data = "PAUSE";
@@ -307,7 +307,7 @@ bool ActionDaemon::CheckDriving() {
     return true;
 }
 
-vector<shared_ptr<ActionElement>> ActionDaemon::GetRunningActions() {
+vector<shared_ptr<ActionElement>> ActionClient::GetRunningActions() {
   vector<shared_ptr<ActionElement>> runningActions;
   for (auto const& action_it : activeActionsList) {
     if (action_it->state == "RUNNING") {
@@ -317,7 +317,7 @@ vector<shared_ptr<ActionElement>> ActionDaemon::GetRunningActions() {
   return runningActions;
 }
 
-vector<shared_ptr<ActionElement>> ActionDaemon::GetRunningPausedActions() {
+vector<shared_ptr<ActionElement>> ActionClient::GetRunningPausedActions() {
   vector<shared_ptr<ActionElement>> runningPausedActions;
   for (auto const& action_it : activeActionsList) {
     if (action_it->state == "RUNNING" || action_it->state == "PAUSED") {
@@ -327,7 +327,7 @@ vector<shared_ptr<ActionElement>> ActionDaemon::GetRunningPausedActions() {
   return runningPausedActions;
 }
 
-vector<shared_ptr<ActionElement>> ActionDaemon::GetActionsToCancel(string orderIdToCancel) {
+vector<shared_ptr<ActionElement>> ActionClient::GetActionsToCancel(string orderIdToCancel) {
   vector<shared_ptr<ActionElement>> actionsToCancel;
   auto it = activeActionsList.begin();
   while ((it = find_if(
@@ -341,7 +341,7 @@ vector<shared_ptr<ActionElement>> ActionDaemon::GetActionsToCancel(string orderI
   return actionsToCancel;
 }
 
-shared_ptr<ActionElement> ActionDaemon::FindAction(string actionId) {
+shared_ptr<ActionElement> ActionClient::FindAction(string actionId) {
   vector<shared_ptr<ActionElement>>::iterator it =
       find_if(activeActionsList.begin(), activeActionsList.end(),
           [&actionId](shared_ptr<ActionElement> const& p) { return p->compareActionId(actionId); });
@@ -351,7 +351,7 @@ shared_ptr<ActionElement> ActionDaemon::FindAction(string actionId) {
     return *it;
 }
 
-void ActionDaemon::UpdateActions() {
+void ActionClient::UpdateActions() {
   /** check if orders must be cancelled -> block all actions*/
   if (!orderCancellations.empty()) {
     vector<orderToCancel> orderCancellationsFinished;
@@ -520,7 +520,7 @@ void ActionDaemon::UpdateActions() {
             if (nextBlockType == "HARD") {
               /** TODO: Check if last action still running*/
               /** If driving -> stop, else publish action*/
-              if (ActionDaemon::CheckDriving()) {
+              if (ActionClient::CheckDriving()) {
                 /** set sentToAgv to true*/
                 auto sentAction = FindAction(orderActionQueue.front().actionId);
                 sentAction->sentToAgv = true;
@@ -578,10 +578,10 @@ void ActionDaemon::UpdateActions() {
 int main(int argc, char** argv) {
   ros::init(argc, argv, "action_deamon");
 
-  ActionDaemon actionDaemon;
+  ActionClient ActionClient;
 
   while (ros::ok()) {
-    actionDaemon.UpdateActions();
+    ActionClient.UpdateActions();
     ros::spinOnce();
   }
   return 0;

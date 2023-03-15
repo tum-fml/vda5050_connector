@@ -7,8 +7,8 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#ifndef DAEMON_H
-#define DAEMON_H
+#ifndef NODE_H
+#define NODE_H
 #include <ros/console.h>
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -20,14 +20,12 @@
 #include "std_msgs/String.h"
 #include "utils/utils.h"
 
-#define DEFAULT_ERROR_TOPIC "/internal_errors"
-
 /**
- * Model for all daemons. Every daemon provides some functionality to translate
+ * Model for all nodes. Every node provides some functionality to translate
  * messages between the robot's internal communication and the VDA-5050-based
  * client-server communication.
  */
-class Daemon {
+class VDA5050Node {
  private:
   // All topics to publish on. Map from topic keys to user-defined topic names.
   std::map<std::string, std::string> topicPublisherList;
@@ -36,7 +34,7 @@ class Daemon {
   std::map<std::string, std::string> topicSubscriberList;
 
  protected:
-  // All publishers the daemon uses. Map from topic keys to ROS Publisher objects.
+  // All publishers the node uses. Map from topic keys to ROS Publisher objects.
   std::map<std::string, ros::Publisher> messagePublisher;
 
   // ROS Publisher for error messages.
@@ -46,16 +44,16 @@ class Daemon {
   ros::NodeHandle nh;
 
  public:
-  // Delete default constructor for daemon objects.
-  Daemon() = delete;
+  // Delete default constructor for node objects.
+  VDA5050Node() = delete;
 
   /**
-   * Constructor for daemon objects.
+   * Constructor for node objects.
    *
    * @param nh          ROS node handle object.
-   * @param daemonName  Name of the daemon.
+   * @param nodeName  Name of the node.
    */
-  Daemon(ros::NodeHandle* nh, std::string daemonName);
+  VDA5050Node(ros::NodeHandle* nh, std::string nodeName);
 
   /**
    * Calculates the passed time between last update interval and now.

@@ -7,14 +7,14 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#ifndef ORDER_DAEMON_H
-#define ORDER_DAEMON_H
+#ifndef ORDER_MANAGER_H
+#define ORDER_MANAGER_H
 
 #include <ros/ros.h>
+#include <std_msgs/UInt32.h>
 #include <iostream>
 #include <string>
 #include <vector>
-#include "daemon.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/Int32.h"
 #include "std_msgs/String.h"
@@ -23,14 +23,17 @@
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/Edge.h"
 #include "vda5050_msgs/EdgeState.h"
+#include "vda5050_msgs/EdgeStates.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/NodeState.h"
+#include "vda5050_msgs/NodeStates.h"
 #include "vda5050_msgs/Order.h"
 #include "vda5050_msgs/OrderActions.h"
 #include "vda5050_msgs/OrderMotion.h"
+#include "vda5050node.h"
 
 /**
- * Daemon for processing of VDA 5050 action messages. The order daemon consists
+ * Node for processing of VDA 5050 action messages. The order node consists
  * of a) a main loop which processes orders according to their states and
  * changes in the system state and b) several callbacks which receive and
  * process system changes.
@@ -149,14 +152,14 @@ class CurrentOrder {
   vda5050_msgs::Node getLastNodeInBase();
 
   /**
-   * Sends all new actions to action daemon
+   * Sends all new actions to action node
    *
    * @param actionPublisher  ROS publisher to use for sending the actions.
    */
   void sendActions(ros::Publisher actionPublisher);
 
   /**
-   * Sends all new node states to state daemon.
+   * Sends all new node states to state node.
    *
    * @param nodeStatesPublisher  ROS publisher to use for sending the node
    *                             states.
@@ -164,7 +167,7 @@ class CurrentOrder {
   void sendNodeStates(ros::Publisher nodeStatesPublisher);
 
   /**
-   * Sends all new edge states to state daemon.
+   * Sends all new edge states to state node.
    *
    * @param edgeStatesPublisher  ROS publisher to use for sending the edge
    *                             states.
@@ -225,10 +228,10 @@ class AGVPosition {
 };
 
 /**
- * Daemon for processing VDA 5050 order messages.
+ * Node for processing VDA 5050 order messages.
  *
  */
-class OrderDaemon : public Daemon {
+class OrderManager : public VDA5050Node {
  private:
   // Current order.
   std::vector<CurrentOrder> currentOrders;
@@ -241,16 +244,16 @@ class OrderDaemon : public Daemon {
    * communication.
    */
 
-  // Cancel request from action daemon.
+  // Cancel request from action node.
   ros::Subscriber orderCancelSub;
 
   // Position data from AGV.
   ros::Subscriber agvPositionSub;
 
-  // Response from action daemon if all actions of a order to cancel are successfully cancelled.
+  // Response from action node if all actions of a order to cancel are successfully cancelled.
   ros::Subscriber allActionsCancelledSub;
 
-  // Ordinary order actions from order_daemon to action_daemon.
+  // Ordinary order actions from order_node to action_node.
   ros::Publisher orderActionPub;
 
   // Response to cancel request.
@@ -259,10 +262,10 @@ class OrderDaemon : public Daemon {
   // Triggers actions when AGV arrives at edge or node.
   ros::Publisher orderTriggerPub;
 
-  // Node state transfer topic (to state daemon).
+  // Node state transfer topic (to state node).
   ros::Publisher nodeStatesPub;
 
-  // Edge state transfer topic (to state daemon).
+  // Edge state transfer topic (to state node).
   ros::Publisher edgeStatesPub;
 
   // Last node ID; changes when a node is left.
@@ -289,22 +292,22 @@ class OrderDaemon : public Daemon {
 
  public:
   /**
-   * Constructor for OrderDaemon objects. Links all internal and external ROS
+   * Constructor for Ordernode objects. Links all internal and external ROS
    * topics.
    */
-  OrderDaemon();
+  OrderManager();
 
   /**
    * Links all external publishing topics.
    *
-   * @param nh  ROS node handle for order daemon.
+   * @param nh  ROS node handle for order manager.
    */
   void LinkPublishTopics(ros::NodeHandle* nh);
 
   /**
    * Links all external subscribing topics
    *
-   * @param nh  ROS node handle for order daemon.
+   * @param nh  ROS node handle for order manager.
    */
   void LinkSubscriptionTopics(ros::NodeHandle* nh);
 
@@ -351,8 +354,8 @@ class OrderDaemon : public Daemon {
 
   /**
    * Callback for incoming cancel requests. When an instantAction message with
-   * a cancel request arrives at the action daemon, the request is transferred
-   * to the order daemon by this topic.
+   * a cancel request arrives at the action node, the request is transferred
+   * to the order node by this topic.
    *
    * @param msg  Message containing the order cancel request.
    */
@@ -413,13 +416,13 @@ class OrderDaemon : public Daemon {
   void updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
   /**
-   * Main loop of the daemon. The routine consists of the following steps:
+   * Main loop of the node. The routine consists of the following steps:
    * - get order actions
    * - get instantAction topics
    * - calculate queue
    * - send queue to agv
-   * - send order cancellations to order_daemon
-   * - send action status to state_daemon
+   * - send order cancellations to order_node
+   * - send action status to state_node
    */
   void UpdateOrders();
 

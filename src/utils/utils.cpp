@@ -6,11 +6,11 @@ bool CheckRange(double lowerRange, double upperRange, double value) {
   return (value >= lowerRange && value <= upperRange);
 }
 
-bool CompareStrings(std::string str1, std::string str2) {
-  return (str1.find(str2) != std::string::npos ? true : false);
+bool CheckParamIncludes(std::string full_param_name, std::string string_to_find) {
+  auto last_slash = full_param_name.find_last_of("/");
+  if (last_slash == std::string::npos) return false;
+  return full_param_name.substr(last_slash + 1) == string_to_find;
 }
-
-bool CheckTopic(std::string str1, std::string str2) { return CompareStrings(str1, str2); }
 
 std::string GetISOCurrentTimestamp() {
   boost::posix_time::ptime posixTime = ros::Time::now().toBoost();

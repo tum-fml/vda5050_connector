@@ -7,8 +7,8 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#ifndef CONNECTION_DAEMON_H
-#define CONNECTION_DAEMON_H
+#ifndef CONNECTION_PUBLISHER_H
+#define CONNECTION_PUBLISHER_H
 
 #include <ros/console.h>
 #include <ros/ros.h>
@@ -17,14 +17,14 @@
 #include <string>
 #include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
-#include "daemon.h"
+#include "vda5050node.h"
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Connection.h"
 
 /**
  * Daemon for processing VDA 5050 connection messages.
  */
-class ConnectionDaemon : public Daemon {
+class ConnectionPublisher : public VDA5050Node {
  private:
   // Message containing connection information.
   vda5050_msgs::Connection connectionMessage;
@@ -47,7 +47,7 @@ class ConnectionDaemon : public Daemon {
    *
    * @param heartbeat  Time interval between connection updates.
    */
-  ConnectionDaemon(float heartbeat);
+  ConnectionPublisher(float heartbeat);
 
   /**
    * Creates the subscribers for the required topics given from the config
@@ -78,17 +78,11 @@ class ConnectionDaemon : public Daemon {
   void UpdateConnection();
 
   /**
-   * Generates the name of the topic to publish. The topic name is built by
-   * adding the VDA-5050 global topic
-   */
-  std::string createPublishTopic();
-
-  /**
    * Callback for receiving information about the connection status of the ROS
    * node.
    *
    * @param msg  Incoming message.
    */
-  void ROSConnectionStateCallback(const std_msgs::Bool::ConstPtr& msg);
+  void ConnectionStateCallback(const std_msgs::Bool::ConstPtr& msg);
 };
 #endif
