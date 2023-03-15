@@ -1,4 +1,4 @@
-# How to Use the VDA-5050-Connector
+# How to Use the ROS-VDA5050-Connector
 
 ## Aim of the Repository
 
@@ -6,7 +6,7 @@ The idea of the repository is to ensure an easy connection of the VDA 5050 with 
 It is intended to ensure an immediate integration into ROS.
 For ease of use, you can customize all interfaces by adapting the configuration files in the /config folder to match your requirements.
 
-The VDA5050 connector only covers ROS communication, which means that all messages coming from the main control must be published to ROS topics. Since MQTT is widely used to communicate from the main control to AGVs, an example implementation to achieve compatibility between ROS and MQTT is shown below.
+The ROS-VDA5050-Connector only covers ROS communication, which means that all messages coming from the main control must be published to ROS topics. Since MQTT is widely used to communicate from the main control to AGVs, an example implementation to achieve compatibility between ROS and MQTT is shown below.
 
 <img src="https://user-images.githubusercontent.com/44091826/190145636-37ef04e3-d28b-42da-961d-d2e8e919df73.png" width="500">
 
@@ -45,10 +45,10 @@ Be careful to choose the correct branch. If you plan to use ROS melodic, checkou
 
 ## Installation of the VDA5050 connector
 
-In the same src folder where you cloned the MQTT Bridge, clone the `VDA-5050-Connector` repository:
+In the same src folder where you cloned the MQTT Bridge, clone the `ROS-VDA-5050-Connector` repository:
 
 ```bash
-git clone https://github.com/idealworks/VDA-5050-Connector.git
+git clone https://github.com/tum-fml/ros_vda5050_connector.git
 ```
 
 Then clone the `vda5050_msgs` repository:
@@ -75,7 +75,7 @@ In the following sections we will go through them step by step.
 
 >**NOTE**\
 Since we wanted to use the ROS MQTT bridge out of the box with no further customization,\
-all required parameters configuration files can be found in the /config folder in the `VDA-5050-Connector` repository (and not in the `mqtt_bridge` repository).
+all required parameters configuration files can be found in the /config folder in the `ROS-VDA5050-Connector` repository (and not in the `mqtt_bridge` repository).
 
 ### ROS MQTT Bridge Configuration
 
@@ -240,4 +240,4 @@ An overview of the node configuration, channels and required message types is av
 
 ## About
 
-The ROS-VDA-5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
+The ROS-VDA5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
