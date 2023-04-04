@@ -64,6 +64,9 @@ class StateDaemon : public Daemon {
   ros::Time lastUpdateTimestamp;
   /**< Timestamp of the last emitted state message. */
 
+  ros::Time edgeStatePublishTime;
+  /**< Timestamp of the last emitted state message on edge state update. */
+
   bool newPublishTrigger;
   /**< Flag for initiating the emission of a new state message. */
 

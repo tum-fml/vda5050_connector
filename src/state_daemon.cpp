@@ -15,10 +15,9 @@
  * TODO: publish to topicPub, if following requirements are met:
  * - received order
  * - received order update
- * - change of load status										Done
- * in Callback
- * - error														Done
- * in Callback
+ * - change of load status Done in Callback
+ * - error
+ * Done in Callback
  * - driving over an node
  * - change in operationMode									Done
  * in Callback
@@ -37,6 +36,7 @@ StateDaemon::StateDaemon() : Daemon(&(this->nh), "state_daemon") {
 
   updateInterval = ros::Duration(30.0);
   lastUpdateTimestamp = ros::Time::now();
+  edgeStatePublishTime = ros::Time::now();
   newPublishTrigger = true;
 }
 
@@ -229,6 +229,11 @@ void StateDaemon::NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPtr& m
 }
 void StateDaemon::EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg) {
   stateMessage.edgeStates = msg->edgeStates;
+
+  if (edgeStatePublishTime - ros::Time::now() > ros::Duration(5.0)) {
+    newPublishTrigger = true;
+    edgeStatePublishTime = ros::Time::now();
+  }
 }
 void StateDaemon::AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
   stateMessage.agvPosition.positionInitialized = msg->positionInitialized;
