@@ -12,11 +12,6 @@
     output="screen">
     <rosparam command="load" file="$(find vda5050_connector)/config/state_aggregator.yaml" />
   </node>
-  <node name="connection_publisher" pkg="vda5050_connector" type="connection_publisher"
-    clear_params="true"
-    output="screen">
-    <rosparam command="load" file="$(find vda5050_connector)/config/connection_publisher.yaml" />
-  </node>
   <node name="order_manager" pkg="vda5050_connector" type="order_manager" clear_params="true"
     output="screen">
     <rosparam command="load" file="$(find vda5050_connector)/config/order_manager.yaml" />

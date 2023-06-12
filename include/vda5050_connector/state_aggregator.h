@@ -23,6 +23,7 @@
 #include <vector>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "std_msgs/String.h"
+#include "vda5050_msgs/Connection.h"
 #include "vda5050_msgs/EdgeStates.h"
 #include "vda5050_msgs/Errors.h"
 #include "vda5050_msgs/Information.h"
@@ -46,24 +47,21 @@ class StateAggregator : public VDA5050Node {
   vda5050_msgs::State stateMessage;
   // Visualization message sent to the fleet controller.
   vda5050_msgs::Visualization visMessage;
+  // Connection message sent to the fleet controller.
+  vda5050_msgs::Connection connMessage;
 
   // Publisher object for state messages to the fleet controller.
   ros::Publisher statePublisher;
-  // Publisher object for state messages to the fleet controller.
+  // Publisher object for visualization messages to the fleet controller.
   ros::Publisher visPublisher;
+  // Publisher for connection messages.
+  ros::Publisher connectionPublisher;
 
   // List of subsribers used by the StateAggregator to build the robot state.
   std::vector<ros::Subscriber> subscribers;
 
-  /* Declare all ROS subscriber and publisher topics for internal
-   * communication.
-   */
-
-  // Time interval for emitting state and visualization messages.
-  ros::Duration stateInterval, visInterval;
-
-  // Timestamp of the last emitted state and visualization messages.
-  ros::Time lastStatePublishTime, lastVisPublishTime;
+  // Timers to publish messages regularly.
+  ros::Timer stateTimer, visTimer, conTimer;
 
   // Flag for initiating the emission of a new state message.
   bool newPublishTrigger;
@@ -76,14 +74,6 @@ class StateAggregator : public VDA5050Node {
    * @param daemonName  Name of the daemon.
    * */
   StateAggregator();
-
-  /**
-   * Calculates the passed time between last update interval and now.
-   *
-   * @return  Returns true if passed time since last publish is greater than
-   *          30 seconds, else returns false.
-   */
-  bool CheckPassedTime(ros::Time& lastPublishedTime, const ros::Duration& interval);
 
   /**
    * Creates the publisher for the required topics given from the config
@@ -112,6 +102,12 @@ class StateAggregator : public VDA5050Node {
    * publishing.
    */
   void PublishVisualization();
+
+  /**
+   * Sets the header timestamp and publishes the connection state message. Updates the headerId
+   * after publishing.
+   */
+  void PublishConnection(const bool connected);
 
   /**
    * Checks all the logic within the state daemon. For example, it checks
@@ -175,14 +171,14 @@ class StateAggregator : public VDA5050Node {
    *
    * @param msg  Incoming message.
    */
-  void AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
+  void AGVPositionCallback(const geometry_msgs::Pose& msg);
 
   /**
    * Callback function for incoming ROS velocity messages.
    *
    * @param msg  Incoming message.
    */
-  void AGVVelocityCallback(const vda5050_msgs::Velocity::ConstPtr& msg);
+  void AGVVelocityCallback(const geometry_msgs::Twist& msg);
 
   /**
    * Callback function for incoming Load messages.
@@ -265,6 +261,5 @@ class StateAggregator : public VDA5050Node {
    * @param msg  Incoming message.
    */
   void SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg);
-
 };
 #endif
