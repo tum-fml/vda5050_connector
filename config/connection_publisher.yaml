@@ -1,5 +1,0 @@
-#publish topic is defined by vda 5050
-topics_publish:
-    connectio1nState: /connection
-topics_subscribe:
-    connectionState: /connected
