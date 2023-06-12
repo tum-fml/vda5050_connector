@@ -76,7 +76,7 @@ void StateAggregator::PublishState() {
   stateMessage.timestamp = connector_utils::GetISOCurrentTimestamp();
 
   statePublisher.publish(stateMessage);
-  
+
   // Increase header count.
   stateMessage.headerId++;
 }
@@ -150,7 +150,7 @@ void StateAggregator::LinkSubscriptionTopics(ros::NodeHandle* nh) {
     else if (CheckParamIncludes(elem.first, "agvPosition"))
       this->subscribers.push_back(
           nh->subscribe(elem.second, 1000, &StateAggregator::AGVPositionCallback, this));
-    else if (CheckParamIncludes(elem.first, "agvVelocity"))
+    else if (CheckParamIncludes(elem.first, "velocity"))
       this->subscribers.push_back(
           nh->subscribe(elem.second, 1000, &StateAggregator::AGVVelocityCallback, this));
     else if (CheckParamIncludes(elem.first, "loads"))
@@ -276,9 +276,12 @@ int main(int argc, char** argv) {
 
   StateAggregator StateAggregator;
 
+  ros::Rate rate(1.0);
+
   while (ros::ok()) {
     StateAggregator.UpdateState();
     ros::spinOnce();
+    rate.sleep();
   }
 
   // Send OFFLINE message to gracefully disconnect.
