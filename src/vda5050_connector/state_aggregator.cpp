@@ -35,12 +35,14 @@ StateAggregator::StateAggregator() : VDA5050Node(&(this->nh), ros::this_node::ge
   if (ros::param::has("/header/version")) {
     ros::param::get("/header/version", stateMessage.version);
     ros::param::get("/header/version", visMessage.version);
+    ros::param::get("/header/version", connMessage.version);
   }
 
   // Read header manufacturer.
   if (ros::param::has("/header/manufacturer")) {
     ros::param::get("/header/manufacturer", stateMessage.manufacturer);
     ros::param::get("/header/manufacturer", visMessage.manufacturer);
+    ros::param::get("/header/manufacturer", connMessage.manufacturer);
   }
 
   // Read header serialNumber.
@@ -48,16 +50,15 @@ StateAggregator::StateAggregator() : VDA5050Node(&(this->nh), ros::this_node::ge
   if (ros::param::has("/header/serialNumber")) {
     ros::param::get("/header/serialNumber", stateMessage.serialNumber);
     ros::param::get("/header/serialNumber", visMessage.serialNumber);
+    ros::param::get("/header/serialNumber", connMessage.serialNumber);
   }
 
-  stateInterval = ros::Duration(3.0);
-  visInterval = ros::Duration(1.0);
-  lastStatePublishTime = lastVisPublishTime = ros::Time::now();
+  stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&StateAggregator::PublishState, this));
+  visTimer =
+      nh.createTimer(ros::Duration(1.0), std::bind(&StateAggregator::PublishVisualization, this));
+  conTimer = nh.createTimer(
+      ros::Duration(15.0), std::bind(&StateAggregator::PublishConnection, this, true));
   newPublishTrigger = true;
-}
-
-bool StateAggregator::CheckPassedTime(ros::Time& lastPublishedTime, const ros::Duration& interval) {
-  return ros::Time::now() - lastPublishedTime >= interval;
 }
 
 void StateAggregator::PublishVisualization() {
@@ -68,8 +69,6 @@ void StateAggregator::PublishVisualization() {
 
   // Increase header count.
   visMessage.headerId++;
-
-  lastVisPublishTime = ros::Time::now();
 }
 
 void StateAggregator::PublishState() {
@@ -79,18 +78,32 @@ void StateAggregator::PublishState() {
   statePublisher.publish(stateMessage);
   // Increase header count.
   stateMessage.headerId++;
+}
 
-  lastStatePublishTime = ros::Time::now();
-  newPublishTrigger = false;
+void StateAggregator::PublishConnection(const bool connected) {
+  // Set current timestamp of message.
+  connMessage.timestamp = connector_utils::GetISOCurrentTimestamp();
+
+  // Set the connection state.
+  connMessage.connectionState =
+      connected ? vda5050_msgs::Connection::ONLINE : vda5050_msgs::Connection::OFFLINE;
+
+  connectionPublisher.publish(connMessage);
+
+  // Increase header count.
+  connMessage.headerId++;
 }
 
 void StateAggregator::UpdateState() {
-  if (CheckPassedTime(lastStatePublishTime, stateInterval) or newPublishTrigger) {
+  if (newPublishTrigger) {
     PublishState();
-  }
 
-  if (CheckPassedTime(lastVisPublishTime, visInterval)) {
-    PublishVisualization();
+    // Reset the timer.
+    stateTimer.stop();
+    stateTimer.start();
+
+    // Reset the publish trigger.
+    newPublishTrigger = false;
   }
 }
 void StateAggregator::LinkPublishTopics(ros::NodeHandle* nh) {
@@ -101,6 +114,8 @@ void StateAggregator::LinkPublishTopics(ros::NodeHandle* nh) {
       statePublisher = nh->advertise<vda5050_msgs::State>(elem.second, 1000);
     } else if (CheckParamIncludes(elem.first, "visualization")) {
       visPublisher = nh->advertise<vda5050_msgs::Visualization>(elem.second, 1000);
+    } else if (CheckParamIncludes(elem.first, "connection")) {
+      connectionPublisher = nh->advertise<vda5050_msgs::Connection>(elem.second, 1000);
     }
   }
 }
@@ -173,7 +188,7 @@ void StateAggregator::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   }
 }
 
-// VDA 5050 specific callbacks
+// VDA 5050 specific callbacks.
 void StateAggregator::OrderIdCallback(const std_msgs::String::ConstPtr& msg) {
   stateMessage.orderId = msg->data;
 }
@@ -195,11 +210,23 @@ void StateAggregator::NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPt
 void StateAggregator::EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg) {
   stateMessage.edgeStates = msg->edgeStates;
 }
-void StateAggregator::AGVPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
-  stateMessage.agvPosition = visMessage.agvPosition = *msg.get();
+void StateAggregator::AGVPositionCallback(const geometry_msgs::Pose& msg) {
+  stateMessage.agvPosition.x = visMessage.agvPosition.x = msg.position.x;
+  stateMessage.agvPosition.y = visMessage.agvPosition.y = msg.position.y;
+
+  // Get the yaw of the robot from the quaternion.
+  tf::Quaternion quaternion;
+  tf::quaternionMsgToTF(msg.orientation, quaternion);
+  double roll, pitch, yaw;
+  tf::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
+
+  // Set theta 
+  stateMessage.agvPosition.theta = visMessage.agvPosition.theta = yaw;
 }
-void StateAggregator::AGVVelocityCallback(const vda5050_msgs::Velocity::ConstPtr& msg) {
-  stateMessage.velocity = visMessage.velocity = *msg.get();
+void StateAggregator::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
+  stateMessage.velocity.vx = visMessage.velocity.vx = msg.linear.x;
+  stateMessage.velocity.vy = visMessage.velocity.vy = msg.linear.y;
+  stateMessage.velocity.omega = visMessage.velocity.omega = msg.angular.z;
 }
 void StateAggregator::LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg) {
   stateMessage.loads = msg->loads;
@@ -249,5 +276,9 @@ int main(int argc, char** argv) {
     StateAggregator.UpdateState();
     ros::spinOnce();
   }
+
+  // Send OFFLINE message to gracefully disconnect.
+  StateAggregator.PublishConnection(false);
+
   return 0;
 }

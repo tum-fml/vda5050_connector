@@ -1,6 +1,7 @@
 topics_publish:
     state: "/state"
     visualization: "/visualization"
+    connection: "/connection"
 topics_subscribe:
     orderId: "/orderId"
     orderUpdateId: "/orderUpdateId"
