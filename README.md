@@ -61,14 +61,13 @@ After cloning all required repositories, build your catkin workspace.
 
 ## Customization of the configuration
 
-There are distinct parts of the configuration that must be customized to fulfill your connection requirements. Each configuration file is named after the node that it affects. Currently, there are 6 configuration files for 5 nodes, one configuration file is common to all of them. The nodes being :
+There are distinct parts of the configuration that must be customized to fulfill your connection requirements. Each configuration file is named after the node that it affects. Currently, there are 6 configuration files for 4 nodes, one configuration file is common to all of them. The nodes being :
 
 1. ROS MQTT bridge.
 2. State Aggregator.
-3. Connection Publisher.
-4. Order Manager.
-5. Action Client.
-6. AGV Data.
+3. Order Manager.
+4. Action Client.
+5. AGV Data.
 
 Each of them is represented by a single configuration file in the /config folder.
 In the following sections we will go through them step by step.
@@ -179,7 +178,6 @@ If the VDA5050 connector was started properly, the output should be similar to:
 NODES
   /
     action_client (vda5050_connector/action_client)
-    connection_publisher (vda5050_connector/connection_publisher)
     mqtt_bridge (mqtt_bridge/mqtt_bridge_node.py)
     order_manager (vda5050_connector/order_manager)
     state_aggregator (vda5050_connector/state_aggregator)
@@ -189,7 +187,6 @@ ROS_MASTER_URI=http://localhost:11311
 process[mqtt_bridge-1]: started with pid [22954]
 process[action_client-2]: started with pid [22955]
 process[state_aggregator-3]: started with pid [22956]
-process[connection_publisher-4]: started with pid [22957]
 process[order_manager-5]: started with pid [22967]
 [INFO] [1678911895.153781] [/mqtt_bridge]: MQTT connected
 
@@ -200,6 +197,15 @@ process[order_manager-5]: started with pid [22967]
 The output also gives an overview of all parameters read from the config file. Check if the topics are defined as required.
 If any parameters are not readable or not found on the parameter server, there is a warning output. Please check if there is a typo in your config file.
 
+## Run the state mockup
+
+The Connector includes a state mockup for testing. The mockup sends random speed, twist and battery values to the State Aggregator.
+You can run the mockup with the following command :
+
+``` bash
+rosrun vda5050_connector state_mockup
+```
+
 ## Interface Documentation
 
 An overview of the node configuration, channels and required message types is available [here](doc/README.md).
@@ -207,14 +213,6 @@ An overview of the node configuration, channels and required message types is av
 ## Known Issues
 
 * Currently, the console output is done twice for some parameters due to the architecture.
-* Sometimes the MQTT-Bridge cannot connect properly. If the output constantly changes between connected and disconnected, there is probably an error in the network configuration.
-
-```console
-   [INFO] [1657111653.836246]: MQTT disconnected
-   [INFO] [1657111653.836246]: MQTT connected
-   [INFO] [1657111653.836246]: MQTT disconnected
-   [INFO] [1657111653.836246]: MQTT connected
-```
 
 ## Comments on VDA 5050 specification
 
