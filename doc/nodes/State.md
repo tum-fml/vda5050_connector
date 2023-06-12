@@ -4,7 +4,7 @@
 
 The State Aggregator is a work in progress. It works by subscribing to multiple channels to get information about the state of the AGV, then it combines everything into one VDA5050 State message that is sent to Master Control.
 
-The State Aggregator also builds and sends the visualization messages to MC.
+The State Aggregator also builds and sends the visualization messages to MC, as well as the connection state messages.
 
 This interface documentation will get updated as more channels get added with their proper type.
 
@@ -19,8 +19,8 @@ This interface documentation will get updated as more channels get added with th
 * lastNodeSequenceId [std_msgs::UInt32] : The Sequence ID of the last node traversed.
 * nodeStates [vda5050_msgs::NodeStates] : State of the nodes of the current order.
 * edgeStates [vda5050_msgs::EdgeStates] : State of the edges of the current order.
-* agvPosition [vda5050_msgs::AGVPosition] : The current position of the AGV.
-* velocity [vda5050_msgs::Velocity] : The current speed of the AGV.
+* agvPosition [geometry_msgs::Pose] : The current position of the AGV.
+* velocity [geometry_msgs::Twist] : The current speed of the AGV.
 * loads [vda5050_msgs::Loads] : Load state of the AGV.
 * driving [std_msgs::Bool] : State of the AGV if it's driving at the moment or not.
 * paused [std_msgs::Bool] : State of the AGV if it's paused or not.
@@ -37,3 +37,4 @@ This interface documentation will get updated as more channels get added with th
 
 * state [vda5050_msgs::State] : The state of the robot to be published to AnyFleet.
 * visualization [vda5050_msgs::Visalization] : Real time visualization messages of the AGV to AnyFleet.
+* connectionState [vda5050_msgs::Connection] : Connection state sent to Master Control.
