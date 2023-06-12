@@ -230,7 +230,7 @@ class StateAggregator : public VDA5050Node {
    *
    * @param msg  Incoming message.
    */
-  void BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg);
+  void BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
 
   /**
    * Callback function that is called when the operating mode of the vehicle

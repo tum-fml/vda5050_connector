@@ -10,15 +10,15 @@ topics_subscribe:
     lastNodeSequenceId: "/lastNodeSequenceId"
     nodeStates: "/nodeStates"
     edgeStates: "/edgeStates"
-    agvPosition: "/agvPosition"
-    velocity: "/agvVelocity"
+    agvPosition: "/agvPosition" #!!! Uses ROS Pose messages. !!!
+    velocity: "/agvVelocity" #!!! Uses ROS Twist messages. !!!
     loads: "/loads"
     driving: "/driving"
     paused: "/paused"
     newBaseRequest: "/newBaseRequest"
     distanceSinceLastNode: "/distanceSinceLastNode"
     actionStates: "/actionStates"
-    batteryState: "/batteryState"
+    batteryState: "/batteryState" #!!! Uses ROS Battery messages. !!!
     operatingMode: "/operatingMode"
     errors: "/errors"
     information: "/information"

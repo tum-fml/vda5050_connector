@@ -7,81 +7,111 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 #include <math.h>
+#include <sensor_msgs/BatteryState.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ctime>
 #include <iostream>
+#include <random>
 #include <string>
 #include "ros/ros.h"
 #include "vda5050_msgs/AGVPosition.h"
 #include "vda5050_msgs/State.h"
+#include "vda5050_msgs/Visualization.h"
 
 using namespace std;
 
-string getTimestamp() {
-  time_t now;
-  time(&now);
-  char buf[sizeof "2011-10-08T07:07:09Z"];
-  strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
-  return (buf);
-}
-
-/*
- * This is a simple example program to send a state mockup file to anyfleet
+/**
+ * @brief Publishes a random agv position.
+ *
  */
+void publishRandomAGVPosition(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
 
-// creates the order msg
-vda5050_msgs::State createMessage() {
-  vda5050_msgs::State msg;
-  msg.headerId = 1;
-  msg.timestamp = getTimestamp();
-  msg.version = "1.1";
-  msg.manufacturer = "fml Enterprise";
-  msg.serialNumber = "ajf894ajc";
-  //	msg.orderId="pass nr 3.5";
-  //	msg.orderUpdateId=876324;
-  //	msg.zoneSetId="fml hall of fame";
-  msg.agvPosition.x = 25.07;
-  msg.agvPosition.y = 17.44;
-  msg.agvPosition.theta = 0;
-  msg.agvPosition.positionInitialized = true;
-  msg.agvPosition.mapId = "c01bf928-27b4-4018-9df0-cb37b96bf710";
-  msg.batteryState.batteryCharge = 70.0;
-  //	msg.driving=true;
+  // Define the range of the random values
+  std::uniform_real_distribution<double> pose_dist(0.0, 400.0);
+  std::uniform_real_distribution<double> rotation_dist(-M_PI, M_PI);
 
-  return (msg);
+  // Set random position on the map.
+  geometry_msgs::Pose pose;
+  pose.position.x = pose_dist(gen);
+  pose.position.y = pose_dist(gen);
+
+  // Set random angle for the robot.
+  tf2::Quaternion quat;
+  quat.setRPY(0.0, 0, rotation_dist(gen));
+  pose.orientation = tf2::toMsg(quat);
+
+  // Publish the msg.
+  publisher.publish(pose);
 }
 
-vda5050_msgs::State updateMessage(
-    vda5050_msgs::State msg, float angle, float r, float mx, float my) {
-  msg.agvPosition.x = r * cos(angle) + mx;
-  msg.agvPosition.y = r * sin(angle) + my;
-  msg.agvPosition.theta = angle;
-  return (msg);
+/**
+ * @brief Publishes a random agv speed.
+ *
+ */
+void publishRandomAGVTwist(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> linear_dist(0.0, 2.5);
+  std::uniform_real_distribution<double> angular_dist(-2, 2);
+
+  // Set random speed for the robot.
+  geometry_msgs::Twist twist;
+  twist.linear.x = linear_dist(gen);
+  twist.linear.y = linear_dist(gen);
+  twist.angular.z = angular_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(twist);
+}
+
+/**
+ * @brief Publishes a random agv position.
+ *
+ */
+void publishRandomAGVBattery(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> percentage_dist(0.0, 1.0);
+  std::uniform_real_distribution<double> voltage_dist(30, 50);
+  std::uniform_int_distribution<int> power_supply_dist(0, 4);
+
+  // Set random battery for the robot.
+  sensor_msgs::BatteryState battery_state;
+  battery_state.percentage = percentage_dist(gen);
+  battery_state.voltage = voltage_dist(gen);
+  battery_state.power_supply_status = power_supply_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(battery_state);
 }
 
 int main(int argc, char** argv) {
-  string topicPublish = "state";
-  string topicViz = "viz";
-  if (argc > 1) topicPublish = argv[1];
   ros::init(argc, argv, "state_msg_mockup");
   ros::NodeHandle nh;
-  ros::Rate loop_rate(10);
-  ros::Publisher publisherState = nh.advertise<vda5050_msgs::State>(topicPublish, 1000);
-  vda5050_msgs::State msg = createMessage();
-  float mx = 30;
-  float my = 30;
-  float r = 10;
-  cout << topicPublish << "\n";
-  float angle = -M_PI;
+  ros::Rate loop_rate(1);
+  ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/agvPosition", 1000);
+  ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/agvVelocity", 1000);
+  ros::Publisher battery_publisher =
+      nh.advertise<sensor_msgs::BatteryState>("/batteryState", 1000);
+
   while (ros::ok()) {
-    publisherState.publish(msg);
+    // Publish messages.
+    publishRandomAGVPosition(pos_publisher);
+    publishRandomAGVTwist(speed_publisher);
+    publishRandomAGVBattery(battery_publisher);
+
     ros::spinOnce();
     loop_rate.sleep();
-    msg.headerId += 1;
-    //		msg=updateMessage(msg,angle,r,mx,my);
-    //		angle+=0.05;
-    //			if (angle >= M_PI)
-    //		angle=-M_PI;
   }
   return (0);
 };

@@ -76,6 +76,7 @@ void StateAggregator::PublishState() {
   stateMessage.timestamp = connector_utils::GetISOCurrentTimestamp();
 
   statePublisher.publish(stateMessage);
+
   // Increase header count.
   stateMessage.headerId++;
 }
@@ -149,7 +150,7 @@ void StateAggregator::LinkSubscriptionTopics(ros::NodeHandle* nh) {
     else if (CheckParamIncludes(elem.first, "agvPosition"))
       this->subscribers.push_back(
           nh->subscribe(elem.second, 1000, &StateAggregator::AGVPositionCallback, this));
-    else if (CheckParamIncludes(elem.first, "agvVelocity"))
+    else if (CheckParamIncludes(elem.first, "velocity"))
       this->subscribers.push_back(
           nh->subscribe(elem.second, 1000, &StateAggregator::AGVVelocityCallback, this));
     else if (CheckParamIncludes(elem.first, "loads"))
@@ -220,7 +221,7 @@ void StateAggregator::AGVPositionCallback(const geometry_msgs::Pose& msg) {
   double roll, pitch, yaw;
   tf::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
 
-  // Set theta 
+  // Set theta in robot's position.
   stateMessage.agvPosition.theta = visMessage.agvPosition.theta = yaw;
 }
 void StateAggregator::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
@@ -249,8 +250,11 @@ void StateAggregator::ActionStateCallback(const vda5050_msgs::ActionState::Const
   /** TODO: Use single action states*/
   // stateMessage.actionStates=msg->actionStates;
 }
-void StateAggregator::BatteryStateCallback(const vda5050_msgs::BatteryState::ConstPtr& msg) {
-  stateMessage.batteryState = *msg.get();
+void StateAggregator::BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
+  if (!isnan(msg->percentage)) stateMessage.batteryState.batteryCharge = msg->percentage * 100.0;
+  stateMessage.batteryState.batteryVoltage = msg->voltage;
+  stateMessage.batteryState.charging =
+      msg->power_supply_status == sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
 }
 void StateAggregator::OperatingModeCallback(const std_msgs::String::ConstPtr& msg) {
   stateMessage.operatingMode = msg->data;
@@ -272,9 +276,12 @@ int main(int argc, char** argv) {
 
   StateAggregator StateAggregator;
 
+  ros::Rate rate(1.0);
+
   while (ros::ok()) {
     StateAggregator.UpdateState();
     ros::spinOnce();
+    rate.sleep();
   }
 
   // Send OFFLINE message to gracefully disconnect.
