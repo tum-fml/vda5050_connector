@@ -27,7 +27,7 @@ This interface documentation will get updated as more channels get added with th
 * newBaseRequest [std_msgs::Bool] : Boolean indicating that the AGV is running out of base nodes and requires an update.
 * distanceSinceLastNode [std_msgs::Float64] : Distance traversed by the AGV since the last node traversed.
 * actionStates [vda5050_msgs::ActionState] : State of the actions of the current order.
-* batteryState [vda5050_msgs::BatteryState] : Battery state of the AGV.
+* batteryState [sensor_msgs::BatteryState] : Battery state of the AGV.
 * operatingMode [std_msgs::String] : The operating mode in the AGV. E.g. AUTOMATIC/MANUAL.
 * errors [vda5050_msgs::Errors] : List of the errors produced by the AGV.
 * information [vda5050_msgs::Information] : List of information messages produced by the AGV.
