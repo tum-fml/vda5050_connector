@@ -33,7 +33,7 @@ string getTimestamp() {
 vda5050_msgs::Visualization createMessage() {
   vda5050_msgs::Visualization msg;
   msg.headerId = 1;
-  msg.timestamp = getTimestamp();
+  msg.timeStamp = getTimestamp();
   msg.version = "1.1";
   msg.manufacturer = "fml Enterprise";
   msg.serialNumber = "ajf894ajc";
