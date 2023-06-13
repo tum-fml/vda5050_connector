@@ -4,9 +4,7 @@ mqtt:
     ca_certs: <path_to_root_certificate>
     certfile: <path_to_device_certificate>
     keyfile: <path_to_private_key>
-    tls_version: 5
-    tls_insecure: false
-    
+
   # Connection parameters.
   connection:
     host: <hostname>
@@ -15,7 +13,6 @@ mqtt:
 
   # MQTT parameters.
   client:
-    protocol: 4
     client_id: <device_client_id>
 
 bridge:
@@ -24,7 +21,7 @@ bridge:
     msg_type: vda5050_msgs.msg:State
     topic_from: /state
     topic_to: qa/<device_client_id>/state
-    
+
   - factory: mqtt_bridge.bridge:RosToMqttBridge
     msg_type: vda5050_msgs.msg:Visualization
     topic_from: /visualization
@@ -34,14 +31,19 @@ bridge:
     msg_type: vda5050_msgs.msg:Connection
     topic_from: /connection
     topic_to: qa/<device_client_id>/connection
-    
+
   # Bridge from MQTT to ROS.
   - factory: mqtt_bridge.bridge:MqttToRosBridge
     msg_type: vda5050_msgs.msg:Action
     topic_from: qa/<device_client_id>/instantActions
     topic_to: /instantActions
-    
+
   - factory: mqtt_bridge.bridge:MqttToRosBridge
     msg_type: vda5050_msgs.msg:Order
     topic_from: qa/<device_client_id>/order
     topic_to: /order_from_mc
+
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:ZoneUpdate
+    topic_from: qa/<device_client_id>/zones
+    topic_to: /zones
