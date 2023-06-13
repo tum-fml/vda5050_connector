@@ -63,7 +63,7 @@ StateAggregator::StateAggregator() : VDA5050Node(&(this->nh), ros::this_node::ge
 
 void StateAggregator::PublishVisualization() {
   // Set current timestamp of message.
-  visMessage.timestamp = connector_utils::GetISOCurrentTimestamp();
+  visMessage.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
   visPublisher.publish(visMessage);
 
@@ -73,7 +73,7 @@ void StateAggregator::PublishVisualization() {
 
 void StateAggregator::PublishState() {
   // Set current timestamp of message.
-  stateMessage.timestamp = connector_utils::GetISOCurrentTimestamp();
+  stateMessage.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
   statePublisher.publish(stateMessage);
 
@@ -83,7 +83,7 @@ void StateAggregator::PublishState() {
 
 void StateAggregator::PublishConnection(const bool connected) {
   // Set current timestamp of message.
-  connMessage.timestamp = connector_utils::GetISOCurrentTimestamp();
+  connMessage.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
   // Set the connection state.
   connMessage.connectionState =

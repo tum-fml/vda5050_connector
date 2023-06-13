@@ -128,7 +128,7 @@ void OrderMsg::create_example_order(int new_headerId, std::string new_orderId, i
     int node_num, int node_released_num) {
   // header
   this->_msg.headerId = new_headerId;
-  this->_msg.timestamp = "10/6/2022 10:16:37 AM";
+  this->_msg.timeStamp = "10/6/2022 10:16:37 AM";
   this->_msg.version = "v1";
   this->_msg.manufacturer;
   this->_msg.serialNumber;
