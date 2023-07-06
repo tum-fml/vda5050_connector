@@ -167,6 +167,20 @@ class StateAggregator : public VDA5050Node {
   void EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg);
 
   /**
+   * @brief Callback function for position initialized
+   *
+   * @param msg
+   */
+  void AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
+   * @brief Callback function for the map id.
+   *
+   * @param msg
+   */
+  void AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
    * Callback function for incoming AGV positions.
    *
    * @param msg  Incoming message.

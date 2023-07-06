@@ -150,6 +150,12 @@ void StateAggregator::LinkSubscriptionTopics(ros::NodeHandle* nh) {
     else if (CheckParamIncludes(elem.first, "agvPosition"))
       this->subscribers.push_back(
           nh->subscribe(elem.second, 1000, &StateAggregator::AGVPositionCallback, this));
+    else if (CheckParamIncludes(elem.first, "mapId"))
+      this->subscribers.push_back(
+          nh->subscribe(elem.second, 1000, &StateAggregator::AGVPositionMapIdCallback, this));
+    else if (CheckParamIncludes(elem.first, "positionInitialized"))
+      this->subscribers.push_back(
+          nh->subscribe(elem.second, 1000, &StateAggregator::AGVPositionInitializedCallback, this));
     else if (CheckParamIncludes(elem.first, "velocity"))
       this->subscribers.push_back(
           nh->subscribe(elem.second, 1000, &StateAggregator::AGVVelocityCallback, this));
@@ -224,6 +230,15 @@ void StateAggregator::AGVPositionCallback(const geometry_msgs::Pose& msg) {
   // Set theta in robot's position.
   stateMessage.agvPosition.theta = visMessage.agvPosition.theta = yaw;
 }
+
+void StateAggregator::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg) {
+  stateMessage.agvPosition.positionInitialized = msg->data;
+}
+
+void StateAggregator::AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg) {
+  stateMessage.agvPosition.mapId = msg->data;
+}
+
 void StateAggregator::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
   stateMessage.velocity.vx = visMessage.velocity.vx = msg.linear.x;
   stateMessage.velocity.vy = visMessage.velocity.vy = msg.linear.y;
