@@ -10,6 +10,8 @@ topics_subscribe:
     lastNodeSequenceId: "/lastNodeSequenceId"
     nodeStates: "/nodeStates"
     edgeStates: "/edgeStates"
+    mapId: "/mapId" #!!! Uses ROS String messages. !!!
+    positionInitialized: "/positionInitialized" #!!! Uses ROS bool messages. !!!
     agvPosition: "/agvPosition" #!!! Uses ROS Pose messages. !!!
     velocity: "/agvVelocity" #!!! Uses ROS Twist messages. !!!
     loads: "/loads"

@@ -1,7 +1,7 @@
 <launch>
   <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${time}] [${node}]: ${message}" />
   <arg name="bridge_params" />
-  <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen">
+  <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen" respawn="true">
     <rosparam command="load" file="$(find vda5050_connector)/config/mqtt_bridge.yaml" />
   </node>
   <node name="action_client" pkg="vda5050_connector" type="action_client" clear_params="true"

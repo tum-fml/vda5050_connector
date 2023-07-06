@@ -11,8 +11,13 @@
 #include <geometry_msgs/Twist.h>
 #include <math.h>
 #include <sensor_msgs/BatteryState.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <ctime>
 #include <iostream>
 #include <random>
@@ -95,20 +100,58 @@ void publishRandomAGVBattery(const ros::Publisher& publisher) {
   publisher.publish(battery_state);
 }
 
+/**
+ * @brief Publishes a random map id.
+ *
+ */
+void publishRandomMapId(const ros::Publisher& publisher) {
+  // Create a random string UUID.
+  boost::uuids::uuid uuid = boost::uuids::random_generator()();
+
+  // Build the string message.
+  std_msgs::String map_id_msg;
+  map_id_msg.data = boost::uuids::to_string(uuid);
+
+  // Publish the msg.
+  publisher.publish(map_id_msg);
+}
+
+/**
+ * @brief Publishes a random position initialized value.
+ *
+ */
+void publishRandomPosInit(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_int_distribution<int> pos_init_dist(0, 1);
+
+  // Create the bool message.
+  std_msgs::Bool pos_init_msg;
+  pos_init_msg.data = pos_init_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(pos_init_msg);
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "state_msg_mockup");
   ros::NodeHandle nh;
   ros::Rate loop_rate(1);
   ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/agvPosition", 1000);
   ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/agvVelocity", 1000);
-  ros::Publisher battery_publisher =
-      nh.advertise<sensor_msgs::BatteryState>("/batteryState", 1000);
+  ros::Publisher battery_publisher = nh.advertise<sensor_msgs::BatteryState>("/batteryState", 1000);
+  ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/mapId", 1000);
+  ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/positionInitialized", 1000);
 
   while (ros::ok()) {
     // Publish messages.
     publishRandomAGVPosition(pos_publisher);
     publishRandomAGVTwist(speed_publisher);
     publishRandomAGVBattery(battery_publisher);
+    publishRandomMapId(map_id_publisher);
+    publishRandomPosInit(pos_init_publisher);
 
     ros::spinOnce();
     loop_rate.sleep();
