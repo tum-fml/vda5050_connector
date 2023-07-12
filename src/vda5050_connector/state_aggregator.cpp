@@ -280,7 +280,7 @@ void StateAggregator::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg) 
   newPublishTrigger = true;
 }
 void StateAggregator::InformationCallback(const vda5050_msgs::Information::ConstPtr& msg) {
-  stateMessage.informations = msg->informations;
+  stateMessage.information = msg->information;
 }
 void StateAggregator::SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg) {
   stateMessage.safetyState = *msg.get();
