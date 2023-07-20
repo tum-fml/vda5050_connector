@@ -33,10 +33,10 @@ Go to your catkin workspace and cd into the src directory:
 cd ./src
 ```
 
-Clone the `mqtt_bridge` repository and install the additional requirements to run the bridge (see <https://github.com/groove-x/mqtt_bridge#prerequisites>).
+Clone the `mqtt_bridge` repository and install the additional requirements to run the bridge (see <https://github.com/idealworks/mqtt_bridge#prerequisites>).
 
 ```console
-git clone https://github.com/groove-x/mqtt_bridge.git
+git clone https://github.com/idealworks/mqtt_bridge.git
 ```
 
 >**NOTE**\

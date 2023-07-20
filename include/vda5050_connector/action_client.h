@@ -16,21 +16,20 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "vda5050node.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/InstantActions.h"
 #include "vda5050_msgs/OrderActions.h"
+#include "vda5050node.h"
 
 using namespace std;
 
 /**
  * Stores information about a single action.
  */
-class ActionElement {
- private:
+struct ActionElement {
   // Unique ID to identify the related order.
   string orderId;
 
@@ -46,7 +45,6 @@ class ActionElement {
   // Array of action parameters.
   vector<vda5050_msgs::ActionParameter> actionParameters;
 
- public:
   // State of the action.
   string state;
 
@@ -77,16 +75,6 @@ class ActionElement {
    * @return               false if IDs are not equal.
    */
   bool compareActionId(string actionId2comp);
-
-  /**
-   * Checks if this Action's order ID equals the given one.
-   *
-   * @param orderId2comp  ID to compare.
-   *
-   * @return              true if IDs are equal.
-   * @return              false if IDs are not equal.
-   */
-  bool compareOrderId(string orderId2comp);
 
   /**
    * Get the Action ID object.

@@ -12,9 +12,25 @@
 using namespace std;
 using namespace connector_utils;
 
-/*-------------------------------------CurrentOrder--------------------------------------------*/
+/**
+ * TODO: publish to topicPub, if following requirements are met:
+ * - received order
+ * - received order update
+ * - change of load status Done in Callback
+ * - error
+ * Done in Callback
+ * - driving over an node
+ * - change in operationMode									Done
+ * in Callback
+ * - change in "driving" field of the state						Done in
+ * Callback
+ * - change in nodeStates, edgeStates or actionStates
+ * - every 30 seconds if nothing changed
+ *  */
 
-CurrentOrder::CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder) {
+/*-------------------------------------Order--------------------------------------------*/
+
+Order::Order(const vda5050_msgs::Order::ConstPtr& incomingOrder) {
   actionsFinished = false;
   actionCancellationComplete = false;
 
@@ -27,44 +43,20 @@ CurrentOrder::CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder) {
       deque<vda5050_msgs::Node>({incomingOrder->nodes.begin(), incomingOrder->nodes.end()});
 }
 
-bool CurrentOrder::compareOrderId(string orderIdToCompare) {
-  return this->orderId == orderIdToCompare;
-}
-
-string CurrentOrder::compareOrderUpdateId(int orderUpdateIdToCompare) {
-  if (orderUpdateIdToCompare == this->orderUpdateId)
-    return "EQUAL";
-  else if (orderUpdateIdToCompare > this->orderUpdateId)
-    return "HIGHER";
-  else if (orderUpdateIdToCompare < this->orderUpdateId)
-    return "LOWER";
-  else
-    return "ERROR";
-}
-
-bool CurrentOrder::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId) {
+bool Order::compareBase(string startOfNewBaseNodeId, int startOfNewBaseSequenceId) {
   return (this->nodeStates.back().nodeId == startOfNewBaseNodeId) &&
          (this->nodeStates.back().sequenceId == startOfNewBaseSequenceId);
 }
 
-string CurrentOrder::getOrderId() { return this->orderId; }
+string Order::getOrderId() { return this->orderId; }
 
-int CurrentOrder::getOrderUpdateId() { return this->orderUpdateId; }
+int Order::getOrderUpdateId() { return this->orderUpdateId; }
 
-void CurrentOrder::setOrderUpdateId(int incomingUpdateId) {
-  this->orderUpdateId = incomingUpdateId;
-}
+void Order::setOrderUpdateId(int orderUpdateId) { this->orderUpdateId = orderUpdateId; }
 
-bool CurrentOrder::isActive() {
-  if (!this->nodeStates.empty()) {
-    if (!this->edgeStates.empty()) {
-      if (this->actionStates.empty()) return true;
-    }
-  }
-  return false;
-}
+bool Order::isActive() { return (!(this->nodeStates.empty() && this->edgeStates.empty())); }
 
-string CurrentOrder::findNodeEdge(int currSequenceId) {
+string Order::findNodeEdge(int currSequenceId) {
   if (edgeStates.front().sequenceId == currSequenceId)
     return "EDGE";
   else if (nodeStates.front().sequenceId == currSequenceId)
@@ -73,7 +65,7 @@ string CurrentOrder::findNodeEdge(int currSequenceId) {
     return "SEQUENCE ERROR";
 }
 
-vda5050_msgs::Node CurrentOrder::getLastNodeInBase() {
+vda5050_msgs::Node Order::getLastNodeInBase() {
   /** find first element which is not released to find end of base*/
   auto it = find_if(nodeStates.begin(), nodeStates.end(),
       [](const vda5050_msgs::Node& node) { return node.released == false; });
@@ -84,7 +76,7 @@ vda5050_msgs::Node CurrentOrder::getLastNodeInBase() {
     return nodeStates.back();
 }
 
-void CurrentOrder::sendActions(ros::Publisher actionPublisher) {
+void Order::sendActions(ros::Publisher actionPublisher) {
   int maxSequenceId = max(edgeStates.back().sequenceId, nodeStates.back().sequenceId);
   deque<vda5050_msgs::Edge>::iterator edgeIt = edgeStates.begin();
   deque<vda5050_msgs::Node>::iterator nodeIt = nodeStates.begin();
@@ -112,7 +104,7 @@ void CurrentOrder::sendActions(ros::Publisher actionPublisher) {
   }
 }
 
-void CurrentOrder::sendNodeStates(ros::Publisher nodeStatesPublisher) {
+void Order::sendNodeStates(ros::Publisher nodeStatesPublisher) {
   for (auto const& state_it : this->nodeStates) {
     /** Create node states message*/
     vda5050_msgs::NodeState state_msg;
@@ -129,7 +121,7 @@ void CurrentOrder::sendNodeStates(ros::Publisher nodeStatesPublisher) {
   }
 }
 
-void CurrentOrder::sendEdgeStates(ros::Publisher edgeStatesPublisher) {
+void Order::sendEdgeStates(ros::Publisher edgeStatesPublisher) {
   for (auto const& state_it : this->edgeStates) {
     /** Create node states message*/
     vda5050_msgs::EdgeState state_msg;
@@ -168,52 +160,107 @@ float AGVPosition::getTheta() { return theta; }
 
 /*-------------------------------------OrderManager--------------------------------------------*/
 
-OrderManager::OrderManager() : VDA5050Node(&(this->nh), ros::this_node::getName()) {
+OrderManager::OrderManager() {
   /** Initialize external ROS topics*/
   LinkPublishTopics(&(this->nh));
   LinkSubscriptionTopics(&(this->nh));
 
-  /** Initialize internal ROS topics*/
-  // TODO : Remove this.
-  orderCancelSub =
-      nh.subscribe("orderCancelRequest", 1000, &OrderManager::OrderCancelRequestCallback, this);
-  agvPositionSub = nh.subscribe("/agvPosition", 1000, &OrderManager::AgvPositionCallback, this);
-  allActionsCancelledSub =
-      nh.subscribe("allActionsCancelled", 1000, &OrderManager::allActionsCancelledCallback, this);
-  orderActionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
-  orderCancelPub = nh.advertise<std_msgs::String>("orderCancelResponse", 1000);
-  orderTriggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
-  nodeStatesPub = nh.advertise<vda5050_msgs::NodeStates>("nodeStates", 1000);
-  edgeStatesPub = nh.advertise<vda5050_msgs::EdgeStates>("edgeStates", 1000);
-  lastNodeIdPub = nh.advertise<std_msgs::String>("lastNodeId", 1000);
-  lastNodeSequenceIdPub = nh.advertise<std_msgs::UInt32>("lastNodeSequenceId", 1000);
-  orderIdPub = nh.advertise<std_msgs::String>("orderId", 1000);
-  orderUpdateIdPub = nh.advertise<std_msgs::UInt32>("orderUpdateId", 1000);
+  // Read header version.
+  if (ros::param::has("/header/version")) {
+    ros::param::get("/header/version", state.version);
+    ros::param::get("/header/version", visualization.version);
+    ros::param::get("/header/version", connection.version);
+  }
+
+  // Read header manufacturer.
+  if (ros::param::has("/header/manufacturer")) {
+    ros::param::get("/header/manufacturer", state.manufacturer);
+    ros::param::get("/header/manufacturer", visualization.manufacturer);
+    ros::param::get("/header/manufacturer", connection.manufacturer);
+  }
+
+  // Read header serialNumber.
+  // TODO : The serial number needs to be read from the client ID Text file!
+  if (ros::param::has("/header/serialNumber")) {
+    ros::param::get("/header/serialNumber", state.serialNumber);
+    ros::param::get("/header/serialNumber", visualization.serialNumber);
+    ros::param::get("/header/serialNumber", connection.serialNumber);
+  }
+
+  stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&OrderManager::PublishState, this));
+  visTimer =
+      nh.createTimer(ros::Duration(1.0), std::bind(&OrderManager::PublishVisualization, this));
+  connTimer =
+      nh.createTimer(ros::Duration(15.0), std::bind(&OrderManager::PublishConnection, this, true));
+  newPublishTrigger = true;
 }
 
 void OrderManager::LinkPublishTopics(ros::NodeHandle* nh) {
-  map<string, string> topicList = GetTopicPublisherList();
-  std::string topic_index;
+  std::map<std::string, std::string> topicList =
+      GetTopicList(ros::this_node::getName() + "/publish_topics");
 
   for (const auto& elem : topicList) {
-    topic_index = GetTopic(elem.first);
-    if (CheckParamIncludes(elem.first, "orderMotion"))
-      messagePublisher[topic_index] = nh->advertise<vda5050_msgs::OrderMotion>(elem.second, 1000);
-    if (CheckParamIncludes(elem.first, "prDriving")) {
-      messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
+    if (CheckParamIncludes(elem.first, "order"))
+      orderPublisher = nh->advertise<vda5050_msgs::Order>(elem.second, 1000);
+    else if (CheckParamIncludes(elem.first, "state")) {
+      statePublisher = nh->advertise<vda5050_msgs::State>(elem.second, 1000);
+    } else if (CheckParamIncludes(elem.first, "visualization")) {
+      visPublisher = nh->advertise<vda5050_msgs::Visualization>(elem.second, 1000);
+    } else if (CheckParamIncludes(elem.first, "connection")) {
+      connectionPublisher = nh->advertise<vda5050_msgs::Connection>(elem.second, 1000);
     }
   }
 }
 
 void OrderManager::LinkSubscriptionTopics(ros::NodeHandle* nh) {
-  map<string, string> topicList = GetTopicSubscriberList();
-  for (const auto& elem : topicList) {
-    if (CheckParamIncludes(elem.first, "orderFromMc"))
-      nh->subscribe(elem.second, 1000, &OrderManager::OrderCallback, this);
-    else if (CheckParamIncludes(elem.first, "actionStates"))
-      nh->subscribe(elem.second, 1000, &OrderManager::ActionStateCallback, this);
-    else if (CheckParamIncludes(elem.first, "driving"))
-      nh->subscribe(elem.second, 1000, &OrderManager::DrivingCallback, this);
+  std::map<std::string, std::string> topic_list =
+      GetTopicList(ros::this_node::getName() + "/subscribe_topics");
+  for (const auto& elem : topic_list) {
+    if (CheckParamIncludes(elem.first, "order_from_mc"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::OrderCallback, this)));
+    else if (CheckParamIncludes(elem.first, "zoneSetId"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::ZoneSetIdCallback, this)));
+    else if (CheckParamIncludes(elem.first, "agvPosition"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::AGVPositionCallback, this)));
+    else if (CheckParamIncludes(elem.first, "mapId"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::AGVPositionMapIdCallback, this)));
+    else if (CheckParamIncludes(elem.first, "positionInitialized"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::AGVPositionInitializedCallback, this)));
+    else if (CheckParamIncludes(elem.first, "agvVelocity"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::AGVVelocityCallback, this)));
+    else if (CheckParamIncludes(elem.first, "loads"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::LoadsCallback, this)));
+    else if (CheckParamIncludes(elem.first, "paused"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::PausedCallback, this)));
+    else if (CheckParamIncludes(elem.first, "newBaseRequest"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::NewBaseRequestCallback, this)));
+    else if (CheckParamIncludes(elem.first, "distanceSinceLastNode"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::DistanceSinceLastNodeCallback, this)));
+    else if (CheckParamIncludes(elem.first, "batteryState"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::BatteryStateCallback, this)));
+    else if (CheckParamIncludes(elem.first, "operatingMode"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::OperatingModeCallback, this)));
+    else if (CheckParamIncludes(elem.first, "errors"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::ErrorsCallback, this)));
+    else if (CheckParamIncludes(elem.first, "information"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::InformationCallback, this)));
+    else if (CheckParamIncludes(elem.first, "safetyState"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &OrderManager::SafetyStateCallback, this)));
   }
 }
 
@@ -227,38 +274,39 @@ bool OrderManager::validationCheck(const vda5050_msgs::Order::ConstPtr& msg) {
 bool OrderManager::inDevRange(vda5050_msgs::Node node) {
   return ((agvPosition.nodeDistance(node.nodePosition.x, node.nodePosition.y)) <=
              node.nodePosition.allowedDeviationXY) &&
-         (agvPosition.getTheta() <= node.nodePosition.allowedDeviationTheta);
+         (abs(agvPosition.getTheta() - node.nodePosition.theta) <=
+             node.nodePosition.allowedDeviationTheta);
 }
 
 void OrderManager::triggerNewActions(string nodeOrEdge) {
   if (nodeOrEdge == "NODE") {
-    if (this->currentOrders.front().nodeStates.front().released) {
-      if (!this->currentOrders.front().nodeStates.front().actions.empty()) {
-        for (auto const& action : this->currentOrders.front().nodeStates.front().actions) {
+    if (this->order.nodeStates.front().released) {
+      if (!this->order.nodeStates.front().actions.empty()) {
+        for (auto const& action : this->order.nodeStates.front().actions) {
           std_msgs::String msg;
           msg.data = action.actionId;
           orderTriggerPub.publish(msg);
         }
       } else
-        currentOrders.front().actionsFinished = true;
+        order.actionsFinished = true;
     }
   } else if (nodeOrEdge == "EDGE") {
-    if (this->currentOrders.front().edgeStates.front().released) {
-      if (!this->currentOrders.front().edgeStates.front().actions.empty()) {
-        for (auto const& action : this->currentOrders.front().edgeStates.front().actions) {
+    if (this->order.edgeStates.front().released) {
+      if (!this->order.edgeStates.front().actions.empty()) {
+        for (auto const& action : this->order.edgeStates.front().actions) {
           std_msgs::String msg;
           msg.data = action.actionId;
           orderTriggerPub.publish(msg);
         }
       } else
-        currentOrders.front().actionsFinished = true;
+        order.actionsFinished = true;
     }
   } else
     ROS_ERROR("Neither node nor edge matching sequence ID!");
 }
 
 void OrderManager::sendMotionCommand() {
-  vda5050_msgs::Edge edge = currentOrders.front().edgeStates.front();
+  vda5050_msgs::Edge edge = order.edgeStates.front();
   vda5050_msgs::OrderMotion msg;
   if (edge.released) {
     /** TODO: catch exceptions if certain optional keys are not inlcuded in the message*/
@@ -273,52 +321,49 @@ void OrderManager::sendMotionCommand() {
 
     /** check if trajectory is in use*/
     if (edge.trajectory.knotVector.empty())
-      msg.target = currentOrders.front().nodeStates.front().nodePosition;
+      msg.target = order.nodeStates.front().nodePosition;
     else
       msg.trajectory = edge.trajectory;
-    messagePublisher["orderMotion"].publish(msg);
   } else
     ROS_ERROR("Neither node nor edge matching sequence ID!");
 }
 
 void OrderManager::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
+  ROS_INFO("Order message received");
+
   if (validationCheck(msg)) {
-    if (!currentOrders.empty()) {
-      if (currentOrders.back().compareOrderId(msg->orderId)) {
-        if (currentOrders.back().compareOrderUpdateId(msg->orderUpdateId) == "LOWER") {
+    // TODO : Update the validation and checks.
+    if (order.isActive()) {
+      if (order.orderId == msg->orderId) {
+        if (order.orderUpdateId < msg->orderUpdateId) {
           orderUpdateError(msg->orderId, msg->orderUpdateId);
-        } else if (currentOrders.back().compareOrderUpdateId(msg->orderUpdateId) == "EQUAL") {
-          ROS_WARN_STREAM(
-              "Order discarded. Strucure invalid! " << msg->orderId << ", " << msg->orderUpdateId);
+        } else if (order.orderUpdateId == (msg->orderUpdateId)) {
+          ROS_WARN_STREAM("Order discarded. Message already received! " << msg->orderId << ", "
+                                                                        << msg->orderUpdateId);
         } else {
-          if (currentOrders.back().isActive()) {
-            if (currentOrders.back().compareBase(
-                    msg->nodes.front().nodeId, msg->nodes.front().sequenceId)) {
-              updateExistingOrder(msg);
-            } else {
-              orderUpdateError(msg->orderId, msg->orderUpdateId);
-            }
+          if (order.compareBase(msg->nodes.front().nodeId, msg->nodes.front().sequenceId)) {
+            // Send the order update.
+            orderPublisher.publish(msg);
+            // updateExistingOrder(msg);
           } else {
-            if (currentOrders.back().compareBase(
-                    msg->nodes.front().nodeId, msg->nodes.front().sequenceId)) {
-              updateExistingOrder(msg);
-            } else {
-              orderUpdateError(msg->orderId, msg->orderUpdateId);
-            }
+            orderUpdateError(msg->orderId, msg->orderUpdateId);
           }
         }
       } else {
-        if (currentOrders.back().compareBase(
-                msg->nodes.front().nodeId, msg->nodes.front().sequenceId)) {
-          appendNewOrder(msg);
+        if (order.compareBase(msg->nodes.front().nodeId, msg->nodes.front().sequenceId)) {
+          orderPublisher.publish(msg);
+          // appendNewOrder(msg);
         } else {
           orderUpdateError(msg->orderId, msg->orderUpdateId);
         }
       }
     } else {
-      if (inDevRange(msg.get()->nodes.front()))
-        startNewOrder(msg);
-      else
+      // If no order is active, and the robot is in the deviation range of the first node, the order
+      // can be started.
+      if (inDevRange(msg.get()->nodes.front())) {
+        orderPublisher.publish(msg);
+        // startNewOrder(msg);
+      } else
         orderUpdateError(msg->orderId, msg->orderUpdateId);
     }
 
@@ -328,200 +373,147 @@ void OrderManager::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 }
 
 void OrderManager::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg) {
-  ROS_INFO("Received cancel request for order: %s", msg.get()->data.c_str());
-  auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
-      [&msg](CurrentOrder order) { return order.compareOrderId(msg.get()->data); });
-  if (orderToCancel != currentOrders.end()) {
-    if (isDriving == true) {
+  ROS_INFO("Received cancel request for order: %s", order.orderId.c_str());
+  if (!order.nodeStates.empty() && !order.actionStates.empty()) {
+    if (state.driving == true) {
       std_msgs::String msg;
       msg.data = "PAUSE";
-      messagePublisher["prDriving"].publish(msg);
     }
-    ordersToCancel.push_back(msg.get()->data);
   } else
     ROS_ERROR("Order to cancel not found: %s", msg.get()->data.c_str());
 }
 
 void OrderManager::allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg) {
-  auto orderToCancel = find_if(currentOrders.begin(), currentOrders.end(),
-      [&msg](CurrentOrder order) { return order.compareOrderId(msg.get()->data); });
-  if (orderToCancel != currentOrders.end()) {
-    orderToCancel->actionCancellationComplete = true;
-  }
+  this->order.actionCancellationComplete = true;
 }
 
 void OrderManager::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
-  for (auto& order : currentOrders) {
-    auto it = find(order.actionStates.begin(), order.actionStates.end(), msg.get()->actionID);
-    if (it != order.actionStates.end()) {
-      if (msg.get()->actionStatus == "FINISHED") {
-        order.actionStates.erase(it);
-        if (order.actionStates.empty()) {
-          order.actionsFinished = true;
-        }
-      } else if (msg.get()->actionStatus == "FAILED")
-        /** TODO: Abort order and delete complete actionList*/;
-    }
+  auto it = find(order.actionStates.begin(), order.actionStates.end(), msg.get()->actionID);
+  if (it != order.actionStates.end()) {
+    if (msg.get()->actionStatus == "FINISHED") {
+      order.actionStates.erase(it);
+      if (order.actionStates.empty()) {
+        order.actionsFinished = true;
+      }
+    } else if (msg.get()->actionStatus == "FAILED")
+      /** TODO: Abort order and delete complete actionList*/;
   }
 }
 
 void OrderManager::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
   agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
   // ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
-  if (!currentOrders.empty() && ordersToCancel.empty()) {
-    if (currentOrders.front().findNodeEdge(currSequenceId) == "EDGE") {
-      if (inDevRange(currentOrders.front().nodeStates.front())) {
-        if (currentOrders.front().actionsFinished) {
-          /** reset actions finished flag*/
-          currentOrders.front().actionsFinished = false;
+  if (order.findNodeEdge(state.lastNodeSequenceId) == "EDGE") {
+    if (inDevRange(order.nodeStates.front())) {
+      if (order.actionsFinished) {
+        /** reset actions finished flag*/
+        order.actionsFinished = false;
 
-          /** delete edgeState from queue*/
-          currentOrders.front().edgeStates.pop_front();
+        /** delete edgeState from queue*/
+        order.edgeStates.pop_front();
 
-          /** Further node in base?*/
-          if (!(currentOrders.front().nodeStates.empty())) {
-            currSequenceId = currentOrders.front().nodeStates.front().sequenceId;
-            triggerNewActions("NODE");
-            for (auto const& action : currentOrders.front().nodeStates.front().actions)
-              currentOrders.front().actionStates.push_back(action.actionId);
-          }
-          /** No further node -> error; all orders must begin and end with a node*/
-          else
-            ROS_ERROR("Missing node in current order!");
-          /** TODO: Send on error topic?, How to proceed?*/
+        /** Further node in base?*/
+        if (!(order.nodeStates.empty())) {
+          state.lastNodeSequenceId = order.nodeStates.front().sequenceId;
+          triggerNewActions("NODE");
+          for (auto const& action : order.nodeStates.front().actions)
+            order.actionStates.push_back(action.actionId);
         }
+        /** No further node -> error; all orders must begin and end with a node*/
+        else
+          ROS_ERROR("Missing node in current order!");
+        /** TODO: Send on error topic?, How to proceed?*/
       }
-    } else if (currentOrders.front().findNodeEdge(currSequenceId) == "NODE") {
-      if (currentOrders.front().actionsFinished) {
-        ROS_INFO("Node passed through!");
-        /** reset actionsFinished flag*/
-        currentOrders.front().actionsFinished = false;
+    }
+  } else if (order.findNodeEdge(state.lastNodeSequenceId) == "NODE") {
+    if (order.actionsFinished) {
+      ROS_INFO("Node passed through!");
+      /** reset actionsFinished flag*/
+      order.actionsFinished = false;
 
-        /** send last node ID to state daemon*/
-        std_msgs::String lastNodeIdMsg;
-        lastNodeIdMsg.data = currentOrders.front().nodeStates.front().nodeId;
-        lastNodeIdPub.publish(lastNodeIdMsg);
+      /** send last node ID to state daemon*/
+      std_msgs::String lastNodeIdMsg;
+      lastNodeIdMsg.data = order.nodeStates.front().nodeId;
+      lastNodeIdPub.publish(lastNodeIdMsg);
 
-        /** send last node sequence ID to state daemon*/
-        std_msgs::Int32 lastNodeSequenceIdMsg;
-        lastNodeSequenceIdMsg.data = currentOrders.front().nodeStates.front().sequenceId;
-        lastNodeSequenceIdPub.publish(lastNodeSequenceIdMsg);
+      /** send last node sequence ID to state daemon*/
+      std_msgs::Int32 lastNodeSequenceIdMsg;
+      lastNodeSequenceIdMsg.data = order.nodeStates.front().sequenceId;
+      lastNodeSequenceIdPub.publish(lastNodeSequenceIdMsg);
 
-        /** delete nodeState from queue*/
-        currentOrders.front().nodeStates.pop_front();
+      /** delete nodeState from queue*/
+      order.nodeStates.pop_front();
 
-        /** further edge in base?*/
-        if (currentOrders.front().edgeStates.front().released &&
-            !(currentOrders.front().edgeStates.empty())) {
-          currSequenceId = currentOrders.front().edgeStates.front().sequenceId;
-          triggerNewActions("EDGE");
-          sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct
-                                  next node position is sent*/
-          for (auto const& action : currentOrders.front().edgeStates.front().actions)
-            currentOrders.front().actionStates.push_back(action.actionId);
-        } else {
-          currentOrders.erase(currentOrders.begin());
-          if (currentOrders.empty()) {
-            /** send order ID to state daemon*/
-            std_msgs::String orderIdMsg;
-            orderIdMsg.data = currentOrders.front().getOrderId();
-            orderIdPub.publish(orderIdMsg);
-
-            /** send order update ID to state daemon*/
-            std_msgs::Int32 orderUpdateIdMsg;
-            orderUpdateIdMsg.data = currentOrders.front().getOrderUpdateId();
-            orderUpdateIdPub.publish(orderUpdateIdMsg);
-          }
-        }
+      /** further edge in base?*/
+      if (order.edgeStates.front().released && !(order.edgeStates.empty())) {
+        state.lastNodeSequenceId = order.edgeStates.front().sequenceId;
+        triggerNewActions("EDGE");
+        sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct
+                                next node position is sent*/
+        for (auto const& action : order.edgeStates.front().actions)
+          order.actionStates.push_back(action.actionId);
       }
-    } else
-      ;  // ROS_ERROR("Neither node nor edge matching position update!");
-  }
+    }
+  } else
+    ;  // ROS_ERROR("Neither node nor edge matching position update!");
 }
-
-void OrderManager::DrivingCallback(const std_msgs::Bool::ConstPtr& msg) { isDriving = msg->data; }
 
 void OrderManager::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   /** create new order element*/
-  CurrentOrder newOrder(msg);
-  currentOrders.push_back(newOrder);
-
+  order = Order(msg);
   /** set sequence ID*/
-  currSequenceId = msg->nodes.front().sequenceId;
+  // currSequenceId = msg->nodes.front().sequenceId;
 
   /** send motion commands to AGV*/
   sendMotionCommand();
 
   /** send actions to action daemon*/
-  currentOrders.back().sendActions(orderActionPub);
+  order.sendActions(orderActionPub);
 
   /** trigger Actions in case of first node containing actions*/
-  if (!currentOrders.back().nodeStates.front().actions.empty()) {
+  if (!order.nodeStates.front().actions.empty()) {
     triggerNewActions("NODE");
-    for (auto const& action : currentOrders.front().nodeStates.front().actions)
-      currentOrders.front().actionStates.push_back(action.actionId);
+    for (auto const& action : order.nodeStates.front().actions)
+      order.actionStates.push_back(action.actionId);
   }
 
   /** send node and edge states to state daemon*/
-  currentOrders.front().sendNodeStates(nodeStatesPub);
-  currentOrders.front().sendEdgeStates(edgeStatesPub);
+  order.sendNodeStates(nodeStatesPub);
+  order.sendEdgeStates(edgeStatesPub);
 
   /** send order ID to state daemon*/
   std_msgs::String orderIdMsg;
-  orderIdMsg.data = currentOrders.front().getOrderId();
+  orderIdMsg.data = order.getOrderId();
   orderIdPub.publish(orderIdMsg);
 
   /** send order update ID to state daemon*/
   std_msgs::Int32 orderUpdateIdMsg;
-  orderUpdateIdMsg.data = currentOrders.front().getOrderUpdateId();
+  orderUpdateIdMsg.data = order.getOrderUpdateId();
   orderUpdateIdPub.publish(orderUpdateIdMsg);
 
   ROS_INFO("Started new order: %s", msg->orderId.c_str());
 }
 
-void OrderManager::appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
-  /** clear horizon*/
-  currentOrders.front().edgeStates.erase(
-      remove_if(currentOrders.front().edgeStates.begin(), currentOrders.front().edgeStates.end(),
-          [](vda5050_msgs::Edge delEdge) { return !delEdge.released; }));
-  currentOrders.front().nodeStates.erase(
-      remove_if(currentOrders.front().nodeStates.begin(), currentOrders.front().nodeStates.end(),
-          [](vda5050_msgs::Node delNode) { return !delNode.released; }));
-
-  /** add new order*/
-  CurrentOrder newOrder(msg);
-  currentOrders.push_back(newOrder);
-  newOrder.sendActions(orderActionPub);
-
-  /** send node and edge states to state daemon*/
-  currentOrders.front().sendNodeStates(nodeStatesPub);
-  currentOrders.front().sendEdgeStates(edgeStatesPub);
-}
-
 void OrderManager::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   /** clear horizon*/
-  currentOrders.front().edgeStates.erase(
-      remove_if(currentOrders.front().edgeStates.begin(), currentOrders.front().edgeStates.end(),
-          [](vda5050_msgs::Edge delEdge) { return !delEdge.released; }));
-  currentOrders.front().nodeStates.erase(
-      remove_if(currentOrders.front().nodeStates.begin(), currentOrders.front().nodeStates.end(),
-          [](vda5050_msgs::Node delNode) { return !delNode.released; }));
+  order.edgeStates.erase(remove_if(order.edgeStates.begin(), order.edgeStates.end(),
+      [](vda5050_msgs::Edge delEdge) { return !delEdge.released; }));
+  order.nodeStates.erase(remove_if(order.nodeStates.begin(), order.nodeStates.end(),
+      [](vda5050_msgs::Node delNode) { return !delNode.released; }));
 
   /** append nodeStates/edgeStates*/
-  for (auto const& newEdge : msg->edges)
-    currentOrders.front().edgeStates.push_back(
-        newEdge); /** TODO: Frage: wirklich front(), wenn mehrere orders vorhanden?*/
-  for (auto const& newNode : msg->nodes) currentOrders.front().nodeStates.push_back(newNode);
+  for (auto const& newEdge : msg->edges) order.edgeStates.push_back(newEdge);
+  for (auto const& newNode : msg->nodes) order.nodeStates.push_back(newNode);
 
-  currentOrders.front().setOrderUpdateId(msg.get()->orderUpdateId);
+  order.setOrderUpdateId(msg.get()->orderUpdateId);
 
   /** send actions to action daemon*/
-  CurrentOrder newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
+  Order newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
   newOrder.sendActions(orderActionPub);
 
   /** send node and edge states to state daemon*/
-  currentOrders.front().sendNodeStates(nodeStatesPub);
-  currentOrders.front().sendEdgeStates(edgeStatesPub);
+  order.sendNodeStates(nodeStatesPub);
+  order.sendEdgeStates(edgeStatesPub);
 
   /** send order update ID to state daemon*/
   std_msgs::Int32 orderUpdateMsg;
@@ -530,32 +522,12 @@ void OrderManager::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg)
 }
 
 void OrderManager::UpdateOrders() {
-  if (!ordersToCancel.empty()) {
-    if (!isDriving) {
-      for (vector<string>::iterator orderIdIt = ordersToCancel.begin();
-           orderIdIt != ordersToCancel.end();) {
-        auto order = find_if(currentOrders.begin(), currentOrders.end(),
-            [&orderIdIt](CurrentOrder currOrd) { return currOrd.compareOrderId(*orderIdIt); });
-        if (order != currentOrders.end()) {
-          if (order->actionCancellationComplete) {
-            /** remove order from currentOrders*/
-            currentOrders.erase(
-                std::remove_if(currentOrders.begin(), currentOrders.end(),
-                    [&orderIdIt](CurrentOrder& order) { return order.compareOrderId(*orderIdIt); }),
-                currentOrders.end());
-            /** send response to action daemon*/
-            std_msgs::String msg;
-            msg.data = *orderIdIt;
-            orderCancelPub.publish(msg);
-
-            /** remove order ID from ordersToCancel*/
-            ordersToCancel.erase(orderIdIt);
-          } else
-            orderIdIt++;
-        } else {
-          ROS_WARN("Order to cancel not found: %s", (*orderIdIt).c_str());
-        }
-      }
+  if (!state.driving) {
+    if (order.actionCancellationComplete) {
+      /** send response to action daemon*/
+      std_msgs::String msg;
+      msg.data = order.orderId;
+      orderCancelPub.publish(msg);
     }
   }
 }
@@ -565,7 +537,8 @@ void OrderManager::orderUpdateError(string orderId, int orderUpdateId) {
   stringstream ss;
   ss << "orderUpdateError: " << orderId << ", " << orderUpdateId;
   rejectMsg.data = ss.str();
-  errorPublisher.publish(rejectMsg);
+
+  // Add error message to the state.
 }
 
 void OrderManager::orderValidationError(string orderId, int orderUpdateId) {
@@ -573,7 +546,124 @@ void OrderManager::orderValidationError(string orderId, int orderUpdateId) {
   stringstream ss;
   ss << "orderValidationError: " << orderId << ", " << orderUpdateId;
   rejectMsg.data = ss.str();
-  errorPublisher.publish(rejectMsg);
+
+  // Add error to the state.
+}
+
+// State related callbacks
+
+void OrderManager::ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg) {
+  state.zoneSetId = msg->data;
+}
+
+void OrderManager::AGVPositionCallback(const geometry_msgs::Pose& msg) {
+  state.agvPosition.x = visualization.agvPosition.x = msg.position.x;
+  state.agvPosition.y = visualization.agvPosition.y = msg.position.y;
+
+  // Get the yaw of the robot from the quaternion.
+  tf::Quaternion quaternion;
+  tf::quaternionMsgToTF(msg.orientation, quaternion);
+  double roll, pitch, yaw;
+  tf::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
+
+  // Set theta in robot's position.
+  state.agvPosition.theta = visualization.agvPosition.theta = yaw;
+}
+
+void OrderManager::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg) {
+  state.agvPosition.positionInitialized = visualization.agvPosition.positionInitialized = msg->data;
+}
+
+void OrderManager::AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg) {
+  state.agvPosition.mapId = visualization.agvPosition.mapId = msg->data;
+}
+
+void OrderManager::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
+  state.velocity.vx = visualization.velocity.vx = msg.linear.x;
+  state.velocity.vy = visualization.velocity.vy = msg.linear.y;
+  state.velocity.omega = visualization.velocity.omega = msg.angular.z;
+
+  // Set the driving field based on driving velocity.
+  state.driving = (msg.linear.x > 0.01 || msg.linear.y > 0.01 || msg.angular.z > 0.01);
+}
+void OrderManager::LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg) {
+  state.loads = msg->loads;
+  newPublishTrigger = true;
+}
+void OrderManager::PausedCallback(const std_msgs::Bool::ConstPtr& msg) { state.paused = msg->data; }
+void OrderManager::NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg) {
+  state.newBaseRequest = msg->data;
+}
+void OrderManager::DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg) {
+  state.distanceSinceLastNode = msg->data;
+}
+
+void OrderManager::BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
+  if (!isnan(msg->percentage)) state.batteryState.batteryCharge = msg->percentage * 100.0;
+  state.batteryState.batteryVoltage = msg->voltage;
+  state.batteryState.charging =
+      msg->power_supply_status == sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
+}
+void OrderManager::OperatingModeCallback(const std_msgs::String::ConstPtr& msg) {
+  state.operatingMode = msg->data;
+  newPublishTrigger = true;
+}
+void OrderManager::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg) {
+  state.errors = msg->errors;
+  newPublishTrigger = true;
+}
+void OrderManager::InformationCallback(const vda5050_msgs::Information::ConstPtr& msg) {
+  state.information = msg->information;
+}
+void OrderManager::SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg) {
+  state.safetyState = *msg.get();
+}
+
+void OrderManager::PublishState() {
+  // Set current timestamp of message.
+  state.timeStamp = connector_utils::GetISOCurrentTimestamp();
+
+  statePublisher.publish(state);
+
+  // Increase header count.
+  state.headerId++;
+}
+
+void OrderManager::PublishVisualization() {
+  // Set current timestamp of message.
+  visualization.timeStamp = connector_utils::GetISOCurrentTimestamp();
+
+  visPublisher.publish(visualization);
+
+  // Increase header count.
+  visualization.headerId++;
+}
+
+void OrderManager::PublishConnection(const bool connected) {
+  // Set current timestamp of message.
+  connection.timeStamp = connector_utils::GetISOCurrentTimestamp();
+
+  // Set the connection state.
+  connection.connectionState =
+      connected ? vda5050_msgs::Connection::ONLINE : vda5050_msgs::Connection::OFFLINE;
+
+  connectionPublisher.publish(connection);
+
+  // Increase header count.
+  connection.headerId++;
+}
+
+void OrderManager::PublishStateOnTrigger() {
+  if (!newPublishTrigger) return;
+
+  PublishState();
+
+  // Reset the timer.
+  stateTimer.stop();
+  stateTimer.start();
+
+  // Reset the publish trigger.
+  newPublishTrigger = false;
 }
 
 int main(int argc, char** argv) {
@@ -581,9 +671,19 @@ int main(int argc, char** argv) {
 
   OrderManager OrderManager;
 
+  ros::Rate rate(1.0);
+
   while (ros::ok()) {
     OrderManager.UpdateOrders();
+
+    OrderManager.PublishStateOnTrigger();
+
     ros::spinOnce();
+    rate.sleep();
   }
+
+  // Send OFFLINE message to gracefully disconnect.
+  OrderManager.PublishConnection(false);
+
   return 0;
 }

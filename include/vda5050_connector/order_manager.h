@@ -15,21 +15,29 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "sensor_msgs/BatteryState.h"
 #include "std_msgs/Bool.h"
+#include "std_msgs/Float64.h"
 #include "std_msgs/Int32.h"
 #include "std_msgs/String.h"
 #include "vda5050_msgs/AGVPosition.h"
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
+#include "vda5050_msgs/Connection.h"
 #include "vda5050_msgs/Edge.h"
 #include "vda5050_msgs/EdgeState.h"
 #include "vda5050_msgs/EdgeStates.h"
+#include "vda5050_msgs/Errors.h"
+#include "vda5050_msgs/Information.h"
+#include "vda5050_msgs/Loads.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/NodeState.h"
 #include "vda5050_msgs/NodeStates.h"
 #include "vda5050_msgs/Order.h"
 #include "vda5050_msgs/OrderActions.h"
 #include "vda5050_msgs/OrderMotion.h"
+#include "vda5050_msgs/State.h"
+#include "vda5050_msgs/Visualization.h"
 #include "vda5050node.h"
 
 /**
@@ -38,8 +46,7 @@
  * changes in the system state and b) several callbacks which receive and
  * process system changes.
  */
-class CurrentOrder {
- private:
+struct Order {
   // Order ID of the order object.
   std::string orderId;
 
@@ -49,7 +56,6 @@ class CurrentOrder {
   // ZoneSetID of the order object.
   std::string zoneSetId;
 
- public:
   // All actions related to current edge or node finished?
   bool actionsFinished;
 
@@ -66,31 +72,17 @@ class CurrentOrder {
   std::vector<std::string> actionStates;
 
   /**
+   * Default constructor for a CurrentOrder object.
+   *
+   */
+  Order() = default;
+
+  /**
    * Constructor for a CurrentOrder object.
    *
    * @param incomingOrder  Pointer to the order message.
    */
-  CurrentOrder(const vda5050_msgs::Order::ConstPtr& incomingOrder);
-
-  /**
-   * Check if the given OrderID belongs to the current order.
-   *
-   * @param orderIdToCompare  OrderID string that should be compared against
-   *
-   */
-  bool compareOrderId(std::string orderIdToCompare);
-
-  /**
-   * Compares the incoming order update ID with the currently running order
-   * update ID.
-   *
-   * @param orderUpdateIdToCompare  The order update ID of the incoming order.
-   *
-   * @return                        ["EQUAL", "HIGHER", "LOWER"] if the new
-   *                                order update ID is equal, higher or lower
-   *                                compared to the running order update ID.
-   */
-  std::string compareOrderUpdateId(int orderUpdateIdToCompare);
+  Order(const vda5050_msgs::Order::ConstPtr& incomingOrder);
 
   /**
    * Compares start of new base and end of current base.
@@ -233,8 +225,15 @@ class AGVPosition {
  */
 class OrderManager : public VDA5050Node {
  private:
+  // State message sent to the fleet controller.
+  vda5050_msgs::State state;
+  // Visualization message sent to the fleet controller.
+  vda5050_msgs::Visualization visualization;
+  // Connection message sent to the fleet controller.
+  vda5050_msgs::Connection connection;
+
   // Current order.
-  std::vector<CurrentOrder> currentOrders;
+  Order order;
 
   // Currently active order.
   AGVPosition agvPosition;
@@ -280,16 +279,25 @@ class OrderManager : public VDA5050Node {
   // Order ID; changes when a new order or order update is started.
   ros::Publisher orderUpdateIdPub;
 
+  // Order message publisher.
+  ros::Publisher orderPublisher;
+
+  // Publisher object for state messages to the fleet controller.
+  ros::Publisher statePublisher;
+  // Publisher object for visualization messages to the fleet controller.
+  ros::Publisher visPublisher;
+  // Publisher for connection messages.
+  ros::Publisher connectionPublisher;
+
+  // Timers used to publish state messages regularly.
+  ros::Timer stateTimer, visTimer, connTimer;
+
+  // List of subsribers used by the StateAggregator to build the robot state.
+  std::vector<std::shared_ptr<ros::Subscriber>> subscribers;
+
+  bool newPublishTrigger{false};
+
  protected:
-  // Stores all order IDs to cancel.
-  std::vector<std::string> ordersToCancel;
-
-  // true if vehicle is driving.
-  bool isDriving;
-
-  // Current SequenceId of the node/edge being traversed in the order.
-  int currSequenceId;
-
  public:
   /**
    * Constructor for Ordernode objects. Links all internal and external ROS
@@ -345,56 +353,6 @@ class OrderManager : public VDA5050Node {
   void sendMotionCommand();
 
   /**
-   * Callback for incoming orders. Decides if the incoming order should be
-   * appended or rejected according to the flowchart in VDA 5050.
-   *
-   * @param msg  Incoming order message.
-   */
-  void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
-
-  /**
-   * Callback for incoming cancel requests. When an instantAction message with
-   * a cancel request arrives at the action node, the request is transferred
-   * to the order node by this topic.
-   *
-   * @param msg  Message containing the order cancel request.
-   */
-  void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
-
-  /**
-   * Callback for incoming information about the cancellation of all actions.
-   * Sets flag in currentOrders in case all related actions have been
-   * successfully cancelled in case of order cancellation.
-   *
-   * @param msg  Order ID of the order to cancel.
-   */
-  void allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg);
-
-  /**
-   * Tracks action states to decide if the current node/edge is finished
-   * and can be left.
-   *
-   * @param msg  Incoming action state message.
-   */
-  void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
-
-  /**
-   * Updates the saved position with the incoming position. Depending on
-   * position and action states it decides whether or not the current node or
-   * edge is finished and the next one can be started.
-   *
-   * @param msg  Incoming position update message.
-   */
-  void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
-
-  /**
-   * Keeps track of the driving state of the AGV.
-   *
-   * @param msg  Driving state message from AGV.
-   */
-  void DrivingCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
    * Creates a new order element if no order exists.
    *
    * @param msg  Newly arrived order.
@@ -441,6 +399,209 @@ class OrderManager : public VDA5050Node {
    * @param orderUpdateId  Order update ID of the incoming order.
    */
   void orderValidationError(std::string orderId, int orderUpdateId);
+
+  /**
+   * Sets the header timestamp and publishes the state message. Updates the headerId after
+   * publishing
+   */
+  void PublishState();
+
+  /**
+   * Sets the header timestamp and publishes the visualization message. Updates the headerId after
+   * publishing.
+   */
+  void PublishVisualization();
+
+  /**
+   * Sets the header timestamp and publishes the connection state message. Updates the headerId
+   * after publishing.
+   *
+   * @param connected State of the connection.
+   */
+  void PublishConnection(const bool connected);
+
+  /**
+   * Checks all the logic within the state daemon. For example, it checks
+   * if 30 seconds have passed without update.
+   */
+  void PublishStateOnTrigger();
+
+  // -------- All order callbacks --------
+
+  /**
+   * Callback for incoming orders. Decides if the incoming order should be
+   * appended or rejected according to the flowchart in VDA 5050.
+   *
+   * @param msg  Incoming order message.
+   */
+  void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
+
+  /**
+   * Callback for incoming cancel requests. When an instantAction message with
+   * a cancel request arrives at the action node, the request is transferred
+   * to the order node by this topic.
+   *
+   * @param msg  Message containing the order cancel request.
+   */
+  void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
+   * Callback for incoming information about the cancellation of all actions.
+   * Sets flag in currentOrders in case all related actions have been
+   * successfully cancelled in case of order cancellation.
+   *
+   * @param msg  Order ID of the order to cancel.
+   */
+  void allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
+   * Tracks action states to decide if the current node/edge is finished
+   * and can be left.
+   *
+   * @param msg  Incoming action state message.
+   */
+  void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
+
+  /**
+   * Updates the saved position with the incoming position. Depending on
+   * position and action states it decides whether or not the current node or
+   * edge is finished and the next one can be started.
+   *
+   * @param msg  Incoming position update message.
+   */
+  void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
+
+  // -------- All state callbacks --------
+
+  /**
+   * Callback function for incoming ZoneSetIDs.
+   *
+   * @param msg  Incoming message.
+   */
+  void ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
+   * Callback function for incoming LastNodeIDs.
+   *
+   * @param msg  Incoming message.
+   */
+  void LastNodeIdCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
+   * Callback function for incoming LastNodeSequenceIDs.
+   *
+   * @param msg  Incoming message.
+   */
+  void LastNodeSequenceIdCallback(const std_msgs::UInt32::ConstPtr& msg);
+
+  /**
+   * Callback function for incoming NodeStates.
+   *
+   * @param msg  Incoming message.
+   */
+  void NodeStatesCallback(const vda5050_msgs::NodeStates::ConstPtr& msg);
+
+  /**
+   * Callback function for incoming EdgeStates.
+   *
+   * @param msg  Incoming message.
+   */
+  void EdgeStatesCallback(const vda5050_msgs::EdgeStates::ConstPtr& msg);
+
+  /**
+   * @brief Callback function for position initialized
+   *
+   * @param msg
+   */
+  void AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
+   * @brief Callback function for the map id.
+   *
+   * @param msg
+   */
+  void AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
+   * Callback function for incoming AGV positions.
+   *
+   * @param msg  Incoming message.
+   */
+  void AGVPositionCallback(const geometry_msgs::Pose& msg);
+
+  /**
+   * Callback function for incoming ROS velocity messages.
+   *
+   * @param msg  Incoming message.
+   */
+  void AGVVelocityCallback(const geometry_msgs::Twist& msg);
+
+  /**
+   * Callback function for incoming Load messages.
+   *
+   * @param msg  Incoming message.
+   */
+  void LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg);
+
+  /**
+   * Callback function for notifying this daemon when the vehicle pauses or
+   * resumes.
+   *
+   * @param msg  Incoming message.
+   */
+  void PausedCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
+   * Callback function for notifying this daemon when a new base was
+   * requested.
+   *
+   * @param msg  Incoming message.
+   */
+  void NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
+   * Callback function that receives the updated distance since the last node.
+   *
+   * @param msg  Incoming message.
+   */
+  void DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg);
+
+  /**
+   * Callback function that receives new battery state messages.
+   *
+   * @param msg  Incoming message.
+   */
+  void BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg);
+
+  /**
+   * Callback function that is called when the operating mode of the vehicle
+   * changes.
+   *
+   * @param msg  Incoming message.
+   */
+  void OperatingModeCallback(const std_msgs::String::ConstPtr& msg);
+
+  /**
+   * Callback function that receives error messages.
+   *
+   * @param msg  Incoming message.
+   */
+  void ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg);
+
+  /**
+   * Callback function that receives general information messages.
+   *
+   * @param msg  Incoming message.
+   */
+  void InformationCallback(const vda5050_msgs::Information::ConstPtr& msg);
+
+  /**
+   * Callback function that is called when the safety state of the vehicle
+   * changes.
+   *
+   * @param msg  Incoming message.
+   */
+  void SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg);
 };
 
 #endif

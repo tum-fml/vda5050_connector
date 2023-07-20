@@ -9,7 +9,6 @@
 
 #include "vda5050_connector/action_client.h"
 
-
 using namespace std;
 using namespace connector_utils;
 
@@ -36,8 +35,6 @@ ActionElement::ActionElement(
 
 bool ActionElement::compareActionId(string actionId2comp) { return actionId == actionId2comp; }
 
-bool ActionElement::compareOrderId(string orderId2comp) { return orderId == orderId2comp; }
-
 string ActionElement::getActionId() const { return actionId; }
 
 string ActionElement::getActionType() const { return actionType; }
@@ -55,40 +52,35 @@ vda5050_msgs::Action ActionElement::packAction() {
 
 /*--------------------------------ActionClient--------------------------------------------------------------*/
 
-ActionClient::ActionClient() : VDA5050Node(&(this->nh), ros::this_node::getName()) {
+ActionClient::ActionClient() {
   LinkPublishTopics(&(this->nh));
   LinkSubscriptionTopics(&(this->nh));
-
-  /** Initialize internal topics*/
-  orderActionSub = nh.subscribe("orderAction", 1000, &ActionClient::OrderActionsCallback, this);
-  orderTriggerSub = nh.subscribe("orderTrigger", 1000, &ActionClient::OrderTriggerCallback, this);
-  orderCancelSub =
-      nh.subscribe("orderCancelResponse", 1000, &ActionClient::OrderCancelCallback, this);
-  actionStatesPub = nh.advertise<vda5050_msgs::ActionState>("actionStates", 1000);
-  orderCancelPub = nh.advertise<std_msgs::String>("orderCancelRequest", 1000);
-  allActionsCancelledPub = nh.advertise<std_msgs::String>("allActionsCancelled", 1000);
 }
 
 void ActionClient::LinkPublishTopics(ros::NodeHandle* nh) {
-  map<string, string> topicList = GetTopicPublisherList();
-  std::string topic_index;
+  std::map<std::string, std::string> topicList =
+      GetTopicList(ros::this_node::getName() + "/publish_topics");
 
   for (const auto& elem : topicList) {
-    topic_index = GetTopic(elem.first);
     // ROS_INFO("topic_index = %s",topic_index.c_str());
     if (CheckParamIncludes(elem.first, "actionToAgv"))
-      messagePublisher[topic_index] = nh->advertise<vda5050_msgs::Action>(elem.second, 1000);
+      messagePublisher[elem.first] =
+          make_shared<ros::Publisher>(nh->advertise<vda5050_msgs::Action>(elem.second, 1000));
     if (CheckParamIncludes(elem.first, "agvActionCancel"))
-      messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
+      messagePublisher[elem.first] =
+          make_shared<ros::Publisher>(nh->advertise<std_msgs::String>(elem.second, 1000));
     if (CheckParamIncludes(elem.first, "prActions"))
-      messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
+      messagePublisher[elem.first] =
+          make_shared<ros::Publisher>(nh->advertise<std_msgs::String>(elem.second, 1000));
     if (CheckParamIncludes(elem.first, "prDriving"))
-      messagePublisher[topic_index] = nh->advertise<std_msgs::String>(elem.second, 1000);
+      messagePublisher[elem.first] =
+          make_shared<ros::Publisher>(nh->advertise<std_msgs::String>(elem.second, 1000));
   }
 }
 
 void ActionClient::LinkSubscriptionTopics(ros::NodeHandle* nh) {
-  map<string, string> topicList = GetTopicSubscriberList();
+  std::map<std::string, std::string> topicList =
+      GetTopicList(ros::this_node::getName() + "/subscribe_topics");
   for (const auto& elem : topicList) {
     if (CheckParamIncludes(elem.first, "instantAction"))
       nh->subscribe(elem.second, 1000, &ActionClient::InstantActionsCallback, this);
@@ -167,7 +159,7 @@ void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
             /** Send action cancel request to AGV*/
             std_msgs::String cancel_msg;
             cancel_msg.data = string(cAction->get()->getActionId());
-            messagePublisher["agvActionCancel"].publish(cancel_msg);
+            messagePublisher["agvActionCancel"]->publish(cancel_msg);
             cAction++;
           }
 
@@ -209,7 +201,7 @@ void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
           /** Send action cancel request to AGV*/
           std_msgs::String cancel_msg;
           cancel_msg.data = string(cAction->get()->getActionId());
-          messagePublisher["agvActionCancel"].publish(cancel_msg);
+          messagePublisher["agvActionCancel"]->publish(cancel_msg);
           cAction++;
         }
       }
@@ -265,7 +257,7 @@ void ActionClient::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
       if (actionToUpdate->blockingType != "NONE") {
         std_msgs::String resumeMsg;
         resumeMsg.data = "RESUME";
-        messagePublisher["prDriving"].publish(resumeMsg);
+        messagePublisher["prDriving"]->publish(resumeMsg);
       }
       // actionStatesPub.publish(msg);
       activeActionsList.erase(
@@ -274,7 +266,7 @@ void ActionClient::AgvActionStateCallback(const vda5050_msgs::ActionState::Const
       if (actionToUpdate->blockingType != "NONE") {
         std_msgs::String resumeMsg;
         resumeMsg.data = "RESUME";
-        messagePublisher["prDriving"].publish(resumeMsg);
+        messagePublisher["prDriving"]->publish(resumeMsg);
       }
       // actionStatesPub.publish(msg);
 
@@ -301,7 +293,7 @@ bool ActionClient::CheckDriving() {
   if (isDriving) {
     std_msgs::String pauseMsg;
     pauseMsg.data = "PAUSE";
-    messagePublisher["prDriving"].publish(pauseMsg);
+    messagePublisher["prDriving"]->publish(pauseMsg);
     return false;
   } else
     return true;
@@ -332,7 +324,7 @@ vector<shared_ptr<ActionElement>> ActionClient::GetActionsToCancel(string orderI
   auto it = activeActionsList.begin();
   while ((it = find_if(
               it, activeActionsList.end(), [&orderIdToCancel](shared_ptr<ActionElement> const& p) {
-                return p->compareOrderId(orderIdToCancel);
+                return p->orderId == orderIdToCancel;
               })) != activeActionsList.end()) {
     actionsToCancel.push_back(*it);
     it++;
@@ -442,13 +434,13 @@ void ActionClient::UpdateActions() {
 
             /** send action*/
             vda5050_msgs::Action instantActionMsg = instantActionQueue.front();
-            messagePublisher["actionToAgv"].publish(instantActionMsg);
+            messagePublisher["actionToAgv"]->publish(instantActionMsg);
             instantActionQueue.pop_front();
           }
           /** Pause all actions*/
           std_msgs::String pause_msg;
           pause_msg.data = "PAUSE";
-          messagePublisher["prActions"].publish(pause_msg);
+          messagePublisher["prActions"]->publish(pause_msg);
         } else if (nextBlockType == "SOFT") {
           if (CheckDriving()) {
             /** set sentToAgv to true*/
@@ -457,7 +449,7 @@ void ActionClient::UpdateActions() {
 
             /** send action*/
             vda5050_msgs::Action instantActionMsg = instantActionQueue.front();
-            messagePublisher["actionToAgv"].publish(instantActionMsg);
+            messagePublisher["actionToAgv"]->publish(instantActionMsg);
             instantActionQueue.pop_front();
           }
         } else if (nextBlockType == "NONE") {
@@ -467,7 +459,7 @@ void ActionClient::UpdateActions() {
 
           /** send action*/
           vda5050_msgs::Action instantActionMsg = instantActionQueue.front();
-          messagePublisher["actionToAgv"].publish(instantActionMsg);
+          messagePublisher["actionToAgv"]->publish(instantActionMsg);
 
           instantActionQueue.pop_front();
         }
@@ -475,7 +467,7 @@ void ActionClient::UpdateActions() {
         /** Pause all actions*/
         std_msgs::String pause_msg;
         pause_msg.data = "PAUSE";
-        messagePublisher["prActions"].publish(pause_msg);
+        messagePublisher["prActions"]->publish(pause_msg);
       }
     }
 
@@ -487,7 +479,7 @@ void ActionClient::UpdateActions() {
 
       /** send action to AGV*/
       vda5050_msgs::Action instantActionMsg = instantActionQueue.front();
-      messagePublisher["actionToAgv"].publish(instantActionMsg);
+      messagePublisher["actionToAgv"]->publish(instantActionMsg);
       instantActionQueue.pop_front();
     }
   }
@@ -511,7 +503,7 @@ void ActionClient::UpdateActions() {
           if (action_it->state == "PAUSED") {
             std_msgs::String resume_msg;
             resume_msg.data = "RESUME";
-            messagePublisher["prActions"].publish(resume_msg);
+            messagePublisher["prActions"]->publish(resume_msg);
           }
           /** no actions to resume*/
           else {
@@ -527,7 +519,7 @@ void ActionClient::UpdateActions() {
 
                 /** send action to AGV*/
                 vda5050_msgs::Action orderActionMsg = orderActionQueue.front();
-                messagePublisher["actionToAgv"].publish(orderActionMsg);
+                messagePublisher["actionToAgv"]->publish(orderActionMsg);
                 orderActionQueue.pop_front();
               }
             }
@@ -541,7 +533,7 @@ void ActionClient::UpdateActions() {
 
                 /** send action to AGV*/
                 vda5050_msgs::Action orderActionMsg = orderActionQueue.front();
-                messagePublisher["actionToAgv"].publish(orderActionMsg);
+                messagePublisher["actionToAgv"]->publish(orderActionMsg);
                 orderActionQueue.pop_front();
               }
             }
@@ -553,7 +545,7 @@ void ActionClient::UpdateActions() {
 
               /** send action to AGV*/
               vda5050_msgs::Action orderActionMsg = orderActionQueue.front();
-              messagePublisher["actionToAgv"].publish(orderActionMsg);
+              messagePublisher["actionToAgv"]->publish(orderActionMsg);
               orderActionQueue.pop_front();
             }
           }
@@ -569,7 +561,7 @@ void ActionClient::UpdateActions() {
 
       /** send action to AGV*/
       vda5050_msgs::Action orderActionMsg = orderActionQueue.front();
-      messagePublisher["actionToAgv"].publish(orderActionMsg);
+      messagePublisher["actionToAgv"]->publish(orderActionMsg);
       orderActionQueue.pop_front();
     }
   }
