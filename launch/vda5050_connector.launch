@@ -8,9 +8,9 @@
     output="screen">
     <rosparam command="load" file="$(find vda5050_connector)/config/action_client.yaml" />
   </node>
-  <node name="order_manager" pkg="vda5050_connector" type="order_manager" clear_params="true"
+  <node name="vda5050_connector" pkg="vda5050_connector" type="vda5050_connector" clear_params="true"
     output="screen">
-    <rosparam command="load" file="$(find vda5050_connector)/config/order_manager.yaml" />
+    <rosparam command="load" file="$(find vda5050_connector)/config/vda5050_connector.yaml" />
   </node>
   <rosparam command="load" ns="header" file="$(find vda5050_connector)/config/agv_data.yaml" />
 </launch>
