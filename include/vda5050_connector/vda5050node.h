@@ -27,17 +27,19 @@
  */
 class VDA5050Node {
  protected:
-  // All publishers the node uses. Map from topic keys to ROS Publisher objects.
-  std::map<std::string, std::shared_ptr<ros::Publisher>> messagePublisher;
+  std::map<std::string, std::shared_ptr<ros::Publisher>>
+      messagePublisher; /**< All publishers the node uses. Map from topic keys to ROS Publisher
+                           objects. */
 
-  // ROS Publisher for error messages.
-  ros::Publisher errorPublisher;
+  ros::Publisher errorPublisher; /**< ROS Publisher for error messages. */
 
-  // ROS node handle, needed to call ROS functions.
-  ros::NodeHandle nh;
+  ros::NodeHandle nh; /**< ROS node handle, needed to call ROS functions. */
 
  public:
-  // Default constructor for node objects.
+  /**
+   * @brief Default constructor for node objects.
+   *
+   */
   VDA5050Node() = default;
 
   /**
