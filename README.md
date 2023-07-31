@@ -61,15 +61,13 @@ After cloning all required repositories, build your catkin workspace.
 
 ## Customization of the configuration
 
-There are distinct parts of the configuration that must be customized to fulfill your connection requirements. Each configuration file is named after the node that it affects. Currently, there are 6 configuration files for 4 nodes, one configuration file is common to all of them. The nodes being :
+There are distinct parts of the configuration that must be customized to make the connector function properly. Each configuration file is named after the node that it affects, with one common configuration file. The config files being :
 
 1. ROS MQTT bridge.
-2. State Aggregator.
-3. Order Manager.
-4. Action Client.
-5. AGV Data.
+2. VDA 5050 Connector.
+3. Action Client.
+4. AGV Data.
 
-Each of them is represented by a single configuration file in the /config folder.
 In the following sections we will go through them step by step.
 
 >**NOTE**\

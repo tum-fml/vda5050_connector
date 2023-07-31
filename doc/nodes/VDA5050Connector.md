@@ -1,4 +1,4 @@
-# State Aggregator
+# VDA5050 Connector
 
 ## Current Status
 
@@ -12,21 +12,15 @@ This interface documentation will get updated as more channels get added with th
 
 ### Subscribed Topics
 
-* orderId [std_msgs::String] : ID of the order executed.
-* orderUpdateId [std_msgs::UInt32] : The update ID of the executed order.
+* order_from_mc [vda5050_msgs::Order] : Order message from the master control.
+* order_state [vda5050_msgs::State] : State message containing order related information. (OrderId, OrderUpdateId, LastNodeId, LastNodeSequenceId, NodeStates, EdgeStates, ActionStates)
 * zoneSetId [std_msgs::String] : The ID of the zone set being used.
-* lastNodeId [std_msgs::String] : The ID of the last node traversed by the AGV.
-* lastNodeSequenceId [std_msgs::UInt32] : The Sequence ID of the last node traversed.
-* nodeStates [vda5050_msgs::NodeStates] : State of the nodes of the current order.
-* edgeStates [vda5050_msgs::EdgeStates] : State of the edges of the current order.
 * agvPosition [geometry_msgs::Pose] : The current position of the AGV.
 * velocity [geometry_msgs::Twist] : The current speed of the AGV.
 * loads [vda5050_msgs::Loads] : Load state of the AGV.
-* driving [std_msgs::Bool] : State of the AGV if it's driving at the moment or not.
 * paused [std_msgs::Bool] : State of the AGV if it's paused or not.
 * newBaseRequest [std_msgs::Bool] : Boolean indicating that the AGV is running out of base nodes and requires an update.
 * distanceSinceLastNode [std_msgs::Float64] : Distance traversed by the AGV since the last node traversed.
-* actionStates [vda5050_msgs::ActionState] : State of the actions of the current order.
 * batteryState [sensor_msgs::BatteryState] : Battery state of the AGV.
 * operatingMode [std_msgs::String] : The operating mode in the AGV. E.g. AUTOMATIC/MANUAL.
 * errors [vda5050_msgs::Errors] : List of the errors produced by the AGV.
@@ -37,4 +31,4 @@ This interface documentation will get updated as more channels get added with th
 
 * state [vda5050_msgs::State] : The state of the robot to be published to AnyFleet.
 * visualization [vda5050_msgs::Visalization] : Real time visualization messages of the AGV to AnyFleet.
-* connectionState [vda5050_msgs::Connection] : Connection state sent to Master Control.
+* connection [vda5050_msgs::Connection] : Connection state sent to Master Control.
