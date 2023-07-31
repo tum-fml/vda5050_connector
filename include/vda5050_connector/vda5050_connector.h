@@ -7,8 +7,8 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#ifndef ORDER_MANAGER_H
-#define ORDER_MANAGER_H
+#ifndef VDA5050_CONNECTOR_H
+#define VDA5050_CONNECTOR_H
 
 #include <ros/ros.h>
 #include <std_msgs/UInt32.h>
@@ -47,29 +47,24 @@
  * process system changes.
  */
 struct Order {
-  // Order ID of the order object.
-  std::string orderId;
+  std::string orderId; /**< Order ID of the order object. */
 
-  // Current Order update ID of the order object.
-  int orderUpdateId;
+  int orderUpdateId; /**< Current Order update ID of the order object. */
 
-  // ZoneSetID of the order object.
-  std::string zoneSetId;
+  std::string zoneSetId; /**< ZoneSetID of the order object. */
 
-  // All actions related to current edge or node finished?
-  bool actionsFinished;
+  bool actionsFinished; /**< Flag to track if all actions related to current edge or node are
+                           finished. */
 
-  // All actions cancelled in case of order cancellation.
-  bool actionCancellationComplete;
+  bool actionCancellationComplete; /**< All actions cancelled in case of order cancellation. */
 
-  // Contains all edges which the AGV has not completed yet.
-  std::deque<vda5050_msgs::Edge> edgeStates;
+  std::deque<vda5050_msgs::Edge>
+      edgeStates; /**< Contains all edges which the AGV has not completed yet. */
 
-  // Contains all nodes which the AGV has not completed yet.
-  std::deque<vda5050_msgs::Node> nodeStates;
+  std::deque<vda5050_msgs::Node>
+      nodeStates; /**< Contains all nodes which the AGV has not completed yet. */
 
-  // Vector containing the states of all active actions.
-  std::vector<std::string> actionStates;
+  std::vector<std::string> actionStates; /**< Vector containing the states of all active actions. */
 
   /**
    * Default constructor for a CurrentOrder object.
@@ -173,17 +168,13 @@ struct Order {
  */
 class AGVPosition {
  private:
-  // x position in map coordinates.
-  float x;
+  float x; /**< x position in map coordinates. */
 
-  // y position in world coordinates.
-  float y;
+  float y; /**< y position in world coordinates. */
 
-  // theta angle in world coordinates.
-  float theta;
+  float theta; /**< theta angle in world coordinates. */
 
-  // Map ID of the current map.
-  std::string mapId;
+  std::string mapId; /**< Map ID of the current map. */
 
  public:
   /**
@@ -223,77 +214,62 @@ class AGVPosition {
  * Node for processing VDA 5050 order messages.
  *
  */
-class OrderManager : public VDA5050Node {
+class VDA5050Connector : public VDA5050Node {
  private:
-  // State message sent to the fleet controller.
-  vda5050_msgs::State state;
-  // Visualization message sent to the fleet controller.
-  vda5050_msgs::Visualization visualization;
-  // Connection message sent to the fleet controller.
-  vda5050_msgs::Connection connection;
+  vda5050_msgs::State state; /**< State message sent to the fleet controller. */
+  vda5050_msgs::Visualization
+      visualization;                   /**< Visualization message sent to the fleet controller. */
+  vda5050_msgs::Connection connection; /**< Connection message sent to the fleet controller. */
 
-  // Current order.
-  Order order;
+  Order order; /**< Current order being executed. */
 
-  // Currently active order.
-  AGVPosition agvPosition;
+  AGVPosition agvPosition; /**< Currently active order. */
 
   /**
    * Declare all ROS subscriber and publisher topics for internal
    * communication.
    */
 
-  // Cancel request from action node.
-  ros::Subscriber orderCancelSub;
+  ros::Subscriber orderCancelSub; /**< Cancel request from action node. */
 
-  // Position data from AGV.
-  ros::Subscriber agvPositionSub;
+  ros::Subscriber agvPositionSub; /**< Position data from AGV. */
 
-  // Response from action node if all actions of a order to cancel are successfully cancelled.
-  ros::Subscriber allActionsCancelledSub;
+  ros::Subscriber allActionsCancelledSub; /**< Response from action node if all actions of a order
+                                             to cancel are successfully cancelled. */
 
-  // Ordinary order actions from order_node to action_node.
-  ros::Publisher orderActionPub;
+  ros::Publisher orderActionPub; /**< Ordinary order actions from order_node to action_node. */
 
-  // Response to cancel request.
-  ros::Publisher orderCancelPub;
+  ros::Publisher orderCancelPub; /**< Response to cancel request. */
 
-  // Triggers actions when AGV arrives at edge or node.
-  ros::Publisher orderTriggerPub;
+  ros::Publisher orderTriggerPub; /**< Triggers actions when AGV arrives at edge or node. */
 
-  // Node state transfer topic (to state node).
-  ros::Publisher nodeStatesPub;
+  ros::Publisher nodeStatesPub; /**< Node state transfer topic (to state node). */
 
-  // Edge state transfer topic (to state node).
-  ros::Publisher edgeStatesPub;
+  ros::Publisher edgeStatesPub; /**< Edge state transfer topic (to state node). */
 
-  // Last node ID; changes when a node is left.
-  ros::Publisher lastNodeIdPub;
+  ros::Publisher lastNodeIdPub; /**< Last node ID; changes when a node is left. */
 
-  // Last node sequence ID; changes when a node is left.
-  ros::Publisher lastNodeSequenceIdPub;
+  ros::Publisher lastNodeSequenceIdPub; /**< Last node sequence ID; changes when a node is left. */
 
-  // Order ID; changes when a new order is started.
-  ros::Publisher orderIdPub;
+  ros::Publisher orderIdPub; /**< Order ID; changes when a new order is started. */
 
-  // Order ID; changes when a new order or order update is started.
-  ros::Publisher orderUpdateIdPub;
+  ros::Publisher
+      orderUpdateIdPub; /**< Order ID; changes when a new order or order update is started. */
 
-  // Order message publisher.
-  ros::Publisher orderPublisher;
+  ros::Publisher orderPublisher; /**< Order message publisher. */
 
-  // Publisher object for state messages to the fleet controller.
-  ros::Publisher statePublisher;
-  // Publisher object for visualization messages to the fleet controller.
-  ros::Publisher visPublisher;
-  // Publisher for connection messages.
-  ros::Publisher connectionPublisher;
+  ros::Publisher
+      statePublisher; /**< Publisher object for state messages to the fleet controller. */
+  ros::Publisher
+      visPublisher; /**< Publisher object for visualization messages to the fleet controller. */
+  ros::Publisher connectionPublisher; /**< Publisher for connection messages. */
 
-  // Timers used to publish state messages regularly.
-  ros::Timer stateTimer, visTimer, connTimer;
+  ros::Timer stateTimer; /**< Timer used to publish state messages regularly. */
+  ros::Timer visTimer;   /**< Timer used to publish visualization messages regularly. */
+  ros::Timer connTimer;  /**< Timer used to publish connection state messages regularly. */
 
-  // List of subsribers used by the StateAggregator to build the robot state.
-  std::vector<std::shared_ptr<ros::Subscriber>> subscribers;
+  std::vector<std::shared_ptr<ros::Subscriber>>
+      subscribers; /**< List of subsribers used by the StateAggregator to build the robot state. */
 
   bool newPublishTrigger{false};
 
@@ -303,7 +279,7 @@ class OrderManager : public VDA5050Node {
    * Constructor for Ordernode objects. Links all internal and external ROS
    * topics.
    */
-  OrderManager();
+  VDA5050Connector();
 
   /**
    * Links all external publishing topics.
@@ -367,14 +343,14 @@ class OrderManager : public VDA5050Node {
   void appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
   /**
-   * Updates the existing order (i.e. release the horizon).
+   * Updates the existing order (i.e. Release the horizon).
    *
    * @param msg  Newly arrived order.
    */
   void updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
   /**
-   * Main loop of the node. The routine consists of the following steps:
+   * Main loop of the node. Consists of the following steps:
    * - get order actions
    * - get instantAction topics
    * - calculate queue
@@ -435,6 +411,13 @@ class OrderManager : public VDA5050Node {
    * @param msg  Incoming order message.
    */
   void OrderCallback(const vda5050_msgs::Order::ConstPtr& msg);
+
+  /**
+   * Callback for state messages relating to orders. Adds received information to the state message.
+   *
+   * @param msg  Incoming state message.
+   */
+  void OrderStateCallback(const vda5050_msgs::State::ConstPtr& msg);
 
   /**
    * Callback for incoming cancel requests. When an instantAction message with

@@ -7,7 +7,7 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
-#include "vda5050_connector/order_manager.h"
+#include "vda5050_connector/vda5050_connector.h"
 
 using namespace std;
 using namespace connector_utils;
@@ -158,10 +158,10 @@ float AGVPosition::nodeDistance(float node_x, float node_y) {
 
 float AGVPosition::getTheta() { return theta; }
 
-/*-------------------------------------OrderManager--------------------------------------------*/
+/*-------------------------------------VDA5050Connector--------------------------------------------*/
 
-OrderManager::OrderManager() {
-  /** Initialize external ROS topics*/
+VDA5050Connector::VDA5050Connector() {
+  // Link publish and subsription ROS topics*/
   LinkPublishTopics(&(this->nh));
   LinkSubscriptionTopics(&(this->nh));
 
@@ -187,15 +187,15 @@ OrderManager::OrderManager() {
     ros::param::get("/header/serialNumber", connection.serialNumber);
   }
 
-  stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&OrderManager::PublishState, this));
+  stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&VDA5050Connector::PublishState, this));
   visTimer =
-      nh.createTimer(ros::Duration(1.0), std::bind(&OrderManager::PublishVisualization, this));
-  connTimer =
-      nh.createTimer(ros::Duration(15.0), std::bind(&OrderManager::PublishConnection, this, true));
+      nh.createTimer(ros::Duration(1.0), std::bind(&VDA5050Connector::PublishVisualization, this));
+  connTimer = nh.createTimer(
+      ros::Duration(15.0), std::bind(&VDA5050Connector::PublishConnection, this, true));
   newPublishTrigger = true;
 }
 
-void OrderManager::LinkPublishTopics(ros::NodeHandle* nh) {
+void VDA5050Connector::LinkPublishTopics(ros::NodeHandle* nh) {
   std::map<std::string, std::string> topicList =
       GetTopicList(ros::this_node::getName() + "/publish_topics");
 
@@ -212,73 +212,92 @@ void OrderManager::LinkPublishTopics(ros::NodeHandle* nh) {
   }
 }
 
-void OrderManager::LinkSubscriptionTopics(ros::NodeHandle* nh) {
+void VDA5050Connector::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   std::map<std::string, std::string> topic_list =
       GetTopicList(ros::this_node::getName() + "/subscribe_topics");
   for (const auto& elem : topic_list) {
     if (CheckParamIncludes(elem.first, "order_from_mc"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::OrderCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderCallback, this)));
+    else if (CheckParamIncludes(elem.first, "order_state"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderStateCallback, this)));
     else if (CheckParamIncludes(elem.first, "zoneSetId"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::ZoneSetIdCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::ZoneSetIdCallback, this)));
     else if (CheckParamIncludes(elem.first, "agvPosition"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::AGVPositionCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionCallback, this)));
     else if (CheckParamIncludes(elem.first, "mapId"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::AGVPositionMapIdCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionMapIdCallback, this)));
     else if (CheckParamIncludes(elem.first, "positionInitialized"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::AGVPositionInitializedCallback, this)));
+      this->subscribers.push_back(make_shared<ros::Subscriber>(nh->subscribe(
+          elem.second, 1000, &VDA5050Connector::AGVPositionInitializedCallback, this)));
     else if (CheckParamIncludes(elem.first, "agvVelocity"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::AGVVelocityCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVVelocityCallback, this)));
     else if (CheckParamIncludes(elem.first, "loads"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::LoadsCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::LoadsCallback, this)));
     else if (CheckParamIncludes(elem.first, "paused"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::PausedCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::PausedCallback, this)));
     else if (CheckParamIncludes(elem.first, "newBaseRequest"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::NewBaseRequestCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::NewBaseRequestCallback, this)));
     else if (CheckParamIncludes(elem.first, "distanceSinceLastNode"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::DistanceSinceLastNodeCallback, this)));
+      this->subscribers.push_back(make_shared<ros::Subscriber>(nh->subscribe(
+          elem.second, 1000, &VDA5050Connector::DistanceSinceLastNodeCallback, this)));
     else if (CheckParamIncludes(elem.first, "batteryState"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::BatteryStateCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::BatteryStateCallback, this)));
     else if (CheckParamIncludes(elem.first, "operatingMode"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::OperatingModeCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::OperatingModeCallback, this)));
     else if (CheckParamIncludes(elem.first, "errors"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::ErrorsCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::ErrorsCallback, this)));
     else if (CheckParamIncludes(elem.first, "information"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::InformationCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::InformationCallback, this)));
     else if (CheckParamIncludes(elem.first, "safetyState"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
-          nh->subscribe(elem.second, 1000, &OrderManager::SafetyStateCallback, this)));
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::SafetyStateCallback, this)));
   }
 }
 
-bool OrderManager::validationCheck(const vda5050_msgs::Order::ConstPtr& msg) {
-  /** TODO: How to validation check?*/
-  /** Maybe depending on AGV's capabilities (e.g. track planning etc.)*/
-  /** Check if number edges is number nodes-1*/
+bool VDA5050Connector::validationCheck(const vda5050_msgs::Order::ConstPtr& msg) {
+  // TODO: How to do a validation check?
+  // Maybe depending on AGV's capabilities (e.g. track planning etc.).
+  // Check if number edges is number nodes-1.
+
+  if (msg->edges.size() != msg->nodes.size() - 1) {
+    ROS_ERROR("Number of edges not equal to number of nodes - 1!");
+
+    // Add error to state message.
+
+    vda5050_msgs::Error error = vda5050_msgs::Error();
+    error.errorType = "validation";
+    error.errorLevel = vda5050_msgs::Error::WARNING;
+    error.errorDescription = "The number of received nodes is not equal to the number of edges + 1";
+    // TODO: Add error references.
+
+    return false;
+  }
+  // TODO: Loop over the edges, and validate that the order has a good sequence.
+
   return true;
 }
 
-bool OrderManager::inDevRange(vda5050_msgs::Node node) {
+bool VDA5050Connector::inDevRange(vda5050_msgs::Node node) {
   return ((agvPosition.nodeDistance(node.nodePosition.x, node.nodePosition.y)) <=
              node.nodePosition.allowedDeviationXY) &&
          (abs(agvPosition.getTheta() - node.nodePosition.theta) <=
              node.nodePosition.allowedDeviationTheta);
 }
 
-void OrderManager::triggerNewActions(string nodeOrEdge) {
+void VDA5050Connector::triggerNewActions(string nodeOrEdge) {
   if (nodeOrEdge == "NODE") {
     if (this->order.nodeStates.front().released) {
       if (!this->order.nodeStates.front().actions.empty()) {
@@ -305,11 +324,11 @@ void OrderManager::triggerNewActions(string nodeOrEdge) {
     ROS_ERROR("Neither node nor edge matching sequence ID!");
 }
 
-void OrderManager::sendMotionCommand() {
+void VDA5050Connector::sendMotionCommand() {
   vda5050_msgs::Edge edge = order.edgeStates.front();
   vda5050_msgs::OrderMotion msg;
   if (edge.released) {
-    /** TODO: catch exceptions if certain optional keys are not inlcuded in the message*/
+    // TODO: catch exceptions if certain optional keys are not inlcuded in the message.
     msg.maxSpeed = edge.maxSpeed;
     msg.maxRotationSpeed = edge.maxRotationSpeed;
     msg.maxHeight = edge.maxHeight;
@@ -319,7 +338,7 @@ void OrderManager::sendMotionCommand() {
     msg.orientation = edge.orientation;
     msg.length = edge.length;
 
-    /** check if trajectory is in use*/
+    // check if trajectory is in use.
     if (edge.trajectory.knotVector.empty())
       msg.target = order.nodeStates.front().nodePosition;
     else
@@ -328,8 +347,10 @@ void OrderManager::sendMotionCommand() {
     ROS_ERROR("Neither node nor edge matching sequence ID!");
 }
 
-void OrderManager::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
-  ROS_INFO("Order message received");
+void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
+  ROS_INFO("New order received.");
+  ROS_DEBUG("  Order id : %s", msg->orderId.c_str());
+  ROS_DEBUG("  Order update id : %d", msg->orderUpdateId);
 
   if (validationCheck(msg)) {
     // TODO : Update the validation and checks.
@@ -372,7 +393,18 @@ void OrderManager::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
   }
 }
 
-void OrderManager::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg) {
+void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& msg) {
+  // Read required order state information from the prefilled state message.
+  state.orderId = msg->orderId;
+  state.orderUpdateId = msg->orderUpdateId;
+  state.lastNodeId = msg->lastNodeId;
+  state.lastNodeSequenceId = msg->lastNodeSequenceId;
+  state.actionStates = msg->actionStates;
+  state.nodeStates = msg->nodeStates;
+  state.edgeStates = msg->edgeStates;
+}
+
+void VDA5050Connector::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg) {
   ROS_INFO("Received cancel request for order: %s", order.orderId.c_str());
   if (!order.nodeStates.empty() && !order.actionStates.empty()) {
     if (state.driving == true) {
@@ -383,11 +415,11 @@ void OrderManager::OrderCancelRequestCallback(const std_msgs::String::ConstPtr& 
     ROS_ERROR("Order to cancel not found: %s", msg.get()->data.c_str());
 }
 
-void OrderManager::allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg) {
+void VDA5050Connector::allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg) {
   this->order.actionCancellationComplete = true;
 }
 
-void OrderManager::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
+void VDA5050Connector::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
   auto it = find(order.actionStates.begin(), order.actionStates.end(), msg.get()->actionID);
   if (it != order.actionStates.end()) {
     if (msg.get()->actionStatus == "FINISHED") {
@@ -396,60 +428,61 @@ void OrderManager::ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr
         order.actionsFinished = true;
       }
     } else if (msg.get()->actionStatus == "FAILED")
-      /** TODO: Abort order and delete complete actionList*/;
+      // TODO: Abort order and delete complete actionList
+      ;
   }
 }
 
-void OrderManager::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
+void VDA5050Connector::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg) {
   agvPosition.updatePosition(msg->x, msg->y, msg->theta, msg->mapId);
   // ROS_INFO("Got new position: %f, %f", msg->x, msg->y);
   if (order.findNodeEdge(state.lastNodeSequenceId) == "EDGE") {
     if (inDevRange(order.nodeStates.front())) {
       if (order.actionsFinished) {
-        /** reset actions finished flag*/
+        // reset actions finished flag
         order.actionsFinished = false;
 
-        /** delete edgeState from queue*/
+        // delete edgeState from queue
         order.edgeStates.pop_front();
 
-        /** Further node in base?*/
+        // Further node in base?
         if (!(order.nodeStates.empty())) {
           state.lastNodeSequenceId = order.nodeStates.front().sequenceId;
           triggerNewActions("NODE");
           for (auto const& action : order.nodeStates.front().actions)
             order.actionStates.push_back(action.actionId);
         }
-        /** No further node -> error; all orders must begin and end with a node*/
+        // No further node -> error; all orders must begin and end with a node
         else
           ROS_ERROR("Missing node in current order!");
-        /** TODO: Send on error topic?, How to proceed?*/
+        // TODO: Send on error topic?, How to proceed?
       }
     }
   } else if (order.findNodeEdge(state.lastNodeSequenceId) == "NODE") {
     if (order.actionsFinished) {
       ROS_INFO("Node passed through!");
-      /** reset actionsFinished flag*/
+      // reset actionsFinished flag
       order.actionsFinished = false;
 
-      /** send last node ID to state daemon*/
+      // send last node ID to state daemon
       std_msgs::String lastNodeIdMsg;
       lastNodeIdMsg.data = order.nodeStates.front().nodeId;
       lastNodeIdPub.publish(lastNodeIdMsg);
 
-      /** send last node sequence ID to state daemon*/
+      // send last node sequence ID to state daemon
       std_msgs::Int32 lastNodeSequenceIdMsg;
       lastNodeSequenceIdMsg.data = order.nodeStates.front().sequenceId;
       lastNodeSequenceIdPub.publish(lastNodeSequenceIdMsg);
 
-      /** delete nodeState from queue*/
+      // delete nodeState from queue
       order.nodeStates.pop_front();
 
-      /** further edge in base?*/
+      // further edge in base?
       if (order.edgeStates.front().released && !(order.edgeStates.empty())) {
         state.lastNodeSequenceId = order.edgeStates.front().sequenceId;
         triggerNewActions("EDGE");
-        sendMotionCommand(); /** -> must be placed after nodeList.pop() to ensure that correct
-                                next node position is sent*/
+        sendMotionCommand();  // -> must be placed after nodeList.pop() to ensure that correct next
+                              // node position is sent
         for (auto const& action : order.edgeStates.front().actions)
           order.actionStates.push_back(action.actionId);
       }
@@ -458,35 +491,35 @@ void OrderManager::AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr
     ;  // ROS_ERROR("Neither node nor edge matching position update!");
 }
 
-void OrderManager::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
-  /** create new order element*/
+void VDA5050Connector::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
+  // create new order element.
   order = Order(msg);
-  /** set sequence ID*/
+  // set sequence ID.
   // currSequenceId = msg->nodes.front().sequenceId;
 
-  /** send motion commands to AGV*/
+  // send motion commands to AGV.
   sendMotionCommand();
 
-  /** send actions to action daemon*/
+  // send actions to action daemon.
   order.sendActions(orderActionPub);
 
-  /** trigger Actions in case of first node containing actions*/
+  // trigger Actions in case of first node containing actions.
   if (!order.nodeStates.front().actions.empty()) {
     triggerNewActions("NODE");
     for (auto const& action : order.nodeStates.front().actions)
       order.actionStates.push_back(action.actionId);
   }
 
-  /** send node and edge states to state daemon*/
+  // send node and edge states to state daemon.
   order.sendNodeStates(nodeStatesPub);
   order.sendEdgeStates(edgeStatesPub);
 
-  /** send order ID to state daemon*/
+  // send order ID to state daemon.
   std_msgs::String orderIdMsg;
   orderIdMsg.data = order.getOrderId();
   orderIdPub.publish(orderIdMsg);
 
-  /** send order update ID to state daemon*/
+  // send order update ID to state daemon.
   std_msgs::Int32 orderUpdateIdMsg;
   orderUpdateIdMsg.data = order.getOrderUpdateId();
   orderUpdateIdPub.publish(orderUpdateIdMsg);
@@ -494,37 +527,37 @@ void OrderManager::startNewOrder(const vda5050_msgs::Order::ConstPtr& msg) {
   ROS_INFO("Started new order: %s", msg->orderId.c_str());
 }
 
-void OrderManager::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) {
-  /** clear horizon*/
+void VDA5050Connector::updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) {
+  // clear horizon.
   order.edgeStates.erase(remove_if(order.edgeStates.begin(), order.edgeStates.end(),
       [](vda5050_msgs::Edge delEdge) { return !delEdge.released; }));
   order.nodeStates.erase(remove_if(order.nodeStates.begin(), order.nodeStates.end(),
       [](vda5050_msgs::Node delNode) { return !delNode.released; }));
 
-  /** append nodeStates/edgeStates*/
+  // append nodeStates/edgeStates.
   for (auto const& newEdge : msg->edges) order.edgeStates.push_back(newEdge);
   for (auto const& newNode : msg->nodes) order.nodeStates.push_back(newNode);
 
   order.setOrderUpdateId(msg.get()->orderUpdateId);
 
-  /** send actions to action daemon*/
-  Order newOrder(msg); /** TODO:  Overhead by creating a new order object!*/
+  // send actions to action daemon.
+  Order newOrder(msg);  // TODO:  Overhead by creating a new order object!.
   newOrder.sendActions(orderActionPub);
 
-  /** send node and edge states to state daemon*/
+  // send node and edge states to state daemon.
   order.sendNodeStates(nodeStatesPub);
   order.sendEdgeStates(edgeStatesPub);
 
-  /** send order update ID to state daemon*/
+  // send order update ID to state daemon.
   std_msgs::Int32 orderUpdateMsg;
   orderUpdateMsg.data = msg.get()->orderUpdateId;
   orderUpdateIdPub.publish(orderUpdateMsg);
 }
 
-void OrderManager::UpdateOrders() {
+void VDA5050Connector::UpdateOrders() {
   if (!state.driving) {
     if (order.actionCancellationComplete) {
-      /** send response to action daemon*/
+      // send response to action daemon.
       std_msgs::String msg;
       msg.data = order.orderId;
       orderCancelPub.publish(msg);
@@ -532,7 +565,7 @@ void OrderManager::UpdateOrders() {
   }
 }
 
-void OrderManager::orderUpdateError(string orderId, int orderUpdateId) {
+void VDA5050Connector::orderUpdateError(string orderId, int orderUpdateId) {
   std_msgs::String rejectMsg;
   stringstream ss;
   ss << "orderUpdateError: " << orderId << ", " << orderUpdateId;
@@ -541,7 +574,7 @@ void OrderManager::orderUpdateError(string orderId, int orderUpdateId) {
   // Add error message to the state.
 }
 
-void OrderManager::orderValidationError(string orderId, int orderUpdateId) {
+void VDA5050Connector::orderValidationError(string orderId, int orderUpdateId) {
   std_msgs::String rejectMsg;
   stringstream ss;
   ss << "orderValidationError: " << orderId << ", " << orderUpdateId;
@@ -552,11 +585,11 @@ void OrderManager::orderValidationError(string orderId, int orderUpdateId) {
 
 // State related callbacks
 
-void OrderManager::ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg) {
+void VDA5050Connector::ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg) {
   state.zoneSetId = msg->data;
 }
 
-void OrderManager::AGVPositionCallback(const geometry_msgs::Pose& msg) {
+void VDA5050Connector::AGVPositionCallback(const geometry_msgs::Pose& msg) {
   state.agvPosition.x = visualization.agvPosition.x = msg.position.x;
   state.agvPosition.y = visualization.agvPosition.y = msg.position.y;
 
@@ -570,15 +603,15 @@ void OrderManager::AGVPositionCallback(const geometry_msgs::Pose& msg) {
   state.agvPosition.theta = visualization.agvPosition.theta = yaw;
 }
 
-void OrderManager::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg) {
+void VDA5050Connector::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg) {
   state.agvPosition.positionInitialized = visualization.agvPosition.positionInitialized = msg->data;
 }
 
-void OrderManager::AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg) {
+void VDA5050Connector::AGVPositionMapIdCallback(const std_msgs::String::ConstPtr& msg) {
   state.agvPosition.mapId = visualization.agvPosition.mapId = msg->data;
 }
 
-void OrderManager::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
+void VDA5050Connector::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
   state.velocity.vx = visualization.velocity.vx = msg.linear.x;
   state.velocity.vy = visualization.velocity.vy = msg.linear.y;
   state.velocity.omega = visualization.velocity.omega = msg.angular.z;
@@ -586,40 +619,42 @@ void OrderManager::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
   // Set the driving field based on driving velocity.
   state.driving = (msg.linear.x > 0.01 || msg.linear.y > 0.01 || msg.angular.z > 0.01);
 }
-void OrderManager::LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg) {
+void VDA5050Connector::LoadsCallback(const vda5050_msgs::Loads::ConstPtr& msg) {
   state.loads = msg->loads;
   newPublishTrigger = true;
 }
-void OrderManager::PausedCallback(const std_msgs::Bool::ConstPtr& msg) { state.paused = msg->data; }
-void OrderManager::NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg) {
+void VDA5050Connector::PausedCallback(const std_msgs::Bool::ConstPtr& msg) {
+  state.paused = msg->data;
+}
+void VDA5050Connector::NewBaseRequestCallback(const std_msgs::Bool::ConstPtr& msg) {
   state.newBaseRequest = msg->data;
 }
-void OrderManager::DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg) {
+void VDA5050Connector::DistanceSinceLastNodeCallback(const std_msgs::Float64::ConstPtr& msg) {
   state.distanceSinceLastNode = msg->data;
 }
 
-void OrderManager::BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
+void VDA5050Connector::BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
   if (!isnan(msg->percentage)) state.batteryState.batteryCharge = msg->percentage * 100.0;
   state.batteryState.batteryVoltage = msg->voltage;
   state.batteryState.charging =
       msg->power_supply_status == sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
 }
-void OrderManager::OperatingModeCallback(const std_msgs::String::ConstPtr& msg) {
+void VDA5050Connector::OperatingModeCallback(const std_msgs::String::ConstPtr& msg) {
   state.operatingMode = msg->data;
   newPublishTrigger = true;
 }
-void OrderManager::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg) {
+void VDA5050Connector::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg) {
   state.errors = msg->errors;
   newPublishTrigger = true;
 }
-void OrderManager::InformationCallback(const vda5050_msgs::Information::ConstPtr& msg) {
+void VDA5050Connector::InformationCallback(const vda5050_msgs::Information::ConstPtr& msg) {
   state.information = msg->information;
 }
-void OrderManager::SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg) {
+void VDA5050Connector::SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg) {
   state.safetyState = *msg.get();
 }
 
-void OrderManager::PublishState() {
+void VDA5050Connector::PublishState() {
   // Set current timestamp of message.
   state.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
@@ -629,7 +664,7 @@ void OrderManager::PublishState() {
   state.headerId++;
 }
 
-void OrderManager::PublishVisualization() {
+void VDA5050Connector::PublishVisualization() {
   // Set current timestamp of message.
   visualization.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
@@ -639,7 +674,7 @@ void OrderManager::PublishVisualization() {
   visualization.headerId++;
 }
 
-void OrderManager::PublishConnection(const bool connected) {
+void VDA5050Connector::PublishConnection(const bool connected) {
   // Set current timestamp of message.
   connection.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
@@ -653,7 +688,7 @@ void OrderManager::PublishConnection(const bool connected) {
   connection.headerId++;
 }
 
-void OrderManager::PublishStateOnTrigger() {
+void VDA5050Connector::PublishStateOnTrigger() {
   if (!newPublishTrigger) return;
 
   PublishState();
@@ -669,21 +704,21 @@ void OrderManager::PublishStateOnTrigger() {
 int main(int argc, char** argv) {
   ros::init(argc, argv, "order_daemon");
 
-  OrderManager OrderManager;
+  VDA5050Connector VDA5050Connector;
 
   ros::Rate rate(1.0);
 
   while (ros::ok()) {
-    OrderManager.UpdateOrders();
+    VDA5050Connector.UpdateOrders();
 
-    OrderManager.PublishStateOnTrigger();
+    VDA5050Connector.PublishStateOnTrigger();
 
     ros::spinOnce();
     rate.sleep();
   }
 
   // Send OFFLINE message to gracefully disconnect.
-  OrderManager.PublishConnection(false);
+  VDA5050Connector.PublishConnection(false);
 
   return 0;
 }
