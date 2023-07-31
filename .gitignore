@@ -6,6 +6,3 @@ build/
 .catkin_tools/
 .devcontainer/
 devel/
-certificates/certificatePem.pem.crt
-certificates/certificatePrivateKey.pem.key
-certificates/rootCA.crt
