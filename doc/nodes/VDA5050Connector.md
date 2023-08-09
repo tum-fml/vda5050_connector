@@ -29,6 +29,7 @@ This interface documentation will get updated as more channels get added with th
 
 ### Published Topics
 
+* order [vda5050_msgs::Order] : Processed Order message coming from master control.
 * state [vda5050_msgs::State] : The state of the robot to be published to AnyFleet.
 * visualization [vda5050_msgs::Visalization] : Real time visualization messages of the AGV to AnyFleet.
 * connection [vda5050_msgs::Connection] : Connection state sent to Master Control.

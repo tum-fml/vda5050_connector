@@ -8,7 +8,7 @@ This is a more in depth view of each available node.
 
 The VDA 5050 Connector handles the creation of VDA 5050 State, Visualization and Connection state messages, which are forwarded to the MQTT bridge, to be published to AnyFleet. This node builds the state message by receiving information about the robot's state on multiple topics.
 
-The VDA 5050 Connector takes care of handling orders from AnyFleet, and forwarding the actions that need to be executed to the AGV.
+The VDA 5050 Connector takes care of handling orders from AnyFleet, and forwarding the actions that need to be executed to the vehicle.
 
 ### [Action Client](nodes/Action.md)
 
