@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <string>
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include "vda5050_msgs/Error.h"
 
 namespace connector_utils {
 
@@ -37,4 +38,13 @@ bool CheckParamIncludes(std::string str1, std::string str2);
  */
 std::string GetISOCurrentTimestamp();
 
+vda5050_msgs::Error CreateVDAError(const std::string& error_type, const std::string& error_desc,
+    const std::string& error_level,
+    const std::vector<std::pair<std::string, std::string>>& error_refs = {});
+
+vda5050_msgs::Error CreateWarningError(const std::string& error_type, const std::string& error_desc,
+    const std::vector<std::pair<std::string, std::string>>& error_refs = {});
+
+vda5050_msgs::Error CreateFatalError(const std::string& error_type, const std::string& error_desc,
+    const std::vector<std::pair<std::string, std::string>>& error_refs = {});
 }  // namespace connector_utils
