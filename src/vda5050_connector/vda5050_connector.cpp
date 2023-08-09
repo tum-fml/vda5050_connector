@@ -253,15 +253,6 @@ void VDA5050Connector::MonitorOrder() {
   // TODO : Monitor the state of the order during execution.
 }
 
-void VDA5050Connector::orderValidationError(string orderId, int orderUpdateId) {
-  std_msgs::String rejectMsg;
-  stringstream ss;
-  ss << "orderValidationError: " << orderId << ", " << orderUpdateId;
-  rejectMsg.data = ss.str();
-
-  // Add error to the state.
-}
-
 // State related callbacks
 
 void VDA5050Connector::ZoneSetIdCallback(const std_msgs::String::ConstPtr& msg) {

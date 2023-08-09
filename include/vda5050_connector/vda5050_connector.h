@@ -148,14 +148,6 @@ class VDA5050Connector : public VDA5050Node {
   void MonitorOrder();
 
   /**
-   * Sends an order validation error to the error topic.
-   *
-   * @param orderId        Order ID of the incoming order.
-   * @param orderUpdateId  Order update ID of the incoming order.
-   */
-  void orderValidationError(std::string orderId, int orderUpdateId);
-
-  /**
    * Sets the header timestamp and publishes the state message. Updates the headerId after
    * publishing
    */
