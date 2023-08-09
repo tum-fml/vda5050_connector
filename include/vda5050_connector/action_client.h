@@ -109,6 +109,10 @@ struct orderToCancel {
  */
 class ActionClient : public VDA5050Node {
  private:
+  std::map<std::string, std::shared_ptr<ros::Publisher>>
+      messagePublisher; /**< All publishers the node uses. Map from topic keys to ROS Publisher
+                           objects. */
+
   vector<shared_ptr<ActionElement>>
       activeActionsList; /**< List of actions to track all active actions. */
 
