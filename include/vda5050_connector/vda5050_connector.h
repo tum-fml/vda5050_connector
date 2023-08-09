@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "models/models.h"
 #include "sensor_msgs/BatteryState.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/Float64.h"
@@ -46,169 +47,6 @@
  * changes in the system state and b) several callbacks which receive and
  * process system changes.
  */
-struct Order {
-  std::string orderId; /**< Order ID of the order object. */
-
-  int orderUpdateId; /**< Current Order update ID of the order object. */
-
-  std::string zoneSetId; /**< ZoneSetID of the order object. */
-
-  bool actionsFinished; /**< Flag to track if all actions related to current edge or node are
-                           finished. */
-
-  bool actionCancellationComplete; /**< All actions cancelled in case of order cancellation. */
-
-  std::deque<vda5050_msgs::Edge>
-      edgeStates; /**< Contains all edges which the AGV has not completed yet. */
-
-  std::deque<vda5050_msgs::Node>
-      nodeStates; /**< Contains all nodes which the AGV has not completed yet. */
-
-  std::vector<std::string> actionStates; /**< Vector containing the states of all active actions. */
-
-  /**
-   * Default constructor for a CurrentOrder object.
-   *
-   */
-  Order() = default;
-
-  /**
-   * Constructor for a CurrentOrder object.
-   *
-   * @param incomingOrder  Pointer to the order message.
-   */
-  Order(const vda5050_msgs::Order::ConstPtr& incomingOrder);
-
-  /**
-   * Compares start of new base and end of current base.
-   *
-   * @param startOfNewBaseNodeId      Start of new base node ID.
-   * @param startOfNewBaseSequenceId  Start of new base sequence ID.
-   *
-   * @return                          true if start of new base equals end of
-   *                                  current base.
-   * @return                          false if start of new base is not equal
-   *                                  to end of current base.
-   */
-  bool compareBase(std::string startOfNewBaseNodeId, int startOfNewBaseSequenceId);
-
-  /**
-   * Get the order ID.
-   *
-   * @return  Current order ID.
-   */
-  std::string getOrderId();
-
-  /**
-   * Get the order update ID.
-   *
-   * @return  Current order update ID.
-   */
-  int getOrderUpdateId();
-
-  /**
-   * Set the Order Update Id object.
-   *
-   * @param incomingUpdateId  Incoming order update ID.
-   */
-  void setOrderUpdateId(int incomingUpdateId);
-
-  /**
-   * Tells us whether or not the order is active.
-   *
-   * @return  true if order is active.
-   * @return  false if order is inactive.
-   */
-  bool isActive();
-
-  /**
-   * Returns "NODE" or "EDGE" based on the sequence ID.
-   *
-   * @param currSequenceId  Current sequence ID.
-   * @return                "NODE" if AGV is positioned on a node and "EDGE"
-   *                        if AGV drives along an edge.
-   */
-  std::string findNodeEdge(int currSequenceId);
-
-  /**
-   * Get the last released node. The last released node means the last node in
-   * current base.
-   *
-   * @return  Last node in current base.
-   */
-  vda5050_msgs::Node getLastNodeInBase();
-
-  /**
-   * Sends all new actions to action node
-   *
-   * @param actionPublisher  ROS publisher to use for sending the actions.
-   */
-  void sendActions(ros::Publisher actionPublisher);
-
-  /**
-   * Sends all new node states to state node.
-   *
-   * @param nodeStatesPublisher  ROS publisher to use for sending the node
-   *                             states.
-   */
-  void sendNodeStates(ros::Publisher nodeStatesPublisher);
-
-  /**
-   * Sends all new edge states to state node.
-   *
-   * @param edgeStatesPublisher  ROS publisher to use for sending the edge
-   *                             states.
-   */
-  void sendEdgeStates(ros::Publisher edgeStatesPublisher);
-};
-
-/**
- * Current position of the AGV in map coordinates.
- *
- */
-class AGVPosition {
- private:
-  float x; /**< x position in map coordinates. */
-
-  float y; /**< y position in world coordinates. */
-
-  float theta; /**< theta angle in world coordinates. */
-
-  std::string mapId; /**< Map ID of the current map. */
-
- public:
-  /**
-   * Constructor for AGV position objects.
-   */
-  AGVPosition();
-
-  /**
-   * Updates last position data to new position.
-   *
-   * @param new_x      New value for x coordinate.
-   * @param new_y      New value for y coordinate.
-   * @param new_theta  New value for angle theta.
-   * @param new_mapId  New map ID.
-   */
-  void updatePosition(float new_x, float new_y, float new_theta, std::string new_mapId);
-
-  /**
-   * Computes the distance to the next node.
-   *
-   * @param node_x   x position of the next node.
-   * @param node_y   y position of the next node.
-   *
-   * @return         Distance to the next node.
-   */
-  float nodeDistance(float node_x, float node_y);
-
-  /**
-   * Get theta angle.
-   *
-   * @return  Current theta angle.
-   */
-  float getTheta();
-};
 
 /**
  * Node for processing VDA 5050 order messages.
@@ -216,45 +54,22 @@ class AGVPosition {
  */
 class VDA5050Connector : public VDA5050Node {
  private:
-  vda5050_msgs::State state; /**< State message sent to the fleet controller. */
-  vda5050_msgs::Visualization
-      visualization;                   /**< Visualization message sent to the fleet controller. */
   vda5050_msgs::Connection connection; /**< Connection message sent to the fleet controller. */
 
   Order order; /**< Current order being executed. */
 
-  AGVPosition agvPosition; /**< Currently active order. */
+  State state; /**< State of the vehicle. */
 
   /**
    * Declare all ROS subscriber and publisher topics for internal
    * communication.
    */
 
-  ros::Subscriber orderCancelSub; /**< Cancel request from action node. */
-
-  ros::Subscriber agvPositionSub; /**< Position data from AGV. */
-
-  ros::Subscriber allActionsCancelledSub; /**< Response from action node if all actions of a order
-                                             to cancel are successfully cancelled. */
-
   ros::Publisher orderActionPub; /**< Ordinary order actions from order_node to action_node. */
 
   ros::Publisher orderCancelPub; /**< Response to cancel request. */
 
   ros::Publisher orderTriggerPub; /**< Triggers actions when AGV arrives at edge or node. */
-
-  ros::Publisher nodeStatesPub; /**< Node state transfer topic (to state node). */
-
-  ros::Publisher edgeStatesPub; /**< Edge state transfer topic (to state node). */
-
-  ros::Publisher lastNodeIdPub; /**< Last node ID; changes when a node is left. */
-
-  ros::Publisher lastNodeSequenceIdPub; /**< Last node sequence ID; changes when a node is left. */
-
-  ros::Publisher orderIdPub; /**< Order ID; changes when a new order is started. */
-
-  ros::Publisher
-      orderUpdateIdPub; /**< Order ID; changes when a new order or order update is started. */
 
   ros::Publisher orderPublisher; /**< Order message publisher. */
 
@@ -268,10 +83,15 @@ class VDA5050Connector : public VDA5050Node {
   ros::Timer visTimer;   /**< Timer used to publish visualization messages regularly. */
   ros::Timer connTimer;  /**< Timer used to publish connection state messages regularly. */
 
+  int stateHeaderId{0}; /**< Header Id used for state messages. */
+  int visHeaderId{0};   /**< Header Id used for visualization messages. */
+  int connHeaderId{0};  /**< Header Id used for connection state messages. */
+
   std::vector<std::shared_ptr<ros::Subscriber>>
       subscribers; /**< List of subsribers used by the StateAggregator to build the robot state. */
 
-  bool newPublishTrigger{false};
+  bool newPublishTrigger{
+      false}; /**< Trigger used to publish state messages on significant updates. */
 
  protected:
  public:
@@ -296,44 +116,11 @@ class VDA5050Connector : public VDA5050Node {
   void LinkSubscriptionTopics(ros::NodeHandle* nh);
 
   /**
-   * Checks if the incoming order is valid.
-   *
-   * @param msg  Incoming order message.
-   *
-   * @return     true if order is valid.
-   * @return     false if order is not valid.
-   */
-  bool validationCheck(const vda5050_msgs::Order::ConstPtr& msg);
-
-  /**
-   * Decides whether the AGV position is within the permissible deviation
-   * range of the given node.
-   *
-   * @param node node to calculate the distance to
-   * @return true if AGV position is in the deviation range
-   * @return false if AGV position is not in the deviation range
-   */
-  bool inDevRange(vda5050_msgs::Node node);
-
-  /**
-   * Triggers actions of the following node or edge.
-   *
-   * @param nodeOrEdge is the AGV currently on a node or an edge?
-   */
-  void triggerNewActions(std::string nodeOrEdge);
-
-  /**
-   * Sends motion commands to the AGV.
-   *
-   */
-  void sendMotionCommand();
-
-  /**
    * Creates a new order element if no order exists.
    *
    * @param msg  Newly arrived order.
    */
-  void startNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
+  void SendOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
   /**
    * Appends the new order instead of the horizon.
@@ -347,7 +134,7 @@ class VDA5050Connector : public VDA5050Node {
    *
    * @param msg  Newly arrived order.
    */
-  void updateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
+  void UpdateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
   /**
    * Main loop of the node. Consists of the following steps:
@@ -358,15 +145,7 @@ class VDA5050Connector : public VDA5050Node {
    * - send order cancellations to order_node
    * - send action status to state_node
    */
-  void UpdateOrders();
-
-  /**
-   * Sends an order update error to the error topic.
-   *
-   * @param orderId        Order ID of the incoming order.
-   * @param orderUpdateId  Order updeate ID of the incoming order.
-   */
-  void orderUpdateError(std::string orderId, int orderUpdateId);
+  void MonitorOrder();
 
   /**
    * Sends an order validation error to the error topic.
@@ -427,23 +206,6 @@ class VDA5050Connector : public VDA5050Node {
    * @param msg  Message containing the order cancel request.
    */
   void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
-
-  /**
-   * Callback for incoming information about the cancellation of all actions.
-   * Sets flag in currentOrders in case all related actions have been
-   * successfully cancelled in case of order cancellation.
-   *
-   * @param msg  Order ID of the order to cancel.
-   */
-  void allActionsCancelledCallback(const std_msgs::String::ConstPtr& msg);
-
-  /**
-   * Tracks action states to decide if the current node/edge is finished
-   * and can be left.
-   *
-   * @param msg  Incoming action state message.
-   */
-  void ActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg);
 
   /**
    * Updates the saved position with the incoming position. Depending on

@@ -15,6 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
 )
 
+file(GLOB UTILS ${PROJECT_SOURCE_DIR}/src/utils/*.cpp)
+file(GLOB MODELS ${PROJECT_SOURCE_DIR}/src/models/*.cpp)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -131,9 +134,8 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/vda5050_connector_node.cpp)
-add_executable(action_client src/vda5050_connector/action_client.cpp src/vda5050_connector/vda5050node.cpp src/utils/utils.cpp)
-add_executable(vda5050_connector src/vda5050_connector/vda5050_connector.cpp src/vda5050_connector/vda5050node.cpp src/utils/utils.cpp)
-add_executable(vis_mockup src/mock_ups/vis_mockup.cpp)
+add_executable(action_client src/vda5050_connector/action_client.cpp src/vda5050_connector/vda5050node.cpp ${UTILS})
+add_executable(vda5050_connector src/vda5050_connector/vda5050_connector.cpp src/vda5050_connector/vda5050node.cpp ${UTILS} ${MODELS})
 add_executable(state_mockup src/mock_ups/state_mockup.cpp)
 add_executable(order_mockup src/mock_ups/order_mockup/order_mockup.cpp)
 add_executable(action_msg_mockup src/mock_ups/action_msg_mockup.cpp)
