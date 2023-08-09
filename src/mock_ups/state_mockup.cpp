@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
   ros::Publisher battery_publisher = nh.advertise<sensor_msgs::BatteryState>("/batteryState", 1000);
   ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/mapId", 1000);
   ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/positionInitialized", 1000);
-  ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localizationScore", 1000);
+  ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localization_score", 1000);
 
   while (ros::ok()) {
     // Publish messages.

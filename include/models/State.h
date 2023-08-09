@@ -99,6 +99,10 @@ class State {
     state.agvPosition.theta = theta;
   }
 
+  inline void SetLocalizationScore(const double score) {
+    state.agvPosition.localizationScore = score;
+  }
+
   inline void SetPositionInitialized(const bool initialized) {
     state.agvPosition.positionInitialized = initialized;
   }

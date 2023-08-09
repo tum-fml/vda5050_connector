@@ -16,6 +16,7 @@ subscribe_topics:
                                                     # - actionStates
     mapId: "/mapId"                                 # Current map id                                                        !!! Uses ROS String messages. !!!
     positionInitialized: "/positionInitialized"     # Boolean if the robot's position is initialized on the map.            !!! Uses ROS Bool messages. !!!
+    localization_score: "/localization_score"     # Boolean if the robot's position is initialized on the map.            !!! Uses ROS Bool messages. !!!
     agvPosition: "/agvPosition"                     # Robot's pose on the map                                               !!! Uses ROS Pose messages. !!!
     agvVelocity: "/agvVelocity"                     # Robot's velocity                                                      !!! Uses ROS Twist messages. !!!
     loads: "/loads"                                 # Loads carried by the robot

@@ -101,6 +101,9 @@ void VDA5050Connector::LinkSubscriptionTopics(ros::NodeHandle* nh) {
     else if (CheckParamIncludes(elem.first, "agvPosition"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionCallback, this)));
+    else if (CheckParamIncludes(elem.first, "localization_score"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::LocScoreCallback, this)));
     else if (CheckParamIncludes(elem.first, "mapId"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionMapIdCallback, this)));
@@ -273,6 +276,10 @@ void VDA5050Connector::AGVPositionCallback(const geometry_msgs::Pose& msg) {
   tf::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
 
   state.SetAGVPosition(msg.position.x, msg.position.y, yaw);
+}
+
+void VDA5050Connector::LocScoreCallback(const std_msgs::Float64::ConstPtr& msg) {
+  state.SetLocalizationScore(msg->data);
 }
 
 void VDA5050Connector::AGVPositionInitializedCallback(const std_msgs::Bool::ConstPtr& msg) {

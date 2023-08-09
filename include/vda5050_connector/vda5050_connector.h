@@ -275,6 +275,13 @@ class VDA5050Connector : public VDA5050Node {
   void AGVPositionCallback(const geometry_msgs::Pose& msg);
 
   /**
+   * Callback function for incoming localization score messages.
+   *
+   * @param msg  Incoming message.
+   */
+  void LocScoreCallback(const std_msgs::Float64::ConstPtr& msg);
+
+  /**
    * Callback function for incoming ROS velocity messages.
    *
    * @param msg  Incoming message.
