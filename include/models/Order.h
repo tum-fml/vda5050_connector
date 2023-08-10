@@ -14,7 +14,7 @@ class Order {
    *
    */
   Order();
-  
+
   /**
    * @brief Construct a new Order object from a vda5050 ros message.
    *
@@ -30,25 +30,27 @@ class Order {
   void UpdateOrder(const vda5050_msgs::Order::ConstPtr& order_update);
 
   /**
-   * @brief Get the Order Id
+   * @brief Checks if the order is valid by testing the number of nodes, edges, and validating the
+   * order sequence.
+   *
+   */
+  void Validate();
+
+  // ----- Getters and Setters -----
+
+  /**
+   * @brief Get the Order Id.
    *
    * @return std::string
    */
   inline std::string GetOrderId() { return order.orderId; };
 
   /**
-   * @brief Get the Order Update Id
+   * @brief Get the Order Update Id.
    *
    * @return uint32_t
    */
   inline uint32_t GetOrderUpdateId() { return order.orderUpdateId; };
-
-  /**
-   * @brief Checks if the order is valid by testing the number of nodes, edges, and validating the
-   * order sequence.
-   *
-   */
-  void Validate();
 
  private:
   vda5050_msgs::Order order; /**< Order message */
