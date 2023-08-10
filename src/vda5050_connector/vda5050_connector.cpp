@@ -159,7 +159,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     // Add error and corresponding references to the state.
     auto error = CreateWarningError("orderValidation", e.what(),
         {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
-    state.AddError(error);
+    state.AppendError(error);
 
     return;
   } catch (const std::exception& e) {
@@ -167,7 +167,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 
     auto error = CreateWarningError(
         "orderCreation", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
-    state.AddError(error);
+    state.AppendError(error);
 
     return;
   }
@@ -184,7 +184,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
           {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
               {static_cast<std::string>("orderUpdateId"),
                   std::to_string(new_order.GetOrderUpdateId())}});
-      state.AddError(error);
+      state.AppendError(error);
 
       return;
 

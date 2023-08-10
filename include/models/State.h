@@ -56,8 +56,7 @@ class State {
    *
    * @param error
    */
-  // TODO : Append error
-  inline void AddError(const vda5050_msgs::Error& error) { state.errors.push_back(error); };
+  inline void AppendError(const vda5050_msgs::Error& error) { state.errors.push_back(error); };
 
   /**
    * @brief Create a Visualization message from the current state message.
@@ -155,7 +154,7 @@ class State {
    */
   inline bool SetBatteryCharge(const double battery_charge) {
     if (0.0 <= battery_charge <= 100.0) {
-    state.batteryState.batteryCharge = battery_charge;
+      state.batteryState.batteryCharge = battery_charge;
       return true;
     };
     return false;
@@ -253,7 +252,7 @@ class State {
    */
   inline bool SetLocalizationScore(const double score) {
     if (0.0 <= score <= 1.0) {
-    state.agvPosition.localizationScore = score;
+      state.agvPosition.localizationScore = score;
       return true;
     }
     return false;
