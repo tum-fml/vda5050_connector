@@ -99,7 +99,7 @@ void ActionClient::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstP
 
     // Create and publish action state msg
     vda5050_msgs::ActionState action_state_msg;
-    action_state_msg.actionID = action.actionId;
+    action_state_msg.actionId = action.actionId;
     action_state_msg.actionType = action.actionType;
     action_state_msg.actionStatus = actionStatus;
     action_state_msg.resultDescription = "";
@@ -178,7 +178,7 @@ void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 
             // send failed state to state daemon
             vda5050_msgs::ActionState state_msg;
-            state_msg.actionID = cAction->get()->getActionId();
+            state_msg.actionId = cAction->get()->getActionId();
             state_msg.actionType = cAction->get()->getActionType();
             state_msg.actionStatus = "FAILED";
             state_msg.resultDescription = "order cancelled";  // Description necessary?
@@ -233,7 +233,7 @@ void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
       instantActionQueue.push_back(iaction);
       // Create and publish action state msg
       vda5050_msgs::ActionState state_msg;
-      state_msg.actionID = iaction.actionId;
+      state_msg.actionId = iaction.actionId;
       state_msg.actionType = iaction.actionType;
       state_msg.actionStatus = "WAITING";
       state_msg.resultDescription = "";  // Description necessary?
@@ -243,7 +243,7 @@ void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::Co
 }
 
 void ActionClient::AgvActionStateCallback(const vda5050_msgs::ActionState::ConstPtr& msg) {
-  shared_ptr<ActionElement> actionToUpdate = FindAction(msg->actionID);
+  shared_ptr<ActionElement> actionToUpdate = FindAction(msg->actionId);
   actionStatesPub.publish(msg);
 
   if (actionToUpdate) {
@@ -378,7 +378,7 @@ void ActionClient::UpdateActions() {
           if (actAct_it != activeActionsList.end()) {
             // Create and publish action state msg.
             vda5050_msgs::ActionState state_msg;
-            state_msg.actionID = (**actAct_it).getActionId();
+            state_msg.actionId = (**actAct_it).getActionId();
             state_msg.actionType = (**actAct_it).getActionType();
             state_msg.actionStatus = "FINISHED";
             state_msg.resultDescription = "";  // Description necessary?.
