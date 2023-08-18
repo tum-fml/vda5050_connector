@@ -2,8 +2,8 @@
 #define STATE_H
 
 #include <boost/optional.hpp>
+#include "models/Order.h"
 #include "vda5050_msgs/Node.h"
-#include "vda5050_msgs/Order.h"
 #include "vda5050_msgs/State.h"
 #include "vda5050_msgs/Visualization.h"
 
@@ -25,7 +25,7 @@ class State {
    * @return true
    * @return false
    */
-  bool HasActiveOrder();
+  bool HasActiveOrder(const Order& current_order);
 
   /**
    * @brief Checks if the order update correctly continues on the previous order by comparing the
@@ -33,7 +33,7 @@ class State {
    *
    * @param order_update
    */
-  void ValidateUpdateBase(const vda5050_msgs::Order::ConstPtr& order_update);
+  void ValidateUpdateBase(const Order& order_update);
 
   /**
    * @brief Adds the new nodes, edges and actions from an order update to the state message.
@@ -42,7 +42,7 @@ class State {
    *
    * @param order_update
    */
-  void UpdateOrder(const vda5050_msgs::Order::ConstPtr& order_update);
+  void UpdateOrder(const Order& current_order, const Order& order_update);
 
   /**
    * @brief Searches in the current state for the last released node in the order.
@@ -108,6 +108,13 @@ class State {
   }
 
   /**
+   * @brief Get the Manufacturer from the state message.
+   *
+   * @return std::string
+   */
+  inline std::string GetManufacturer() { return state.manufacturer; }
+
+  /**
    * @brief Set the Version in the message header.
    *
    * @param version
@@ -115,11 +122,25 @@ class State {
   inline void SetVersion(const std::string& version) { state.version = version; }
 
   /**
+   * @brief Get the version from the state message.
+   *
+   * @return std::string
+   */
+  inline std::string GetVersion() { return state.version; }
+
+  /**
    * @brief Set the Serial Number in the message header.
    *
    * @param sn
    */
   inline void SetSerialNumber(const std::string& sn) { state.serialNumber = sn; }
+
+  /**
+   * @brief Get the Serial Number from the state message.
+   *
+   * @return std::string
+   */
+  inline std::string GetSerialNumber() { return state.serialNumber; }
 
   /**
    * @brief Set the id of the zone set being used when navigating.

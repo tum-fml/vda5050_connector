@@ -42,16 +42,22 @@ void Order::Validate() {
   }
 }
 
-void Order::UpdateOrder(const vda5050_msgs::Order::ConstPtr& order_update) {
+void Order::UpdateOrder(const Order& order_update) {
   // Clear horizon.
   order.edges.erase(remove_if(order.edges.begin(), order.edges.end(),
       [](vda5050_msgs::Edge edge) { return !edge.released; }));
   order.nodes.erase(remove_if(order.nodes.begin(), order.nodes.end(),
       [](vda5050_msgs::Node node) { return !node.released; }));
 
-  // Append new nodes and edges to the order.
-  for (auto const& newEdge : order_update->edges) order.edges.push_back(newEdge);
-  for (auto const& newNode : order_update->nodes) order.nodes.push_back(newNode);
+  auto updated_nodes = order_update.GetNodes();
 
-  order.orderUpdateId = order_update->orderUpdateId;
+  // Remove the first node in the update because it is similar to the last released node in the
+  // order.
+  updated_nodes.erase(updated_nodes.begin());
+
+  // Append new nodes and edges to the order.
+  for (auto const& newNode : order_update.GetNodes()) order.nodes.push_back(newNode);
+  for (auto const& newEdge : order_update.GetEdges()) order.edges.push_back(newEdge);
+
+  order.orderUpdateId = order_update.GetOrderUpdateId();
 }
