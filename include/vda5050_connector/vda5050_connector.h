@@ -54,8 +54,6 @@
  */
 class VDA5050Connector : public VDA5050Node {
  private:
-  vda5050_msgs::Connection connection; /**< Connection message sent to the fleet controller. */
-
   Order order; /**< Current order being executed. */
 
   State state; /**< State of the vehicle. */
@@ -93,7 +91,6 @@ class VDA5050Connector : public VDA5050Node {
   bool newPublishTrigger{
       false}; /**< Trigger used to publish state messages on significant updates. */
 
- protected:
  public:
   /**
    * Constructor for Ordernode objects. Links all internal and external ROS
