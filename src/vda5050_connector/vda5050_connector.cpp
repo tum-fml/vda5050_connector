@@ -12,6 +12,10 @@
 using namespace std;
 using namespace connector_utils;
 
+constexpr char VERSION_PARAM[] = "/header/version";
+constexpr char MANUFACTURER_PARAM[] = "/header/manufacturer";
+constexpr char SN_PARAM[] = "/header/serialNumber";
+
 /**
  * TODO: publish to topicPub, if following requirements are met:
  * - received order
@@ -36,28 +40,31 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
   LinkSubscriptionTopics(&(this->nh));
 
   // Read header version.
-  if (ros::param::has("/header/version")) {
+  if (ros::param::has(VERSION_PARAM)) {
     std::string version;
-    ros::param::get("/header/version", version);
+    ros::param::get(VERSION_PARAM, version);
     state.SetVersion(version);
-    connection.version = version;
+  } else {
+    ROS_ERROR("%s not found in the configuration!", VERSION_PARAM);
   }
 
   // Read header manufacturer.
-  if (ros::param::has("/header/manufacturer")) {
+  if (ros::param::has(MANUFACTURER_PARAM)) {
     std::string manufacturer;
-    ros::param::get("/header/manufacturer", manufacturer);
+    ros::param::get(MANUFACTURER_PARAM, manufacturer);
     state.SetManufacturer(manufacturer);
-    connection.manufacturer = manufacturer;
+  } else {
+    ROS_ERROR("%s not found in the configuration!", MANUFACTURER_PARAM);
   }
 
   // Read header serialNumber.
   // TODO : The serial number needs to be read from the client ID Text file!
-  if (ros::param::has("/header/serialNumber")) {
+  if (ros::param::has(SN_PARAM)) {
     std::string sn;
-    ros::param::get("/header/serialNumber", sn);
+    ros::param::get(SN_PARAM, sn);
     state.SetSerialNumber(sn);
-    connection.serialNumber = sn;
+  } else {
+    ROS_ERROR("%s not found in the configuration!", SN_PARAM);
   }
 
   stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&VDA5050Connector::PublishState, this));
@@ -173,9 +180,9 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
   }
 
   // TODO : Check if the state has an active order, not the new_order.
-  if (state.GetOrderId() == msg->orderId) {
+  if (state.GetOrderId() == new_order.GetOrderId()) {
     // Check if the received order message is an update.
-    if (state.GetOrderUpdateId() < msg->orderUpdateId) {
+    if (state.GetOrderUpdateId() < new_order.GetOrderUpdateId()) {
       std::string error_msg = "Received order update with a lower order update ID";
       ROS_ERROR("Error has occurred : %s", error_msg.c_str());
 
@@ -189,30 +196,35 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       return;
 
       // Discard any already received order updates.
-    } else if (state.GetOrderUpdateId() == msg->orderUpdateId) {
-      ROS_WARN_STREAM("Order discarded. Message already received! " << msg->orderId << ", "
-                                                                    << msg->orderUpdateId);
+    } else if (state.GetOrderUpdateId() == new_order.GetOrderUpdateId()) {
+      ROS_WARN_STREAM("Order discarded. Message already received! "
+                      << new_order.GetOrderId() << ", " << new_order.GetOrderUpdateId());
       return;
     } else {
       // Compare the information of the last order with the newly received order update.
       try {
-        state.ValidateUpdateBase(msg);
-      } catch (...) {
-        // TODO (jammoul271) : Add error printing
-        ROS_ERROR("Update base validation failed.");
+        state.ValidateUpdateBase(new_order);
+      } catch (const std::runtime_error& e) {
+        ROS_ERROR("Update base validation failed. %s", e.what());
+
+        // Add error to the state message.
+
         return;
       }
 
       // Accept the order update by updating the state and the order message.
+      UpdateExistingOrder(new_order);
 
-      // Send the order.
+      ROS_INFO("Forwarding order update");
+
+      // Send the order update.
+      orderPublisher.publish(msg);
     }
 
   } else {
     // If no order is active, and the robot is in the deviation range of the first node, the order
     // can be started.
-
-    if (state.HasActiveOrder()) {
+    if (state.HasActiveOrder(order)) {
       ROS_ERROR("Vehicle received a new order while executing an order!");
 
       // Create an error and add it to the state message.
@@ -220,8 +232,10 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       return;
     }
 
-    if (state.InDeviationRange(msg.get()->nodes.front())) {
+    if (state.InDeviationRange(new_order.GetNodes().front())) {
       // Accept the new order by updating the state message and the order.
+
+      ROS_INFO("Forwarding new order");
 
       // Send the new order.
       orderPublisher.publish(msg);
@@ -229,6 +243,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     } else {
       // Create error, and add error to the state.
       ROS_ERROR("Vehicle not inside the deviation range of the first node in the order.");
+      return;
     }
   }
 
@@ -243,10 +258,14 @@ void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& m
   newPublishTrigger = true;
 }
 
-void VDA5050Connector::UpdateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg) {
+void VDA5050Connector::UpdateExistingOrder(const Order& order_update) {
   // Update the order with added nodes, edges, new order id and update id.
-  order.UpdateOrder(msg);
-  state.UpdateOrder(msg);
+
+  // Update the state before the order, because the state needs the old order to clear actions from
+  // the old horizon.
+  state.UpdateOrder(order, order_update);
+
+  order.UpdateOrder(order_update);
 }
 
 void VDA5050Connector::MonitorOrder() {
@@ -368,8 +387,15 @@ void VDA5050Connector::PublishVisualization() {
 }
 
 void VDA5050Connector::PublishConnection(const bool connected) {
-  // Set current timestamp of message.
+  // Create new connection state message.
+  vda5050_msgs::Connection connection;
+
+  // Set the header fields.
+  connection.headerId = connHeaderId;
   connection.timeStamp = connector_utils::GetISOCurrentTimestamp();
+  connection.version = state.GetVersion();
+  connection.manufacturer = state.GetManufacturer();
+  connection.serialNumber = state.GetSerialNumber();
 
   // Set the connection state.
   connection.connectionState =
@@ -377,8 +403,8 @@ void VDA5050Connector::PublishConnection(const bool connected) {
 
   connectionPublisher.publish(connection);
 
-  // Increase header count.
-  connection.headerId++;
+  // Increase header count after each publish.
+  connHeaderId++;
 }
 
 void VDA5050Connector::PublishStateOnTrigger() {

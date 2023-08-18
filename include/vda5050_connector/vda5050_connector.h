@@ -131,7 +131,7 @@ class VDA5050Connector : public VDA5050Node {
    *
    * @param msg  Newly arrived order.
    */
-  void UpdateExistingOrder(const vda5050_msgs::Order::ConstPtr& msg);
+  void UpdateExistingOrder(const Order& order_update);
 
   /**
    * Main loop of the node. Consists of the following steps:
