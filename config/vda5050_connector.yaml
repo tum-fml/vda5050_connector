@@ -3,8 +3,10 @@ publish_topics:
     visualization: "/visualization"                 # Visualization message to the Master Control.
     connection: "/connection"                       # Connection State message.
     order: "/order"                                 # Processed order.
+    instant_action: "/instant_action"               # Processed instant action message.
 subscribe_topics:
     order_from_mc: "/order_from_mc"                 # Raw order coming from the cloud.
+    ia_from_mc: "/ia_from_mc"                       # Raw instant action message from the cloud.
     zoneSetId: "/zoneSetId"                         # ID of the current zone set used by the robot.                         !!! Uses ROS String messages. !!!
     order_state: "/order_state"                     # Current state of the running order. Contains the following fields :
                                                     # - orderId.

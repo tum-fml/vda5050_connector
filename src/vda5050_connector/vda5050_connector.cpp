@@ -82,6 +82,8 @@ void VDA5050Connector::LinkPublishTopics(ros::NodeHandle* nh) {
   for (const auto& elem : topicList) {
     if (CheckParamIncludes(elem.first, "order"))
       orderPublisher = nh->advertise<vda5050_msgs::Order>(elem.second, 1000);
+    else if (CheckParamIncludes(elem.first, "instant_action"))
+      iaPublisher = nh->advertise<vda5050_msgs::InstantAction>(elem.second, 1000);
     else if (CheckParamIncludes(elem.first, "state")) {
       statePublisher = nh->advertise<vda5050_msgs::State>(elem.second, 1000);
     } else if (CheckParamIncludes(elem.first, "visualization")) {
@@ -99,6 +101,9 @@ void VDA5050Connector::LinkSubscriptionTopics(ros::NodeHandle* nh) {
     if (CheckParamIncludes(elem.first, "order_from_mc"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderCallback, this)));
+    else if (CheckParamIncludes(elem.first, "ia_from_mc"))
+      this->subscribers.push_back(make_shared<ros::Subscriber>(
+          nh->subscribe(elem.second, 1000, &VDA5050Connector::InstantActionCallback, this)));
     else if (CheckParamIncludes(elem.first, "order_state"))
       this->subscribers.push_back(make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderStateCallback, this)));
@@ -250,6 +255,13 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 
   // Send a new state message on orders and order updates.
   newPublishTrigger = true;
+}
+
+void VDA5050Connector::InstantActionCallback(const vda5050_msgs::InstantAction::ConstPtr& msg) {
+  // Forward instant action message to the vehicle.
+
+  ROS_INFO("Sending instant action message");
+  iaPublisher.publish(msg);
 }
 
 void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& msg) {

@@ -30,6 +30,7 @@
 #include "vda5050_msgs/EdgeStates.h"
 #include "vda5050_msgs/Errors.h"
 #include "vda5050_msgs/Information.h"
+#include "vda5050_msgs/InstantAction.h"
 #include "vda5050_msgs/Loads.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/NodeState.h"
@@ -70,6 +71,8 @@ class VDA5050Connector : public VDA5050Node {
   ros::Publisher orderTriggerPub; /**< Triggers actions when AGV arrives at edge or node. */
 
   ros::Publisher orderPublisher; /**< Order message publisher. */
+
+  ros::Publisher iaPublisher; /**< InstantAction message publisher. */
 
   ros::Publisher
       statePublisher; /**< Publisher object for state messages to the fleet controller. */
@@ -203,14 +206,9 @@ class VDA5050Connector : public VDA5050Node {
    */
   void OrderCancelRequestCallback(const std_msgs::String::ConstPtr& msg);
 
-  /**
-   * Updates the saved position with the incoming position. Depending on
-   * position and action states it decides whether or not the current node or
-   * edge is finished and the next one can be started.
-   *
-   * @param msg  Incoming position update message.
-   */
-  void AgvPositionCallback(const vda5050_msgs::AGVPosition::ConstPtr& msg);
+  // -------- All InstantAction callbacks --------
+
+  void InstantActionCallback(const vda5050_msgs::InstantAction::ConstPtr& msg);
 
   // -------- All state callbacks --------
 
