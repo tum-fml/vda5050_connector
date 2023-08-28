@@ -2,6 +2,36 @@
 
 State::State() { this->state = vda5050_msgs::State(); }
 
+vda5050_msgs::NodeState State::NodeToNodeState(const vda5050_msgs::Node& n) {
+  vda5050_msgs::NodeState ns;
+  ns.nodeId = n.nodeId;
+  ns.sequenceId = n.sequenceId;
+  ns.nodeDescription = n.nodeDescription;
+  ns.released = n.released;
+  ns.nodePosition = n.nodePosition;
+  return ns;
+}
+
+vda5050_msgs::EdgeState State::EdgeToEdgeState(const vda5050_msgs::Edge& e) {
+  vda5050_msgs::EdgeState es;
+  es.edgeId = e.edgeId;
+  es.sequenceId = e.sequenceId;
+  es.edgeDescription = e.edgeDescription;
+  es.trajectory = e.trajectory;
+  es.released = e.released;
+  return es;
+}
+
+vda5050_msgs::ActionState State::ActionToActionState(const vda5050_msgs::Action& a) {
+  vda5050_msgs::ActionState as;
+  as.actionId = a.actionId;
+  as.actionDescription = a.actionDescription;
+  as.actionStatus = vda5050_msgs::ActionState::WAITING;
+  as.actionType = a.actionType;
+  as.resultDescription = "";
+  return as;
+}
+
 bool State::HasActiveOrder(const Order& current_order) {
   // Check if there are any base nodes in the order.
 
@@ -63,6 +93,33 @@ bool State::InDeviationRange(vda5050_msgs::Node node) {
   return (vehicle_to_node_dist <= node.nodePosition.allowedDeviationXY) &&
          (abs(state.agvPosition.theta - node.nodePosition.theta) <=
              node.nodePosition.allowedDeviationTheta);
+}
+
+void State::AcceptNewOrder(const Order& new_order) {
+  state.orderId = new_order.GetOrderId();
+  state.orderUpdateId = new_order.GetOrderUpdateId();
+
+  state.nodeStates.clear();
+  state.edgeStates.clear();
+  state.actionStates.clear();
+
+  const auto& new_nodes = new_order.GetNodes();
+  const auto& new_edges = new_order.GetEdges();
+
+  for (size_t i = 0; i < new_nodes.size(); i++) {
+    state.nodeStates.push_back(NodeToNodeState(new_nodes[i]));
+
+    for (const auto& action : new_nodes[i].actions) {
+      state.actionStates.push_back(ActionToActionState(action));
+    }
+
+    if (i < new_edges.size()) {
+      state.edgeStates.push_back(EdgeToEdgeState(new_edges[i]));
+      for (const auto& action : new_edges[i].actions) {
+        state.actionStates.push_back(ActionToActionState(action));
+      }
+    }
+  }
 }
 
 void State::ValidateUpdateBase(const Order& order_update) {
@@ -134,47 +191,17 @@ void State::UpdateOrder(const Order& current_order, const Order& order_update) {
     }
   }
 
-  auto to_nodestate = [](const vda5050_msgs::Node& n) {
-    vda5050_msgs::NodeState ns;
-    ns.nodeId = n.nodeId;
-    ns.sequenceId = n.sequenceId;
-    ns.nodeDescription = n.nodeDescription;
-    ns.released = n.released;
-    ns.nodePosition = n.nodePosition;
-    return ns;
-  };
-
-  auto to_edgestate = [](const vda5050_msgs::Edge& e) {
-    vda5050_msgs::EdgeState es;
-    es.edgeId = e.edgeId;
-    es.sequenceId = e.sequenceId;
-    es.edgeDescription = e.edgeDescription;
-    es.trajectory = e.trajectory;
-    es.released = e.released;
-    return es;
-  };
-
-  auto to_actionstate = [](const vda5050_msgs::Action& a) {
-    vda5050_msgs::ActionState as;
-    as.actionId = a.actionId;
-    as.actionDescription = a.actionDescription;
-    as.actionStatus = vda5050_msgs::ActionState::WAITING;
-    as.actionType = a.actionType;
-    as.resultDescription = "";
-    return as;
-  };
-
   // Append new updated nodes and edges to the order.
   for (const auto& new_node : updated_nodes) {
-    state.nodeStates.push_back(to_nodestate(new_node));
+    state.nodeStates.push_back(NodeToNodeState(new_node));
     for (const auto& action : new_node.actions) {
-      state.actionStates.push_back(to_actionstate(action));
+      state.actionStates.push_back(ActionToActionState(action));
     }
   }
   for (const auto& new_edge : order_update.GetEdges()) {
-    state.edgeStates.push_back(to_edgestate(new_edge));
+    state.edgeStates.push_back(EdgeToEdgeState(new_edge));
     for (const auto& action : new_edge.actions) {
-      state.actionStates.push_back(to_actionstate(action));
+      state.actionStates.push_back(ActionToActionState(action));
     }
   }
 

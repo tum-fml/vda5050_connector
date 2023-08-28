@@ -42,6 +42,14 @@ void Order::Validate() {
   }
 }
 
+void Order::AcceptNewOrder(const Order& new_order) {
+  order.orderId = new_order.GetOrderId();
+  order.orderUpdateId = new_order.GetOrderUpdateId();
+  order.nodes = new_order.GetNodes();
+  order.edges = new_order.GetEdges();
+  order.zoneSetId = new_order.GetZoneSetId();
+}
+
 void Order::UpdateOrder(const Order& order_update) {
   // Clear horizon.
   order.edges.erase(remove_if(order.edges.begin(), order.edges.end(),

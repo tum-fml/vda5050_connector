@@ -127,6 +127,13 @@ class VDA5050Connector : public VDA5050Node {
   void appendNewOrder(const vda5050_msgs::Order::ConstPtr& msg);
 
   /**
+   * Sets the current order.
+   *
+   * @param msg  Newly arrived order.
+   */
+  void AcceptNewOrder(const Order& new_order);
+
+  /**
    * Updates the existing order (i.e. Release the horizon).
    *
    * @param msg  Newly arrived order.

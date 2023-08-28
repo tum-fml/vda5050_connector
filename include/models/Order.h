@@ -23,7 +23,18 @@ class Order {
   Order(const vda5050_msgs::Order::ConstPtr& order);
 
   /**
-   * @brief Clear horizon!
+   * @brief Accepts an order by clearing all old nodes and edges, and sets the nodes, edges, orderId
+   * and orderUpdateId.
+   *
+   * @param new_order
+   */
+  void AcceptNewOrder(const Order& new_order);
+
+  /**
+   * @brief Updates the current order with the new nodes, edges and action received in the order
+   * update.
+   *
+   * Sets the order update id.
    *
    * @param order_update
    */
@@ -52,6 +63,7 @@ class Order {
    */
   inline uint32_t GetOrderUpdateId() const { return order.orderUpdateId; };
 
+  inline std::string GetZoneSetId() const { return order.zoneSetId; }
   /**
    * @brief Get all the nodes in the order
    *

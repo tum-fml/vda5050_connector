@@ -20,6 +20,16 @@ class State {
   State();
 
   /**
+   * @brief Accepts an order by clearing all state arrays, setting the nodeStates, edgeStates and
+   * actionStates.
+   *
+   * The orderId and orderUpdateId are also updated.
+   *
+   * @param new_order
+   */
+  void AcceptNewOrder(const Order& new_order);
+
+  /**
    * @brief Checks if the state has an order that is currently being executed.
    *
    * @return true
@@ -360,6 +370,30 @@ class State {
 
  private:
   vda5050_msgs::State state; /**< State message */
+
+  /**
+   * @brief Transform a VDA Node to a Node state object.
+   *
+   * @param n
+   * @return vda5050_msgs::NodeState
+   */
+  vda5050_msgs::NodeState NodeToNodeState(const vda5050_msgs::Node& n);
+
+  /**
+   * @brief Transform a VDA Edge to an Edge state object.
+   *
+   * @param e
+   * @return vda5050_msgs::EdgeState
+   */
+  vda5050_msgs::EdgeState EdgeToEdgeState(const vda5050_msgs::Edge& e);
+
+  /**
+   * @brief Transform a VDA Action to an Action state object.
+   *
+   * @param a
+   * @return vda5050_msgs::ActionState
+   */
+  vda5050_msgs::ActionState ActionToActionState(const vda5050_msgs::Action& a);
 };
 
 #endif
