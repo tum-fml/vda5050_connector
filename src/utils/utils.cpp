@@ -18,4 +18,33 @@ std::string GetISOCurrentTimestamp() {
   return (isoTimeStr);
 }
 
+vda5050_msgs::Error CreateVDAError(const std::string& error_type, const std::string& error_desc,
+    const std::string& error_level,
+    const std::vector<std::pair<std::string, std::string>>& error_refs) {
+  // Generate an error object.
+  vda5050_msgs::Error error = vda5050_msgs::Error();
+  error.errorType = error_type;
+  error.errorLevel = error_level;
+  error.errorDescription = error_desc;
+
+  // For each key-value pair, create an error reference object and add to the error.
+  for (const auto& ref_pair : error_refs) {
+    vda5050_msgs::ErrorReference reference = vda5050_msgs::ErrorReference();
+    reference.referenceKey = ref_pair.first;
+    reference.referenceValue = ref_pair.second;
+    error.errorReferences.push_back(reference);
+  }
+  return error;
+}
+
+vda5050_msgs::Error CreateFatalError(const std::string& error_type, const std::string& error_desc,
+    const std::vector<std::pair<std::string, std::string>>& error_refs) {
+  return CreateVDAError(error_type, error_desc, vda5050_msgs::Error::FATAL, error_refs);
+}
+
+vda5050_msgs::Error CreateWarningError(const std::string& error_type, const std::string& error_desc,
+    const std::vector<std::pair<std::string, std::string>>& error_refs) {
+  return CreateVDAError(error_type, error_desc, vda5050_msgs::Error::WARNING, error_refs);
+}
+
 }  // namespace connector_utils

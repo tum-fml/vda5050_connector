@@ -137,7 +137,6 @@ void OrderMsg::create_example_order(int new_headerId, std::string new_orderId, i
   // msg.orderId = "f879f35e-a11f-4835-b13a-866c1bbc292a";
   this->_msg.orderId = new_orderId;
   this->_msg.orderUpdateId = new_oderUpdateId;
-  this->_msg.replace;
   this->_msg.zoneSetId = " ";
 
   // nodes

@@ -33,10 +33,10 @@ Go to your catkin workspace and cd into the src directory:
 cd ./src
 ```
 
-Clone the `mqtt_bridge` repository and install the additional requirements to run the bridge (see <https://github.com/groove-x/mqtt_bridge#prerequisites>).
+Clone the `mqtt_bridge` repository.
 
 ```console
-git clone https://github.com/groove-x/mqtt_bridge.git
+git clone https://github.com/tum-fml/mqtt_bridge.git
 ```
 
 >**NOTE**\
@@ -54,22 +54,24 @@ git clone https://github.com/tum-fml/ros_vda5050_connector.git
 Then clone the `vda5050_msgs` repository:
 
 ```bash
-git clone https://github.com/frothm/vda5050_msgs.git
+git clone https://github.com/tum-fml/vda5050_msgs.git
 ```
 
-After cloning all required repositories, build your catkin workspace.
+After cloning all required repositories, head to the parent folder of the src folder, and build your catkin workspace by running :
+
+```console
+catkin_make
+```
 
 ## Customization of the configuration
 
-There are distinct parts of the configuration that must be customized to fulfill your connection requirements. Each configuration file is named after the node that it affects. Currently, there are 6 configuration files for 4 nodes, one configuration file is common to all of them. The nodes being :
+There are distinct parts of the configuration that must be customized to make the connector function properly. Each configuration file is named after the node that it affects, with one common configuration file. The config files being :
 
 1. ROS MQTT bridge.
-2. State Aggregator.
-3. Order Manager.
-4. Action Client.
-5. AGV Data.
+2. VDA 5050 Connector.
+3. Action Client.
+4. AGV Data.
 
-Each of them is represented by a single configuration file in the /config folder.
 In the following sections we will go through them step by step.
 
 >**NOTE**\
@@ -179,15 +181,13 @@ NODES
   /
     action_client (vda5050_connector/action_client)
     mqtt_bridge (mqtt_bridge/mqtt_bridge_node.py)
-    order_manager (vda5050_connector/order_manager)
-    state_aggregator (vda5050_connector/state_aggregator)
+    vda5050_connector (vda5050_connector/vda5050_connector)
 
 ROS_MASTER_URI=http://localhost:11311
 
 process[mqtt_bridge-1]: started with pid [22954]
 process[action_client-2]: started with pid [22955]
-process[state_aggregator-3]: started with pid [22956]
-process[order_manager-5]: started with pid [22967]
+process[vda5050_connector-4]: started with pid [27631]
 [INFO] [1678911895.153781] [/mqtt_bridge]: MQTT connected
 
 ```
@@ -210,32 +210,6 @@ rosrun vda5050_connector state_mockup
 
 An overview of the node configuration, channels and required message types is available [here](doc/README.md).
 
-## Known Issues
-
-* Currently, the console output is done twice for some parameters due to the architecture.
-
-## Comments on VDA 5050 specification
-
-### Assumptions in unclear situations
-
-**Situation:** Vehicle is processing an order and receives a new one (= differing order ID).
-
-**Our Solution:** The new order is rejected if it doesn't begin at the end of the base of the previous (= currently running) order.
-
-**Alternative:** The new order could be accepted if it begins at the end of the horizon of the previous order. Would lead to potential detours if the destination of the current order changes in the meantime.
-
-**Situation:** The order message definition in the vda_msgs repository contains a boolean field called "replace". According to the commentary, this should be used if the base of an order is to be replaced by a new set of nodes/edges. However, the guideline does not define this procedure.
-
-**Our Solution:** We do not implement the base replacement procedure. **TODO:** Throw a warning if the flag is set.
-
-**Alternative:** A replacement procedure could be added to the routine of receiving a message on the order topic. See the according documentation and flow diagrams.
-
-**Situation:** A new order is received. The guideline tells us to "validate" the order, but does not state how to achieve this.
-
-**Our Solution:** We postpone the implementation of validations and expect the fleet controller to send conform order messages.
-
-**Alternative:** Order messages should be validated to avoid undeterministic behavior, waiting and errors. The validation should at least check if the number of edges equals the number of nodes minus one.
-
 ## About
 
-The ROS-VDA5050-Connector was developed by idealworks in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).
+The ROS-VDA5050-Connector was developed by [idealworks](https://idealworks.com/) in cooperation with [TUM fml – future.meets.logistics](https://www.linkedin.com/company/tum-fml/).

@@ -12,6 +12,7 @@
 #include <math.h>
 #include <sensor_msgs/BatteryState.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -135,6 +136,25 @@ void publishRandomPosInit(const ros::Publisher& publisher) {
   publisher.publish(pos_init_msg);
 }
 
+/**
+ * @brief Publishes a random localization score value.
+ *
+ */
+void publishRandomLocScore(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> linear_dist(0.0, 1.0);
+
+  // Create the message.
+  std_msgs::Float64 loc_score_msg;
+  loc_score_msg.data = linear_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(loc_score_msg);
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "state_msg_mockup");
   ros::NodeHandle nh;
@@ -144,6 +164,7 @@ int main(int argc, char** argv) {
   ros::Publisher battery_publisher = nh.advertise<sensor_msgs::BatteryState>("/batteryState", 1000);
   ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/mapId", 1000);
   ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/positionInitialized", 1000);
+  ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localization_score", 1000);
 
   while (ros::ok()) {
     // Publish messages.
@@ -152,6 +173,7 @@ int main(int argc, char** argv) {
     publishRandomAGVBattery(battery_publisher);
     publishRandomMapId(map_id_publisher);
     publishRandomPosInit(pos_init_publisher);
+    publishRandomLocScore(loc_score_publisher);
 
     ros::spinOnce();
     loop_rate.sleep();

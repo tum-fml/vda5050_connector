@@ -5,7 +5,6 @@ build/
 .vscode/
 .catkin_tools/
 .devcontainer/
+.idea/
+.cmake-build-debug/
 devel/
-certificates/certificatePem.pem.crt
-certificates/certificatePrivateKey.pem.key
-certificates/rootCA.crt

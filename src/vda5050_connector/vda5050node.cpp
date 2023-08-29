@@ -24,19 +24,8 @@ using namespace connector_utils;
  * - every 30 seconds if nothing changed
  */
 
-VDA5050Node::VDA5050Node(ros::NodeHandle* nh, std::string nodeName) {
-  topicPublisherList = ReadTopicParams(nh, nodeName + "/topics_publish");
-  topicSubscriberList = ReadTopicParams(nh, nodeName + "/topics_subscribe");
-}
-
-std::map<std::string, std::string> VDA5050Node::GetTopicPublisherList() { return topicPublisherList; }
-
-std::map<std::string, std::string> VDA5050Node::GetTopicSubscriberList() { return topicSubscriberList; }
-
-std::vector<std::string> VDA5050Node::GetMsgList(std::map<std::string, std::string> topicList) {
-  std::vector<std::string> msgList;
-  for (const auto& elem : topicList) msgList.push_back(elem.first);
-  return msgList;
+std::map<std::string, std::string> VDA5050Node::GetTopicList(const std::string& full_param_name) {
+  return ReadTopicParams(&this->nh, full_param_name);
 }
 
 std::string VDA5050Node::GetParameter(std::string paramName) {
@@ -51,11 +40,6 @@ std::string VDA5050Node::GetParameter(std::string paramName) {
   return paramValue;
 }
 
-std::string VDA5050Node::GetTopic(std::string hierarchical_topic) {
-  size_t last_slash = hierarchical_topic.find_last_of("/");
-  return hierarchical_topic.substr(last_slash + 1);
-}
-
 std::map<std::string, std::string> VDA5050Node::ReadTopicParams(
     ros::NodeHandle* nh, std::string paramName) {
   std::map<std::string, std::string> paramResults;
@@ -63,7 +47,7 @@ std::map<std::string, std::string> VDA5050Node::ReadTopicParams(
   nh->getParamNames(keys);
 
   for (std::size_t i = 0; i < keys.size(); ++i) {
-    if (keys[i].find(paramName)!=std::string::npos) {
+    if (keys[i].find(paramName) != std::string::npos) {
       std::string returnValue;
       if (ros::param::get(keys[i], returnValue)) {
         paramResults[keys[i]] = returnValue;

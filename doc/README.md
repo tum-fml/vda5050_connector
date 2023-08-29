@@ -2,15 +2,13 @@
 
 This is a more in depth view of each available node.
 
-## Currently Implemented Nodes
+## Nodes
 
-### [State Aggregator](nodes/State.md)
+### [VDA 5050 Connector](nodes/VDA5050Connector.md)
 
-The State Aggregator handles the creation of VDA 5050 State messages, which are forwarded to the MQTT bridge, to be published to AnyFleet. This node builds the state message by receiving information about the robot's state on multiple topics. This node is also responsible for generating visualization messages to be sent to Master Control. The State Aggregator also informs the cloud about the connection status of the device. If the device wishes to disconnect gracefully, it informs the cloud before closing the connection.
+The VDA 5050 Connector handles the creation of VDA 5050 State, Visualization and Connection state messages, which are forwarded to the MQTT bridge, to be published to AnyFleet. This node builds the state message by receiving information about the robot's state on multiple topics.
 
-### [Order Manager](nodes/Order.md)
-
-The Order Manager takes care of handling orders from AnyFleet, and forwarding the actions that need to be executed to the AGV.
+The VDA 5050 Connector takes care of handling orders from AnyFleet, and forwarding the actions that need to be executed to the vehicle.
 
 ### [Action Client](nodes/Action.md)
 

@@ -16,45 +16,35 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "vda5050node.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
 #include "vda5050_msgs/InstantActions.h"
 #include "vda5050_msgs/OrderActions.h"
+#include "vda5050node.h"
 
 using namespace std;
 
 /**
  * Stores information about a single action.
  */
-class ActionElement {
- private:
-  // Unique ID to identify the related order.
-  string orderId;
+struct ActionElement {
+  string orderId; /**< Unique ID to identify the related order. */
 
-  // Unique ID to identify the action.
-  string actionId;
+  string actionId; /**< Unique ID to identify the action. */
 
-  // Identifies the function of the action.
-  string actionType;
+  string actionType; /**< Identifies the function of the action. */
 
-  // Additional information on the action.
-  string actionDescription;
+  string actionDescription; /**< Additional information on the action. */
 
-  // Array of action parameters.
-  vector<vda5050_msgs::ActionParameter> actionParameters;
+  vector<vda5050_msgs::ActionParameter> actionParameters; /**< Array of action parameters. */
 
- public:
-  // State of the action.
-  string state;
+  string state; /**< State of the action. */
 
-  // Blocking type of the action, Enum {NONE, SOFT, HARD}.
-  string blockingType;
+  string blockingType; /**< Blocking type of the action, Enum {NONE, SOFT, HARD}. */
 
-  // True if the action was sent to the AGV after being triggered.
-  bool sentToAgv;
+  bool sentToAgv; /**< True if the action was sent to the AGV after being triggered. */
 
   bool operator==(const ActionElement& s) const { return actionId == s.actionId; }
   bool operator!=(const ActionElement& s) const { return !operator==(s); }
@@ -77,16 +67,6 @@ class ActionElement {
    * @return               false if IDs are not equal.
    */
   bool compareActionId(string actionId2comp);
-
-  /**
-   * Checks if this Action's order ID equals the given one.
-   *
-   * @param orderId2comp  ID to compare.
-   *
-   * @return              true if IDs are equal.
-   * @return              false if IDs are not equal.
-   */
-  bool compareOrderId(string orderId2comp);
 
   /**
    * Get the Action ID object.
@@ -114,17 +94,14 @@ class ActionElement {
  * Struct to connect actions to cancel with their respective order ID.
  */
 struct orderToCancel {
-  // Order (order ID) which should be deleted.
-  string orderIdToCancel;
+  string orderIdToCancel; /**< Order (order ID) which should be deleted. */
 
-  // ID of the instant action that contains the cancel action.
-  string iActionId;
+  string iActionId; /**< ID of the instant action that contains the cancel action. */
 
-  // List of active actions to cancel.
-  vector<weak_ptr<ActionElement>> actionsToCancel;
+  vector<weak_ptr<ActionElement>> actionsToCancel; /**< List of active actions to cancel. */
 
-  // Flag to ensure that the "all actions cancelled" message is sent only once.
-  bool allActionsCancelledSent;
+  bool allActionsCancelledSent; /**< Flag to ensure that the "all actions cancelled" message is sent
+                                   only once. */
 };
 
 /**
@@ -132,50 +109,49 @@ struct orderToCancel {
  */
 class ActionClient : public VDA5050Node {
  private:
-  // List of actions to track all active actions.
-  vector<shared_ptr<ActionElement>> activeActionsList;
+  std::map<std::string, std::shared_ptr<ros::Publisher>>
+      messagePublisher; /**< All publishers the node uses. Map from topic keys to ROS Publisher
+                           objects. */
 
-  // List of all orders to cancel and their respective order ID.
-  vector<orderToCancel> orderCancellations;
+  vector<shared_ptr<ActionElement>>
+      activeActionsList; /**< List of actions to track all active actions. */
+
+  vector<orderToCancel>
+      orderCancellations; /**< List of all orders to cancel and their respective order ID. */
 
   /**
    * Declare all ROS subscriber and publisher topics for internal
    * communication
    */
 
-  // Ordinary order actions from order_daemon to action_daemon.
-  ros::Subscriber orderActionSub;
+  ros::Subscriber orderActionSub; /**<  Ordinary order actions from order_daemon to action_daemon.*/
 
-  // Order daemon triggers actions.
-  ros::Subscriber orderTriggerSub;
+  ros::Subscriber orderTriggerSub; /**< Order daemon triggers actions. */
 
-  // Order daemon sends response to order cancel request.
-  ros::Subscriber orderCancelSub;
+  ros::Subscriber orderCancelSub; /**< Order daemon sends response to order cancel request. */
 
-  // States of actions from action_daemon to state_daemon.
-  ros::Publisher actionStatesPub;
+  ros::Publisher actionStatesPub; /**< States of actions from action_daemon to state_daemon. */
 
-  // Cancelled actions from action_daemon to order_daemon.
-  ros::Publisher orderCancelPub;
+  ros::Publisher orderCancelPub; /**< Cancelled actions from action_daemon to order_daemon. */
 
-  // All actions of one order to cancel cancelled from action_daemon to order_daemon.
-  ros::Publisher allActionsCancelledPub;
+  ros::Publisher allActionsCancelledPub; /**< All actions of one order to cancel cancelled from
+                                            action_daemon to order_daemon. */
 
-  // True, if the vehicle is driving.
-  bool isDriving;
+  bool isDriving; /**< True, if the vehicle is driving. */
 
  protected:
-  // Queue for keeping track of order actions.
-  deque<vda5050_msgs::Action> orderActionQueue;
+  deque<vda5050_msgs::Action> orderActionQueue; /**< Queue for keeping track of order actions. */
 
-  // Queue for keeping track of instant actions.
-  deque<vda5050_msgs::Action> instantActionQueue;
+  deque<vda5050_msgs::Action>
+      instantActionQueue; /**< Queue for keeping track of instant actions. */
 
-  // List of all orders cancelled by order daemon.
-  vector<string> ordersSucCancelled;
+  vector<string> ordersSucCancelled; /**< List of all orders cancelled by order daemon. */
 
  public:
-  // Constructor for the action daemon.
+  /**
+   * @brief Construct a new Action Client object
+   *
+   */
   ActionClient();
 
   /**
@@ -307,9 +283,8 @@ class ActionClient : public VDA5050Node {
   shared_ptr<ActionElement> FindAction(string actionId);
 
   /**
-   * Processes actions based on their type. The UpdateActions() method
-   * represents the main event loop. Based on the order and instan action
-   * queues, the method processes incoming actions and pauses driving state
+   * Processes actions based on their type. This method represents the main event loop. Based on the
+   * order and instan action queues, the method processes incoming actions and pauses driving state
    * and pauses/resumes other actions.
    */
   void UpdateActions();
