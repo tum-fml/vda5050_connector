@@ -12,6 +12,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/UInt32.h>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -43,16 +44,21 @@
 #include "vda5050node.h"
 
 /**
+ * Struct used to store information about when an error has occurred.
+ *
+ */
+struct ErrorStamped {
+  vda5050_msgs::Error error;
+  std::chrono::system_clock::time_point timestamp;
+};
+
+/**
  * Node for processing of VDA 5050 action messages. The order node consists
  * of a) a main loop which processes orders according to their states and
  * changes in the system state and b) several callbacks which receive and
  * process system changes.
  */
 
-/**
- * Node for processing VDA 5050 order messages.
- *
- */
 class VDA5050Connector : public VDA5050Node {
  private:
   Order order; /**< Current order being executed. */
@@ -93,6 +99,8 @@ class VDA5050Connector : public VDA5050Node {
 
   bool newPublishTrigger{
       false}; /**< Trigger used to publish state messages on significant updates. */
+
+  std::vector<ErrorStamped> internal_errors_stamped;
 
  public:
   /**
@@ -153,6 +161,16 @@ class VDA5050Connector : public VDA5050Node {
    * - send action status to state_node
    */
   void MonitorOrder();
+
+  /**
+   * Removes all expired internal errors from the state message.
+   */
+  void AddInternalError(const vda5050_msgs::Error& error);
+
+  /**
+   * Removes all expired internal errors from the state message.
+   */
+  void ClearExpiredInternalErrors();
 
   /**
    * Sets the header timestamp and publishes the state message. Updates the headerId after

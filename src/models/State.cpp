@@ -63,6 +63,20 @@ bool State::HasActiveOrder(const Order& current_order) {
   return false;
 }
 
+void State::AppendError(const vda5050_msgs::Error& error) {
+  // Remove already existing error.
+  ClearErrorWithType(error.errorType);
+
+  state.errors.push_back(error);
+};
+
+void State::ClearErrorWithType(const std::string& error_type) {
+  auto it = find_if(state.errors.begin(), state.errors.end(),
+      [&](const vda5050_msgs::Error& e) { return e.errorType == error_type; });
+
+  if (it != state.errors.end()) state.errors.erase(it);
+}
+
 vda5050_msgs::Visualization State::CreateVisualizationMsg() {
   vda5050_msgs::Visualization vis;
 

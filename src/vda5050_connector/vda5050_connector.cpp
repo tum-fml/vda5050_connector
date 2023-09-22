@@ -154,7 +154,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     // Add error and corresponding references to the state.
     auto error = CreateWarningError("orderValidation", e.what(),
         {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
-    state.AppendError(error);
+    AddInternalError(error);
 
     return;
   } catch (const std::exception& e) {
@@ -162,7 +162,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 
     auto error = CreateWarningError(
         "orderCreation", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
-    state.AppendError(error);
+    AddInternalError(error);
 
     return;
   }
@@ -179,7 +179,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
           {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
               {static_cast<std::string>("orderUpdateId"),
                   std::to_string(new_order.GetOrderUpdateId())}});
-      state.AppendError(error);
+      AddInternalError(error);
 
       return;
 
@@ -347,12 +347,27 @@ void VDA5050Connector::BatteryStateCallback(const sensor_msgs::BatteryState::Con
 }
 
 void VDA5050Connector::OperatingModeCallback(const std_msgs::String::ConstPtr& msg) {
-  state.SetOperatingMode(msg->data);
+  if (!state.SetOperatingMode(msg->data)) {
+    // Add error and corresponding references to the state.
+    std::pair<std::string, std::string> error_ref{"operating_mode", msg->data};
+    auto error =
+        CreateWarningError("Operating Mode", "Invalid operating mode provided.", {error_ref});
+    AddInternalError(error);
+  }
   newPublishTrigger = true;
 }
 
 void VDA5050Connector::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg) {
-  state.SetErrors(msg->errors);
+  // Remove errors received from the 3rd party.
+  state.ClearAllErrors();
+
+  for (const auto& error_stamped : internal_errors_stamped) {
+    state.AppendError(error_stamped.error);
+  }
+
+  for (const auto& error : msg->errors) {
+    state.AppendError(error);
+  }
   newPublishTrigger = true;
 }
 
@@ -425,6 +440,44 @@ void VDA5050Connector::PublishStateOnTrigger() {
   newPublishTrigger = false;
 }
 
+void VDA5050Connector::AddInternalError(const vda5050_msgs::Error& error) {
+  // If the error already exists, then reset its time.
+  auto it = std::find_if(internal_errors_stamped.begin(), internal_errors_stamped.end(),
+      [&](const ErrorStamped& e) { return e.error.errorType == error.errorType; });
+
+  if (it != internal_errors_stamped.end()) {
+    it->timestamp = std::chrono::system_clock::now();
+  } else {
+    // Add error to the list of internal errors with the timestamp.
+    this->internal_errors_stamped.push_back({error, std::chrono::system_clock::now()});
+  }
+
+  // Add error to the state message.
+  this->state.AppendError(error);
+}
+
+void VDA5050Connector::ClearExpiredInternalErrors() {
+  // Get current time.
+  auto now = std::chrono::system_clock::now();
+
+  // Check if each error has exceeded the allowed time in the state message.
+  for (const auto& error_stamped : internal_errors_stamped) {
+    std::chrono::duration<double> elapsed_time = now - error_stamped.timestamp;
+
+    // Clear error after 10 seconds.
+    if (elapsed_time.count() > 10) state.ClearErrorWithType(error_stamped.error.errorType);
+  }
+
+  // Remove the errors from the internal errors.
+  auto it = std::remove_if(
+      internal_errors_stamped.begin(), internal_errors_stamped.end(), [&](const ErrorStamped& e) {
+        std::chrono::duration<double> elapsed_time = now - e.timestamp;
+        return elapsed_time.count() > 10;
+      });
+
+  internal_errors_stamped.erase(it, internal_errors_stamped.end());
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "vda5050_connector");
 
@@ -434,6 +487,8 @@ int main(int argc, char** argv) {
 
   while (ros::ok()) {
     VDA5050Connector.MonitorOrder();
+
+    VDA5050Connector.ClearExpiredInternalErrors();
 
     VDA5050Connector.PublishStateOnTrigger();
 
