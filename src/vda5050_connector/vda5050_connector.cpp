@@ -9,28 +9,11 @@
 
 #include "vda5050_connector/vda5050_connector.h"
 
-using namespace std;
 using namespace connector_utils;
 
 constexpr char VERSION_PARAM[] = "/header/version";
 constexpr char MANUFACTURER_PARAM[] = "/header/manufacturer";
-constexpr char SN_PARAM[] = "/header/serialNumber";
-
-/**
- * TODO: publish to topicPub, if following requirements are met:
- * - received order
- * - received order update
- * - change of load status Done in Callback
- * - error
- * Done in Callback
- * - driving over an node
- * - change in operationMode									Done
- * in Callback
- * - change in "driving" field of the state						Done in
- * Callback
- * - change in nodeStates, edgeStates or actionStates
- * - every 30 seconds if nothing changed
- *  */
+constexpr char SN_PARAM[] = "/header/serial_number";
 
 /*-------------------------------------VDA5050Connector--------------------------------------------*/
 
@@ -99,58 +82,58 @@ void VDA5050Connector::LinkSubscriptionTopics(ros::NodeHandle* nh) {
       GetTopicList(ros::this_node::getName() + "/subscribe_topics");
   for (const auto& elem : topic_list) {
     if (CheckParamIncludes(elem.first, "order_from_mc"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderCallback, this)));
     else if (CheckParamIncludes(elem.first, "ia_from_mc"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::InstantActionCallback, this)));
     else if (CheckParamIncludes(elem.first, "order_state"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderStateCallback, this)));
-    else if (CheckParamIncludes(elem.first, "zoneSetId"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "zone_set_id"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::ZoneSetIdCallback, this)));
-    else if (CheckParamIncludes(elem.first, "agvPosition"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "pose"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionCallback, this)));
     else if (CheckParamIncludes(elem.first, "localization_score"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::LocScoreCallback, this)));
-    else if (CheckParamIncludes(elem.first, "mapId"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "map_id"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionMapIdCallback, this)));
-    else if (CheckParamIncludes(elem.first, "positionInitialized"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(nh->subscribe(
+    else if (CheckParamIncludes(elem.first, "position_initialized"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(nh->subscribe(
           elem.second, 1000, &VDA5050Connector::AGVPositionInitializedCallback, this)));
-    else if (CheckParamIncludes(elem.first, "agvVelocity"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "velocity"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVVelocityCallback, this)));
     else if (CheckParamIncludes(elem.first, "loads"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::LoadsCallback, this)));
     else if (CheckParamIncludes(elem.first, "paused"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::PausedCallback, this)));
-    else if (CheckParamIncludes(elem.first, "newBaseRequest"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "new_base_request"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::NewBaseRequestCallback, this)));
-    else if (CheckParamIncludes(elem.first, "distanceSinceLastNode"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(nh->subscribe(
+    else if (CheckParamIncludes(elem.first, "distance_since_last_node"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(nh->subscribe(
           elem.second, 1000, &VDA5050Connector::DistanceSinceLastNodeCallback, this)));
-    else if (CheckParamIncludes(elem.first, "batteryState"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "battery_state"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::BatteryStateCallback, this)));
-    else if (CheckParamIncludes(elem.first, "operatingMode"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "operating_mode"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OperatingModeCallback, this)));
     else if (CheckParamIncludes(elem.first, "errors"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::ErrorsCallback, this)));
     else if (CheckParamIncludes(elem.first, "information"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::InformationCallback, this)));
-    else if (CheckParamIncludes(elem.first, "safetyState"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "safety_state"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::SafetyStateCallback, this)));
   }
 }

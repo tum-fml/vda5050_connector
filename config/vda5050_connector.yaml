@@ -1,33 +1,33 @@
 publish_topics:
-    state: "/state"                                 # Vehicle State message.
-    visualization: "/visualization"                 # Visualization message to the Master Control.
-    connection: "/connection"                       # Connection State message.
-    order: "/order"                                 # Processed order.
-    instant_action: "/instant_action"               # Processed instant action message.
+    state: "/state"                                         # Vehicle State message.
+    visualization: "/visualization"                         # Visualization message to the Master Control.
+    connection: "/connection"                               # Connection State message.
+    order: "/order"                                         # Processed order.
+    instant_action: "/instant_action"                       # Processed instant action message.
 subscribe_topics:
-    order_from_mc: "/order_from_mc"                 # Raw order coming from the cloud.
-    ia_from_mc: "/ia_from_mc"                       # Raw instant action message from the cloud.
-    zoneSetId: "/zoneSetId"                         # ID of the current zone set used by the robot.                         !!! Uses ROS String messages. !!!
-    order_state: "/order_state"                     # Current state of the running order. Contains the following fields :
-                                                    # - orderId.
-                                                    # - orderUpdateId
-                                                    # - lastNodeId
-                                                    # - lastNodeSequenceId
-                                                    # - nodeStates
-                                                    # - edgeStates
-                                                    # - actionStates
-    mapId: "/mapId"                                 # Current map id                                                        !!! Uses ROS String messages. !!!
-    positionInitialized: "/positionInitialized"     # Boolean if the robot's position is initialized on the map.            !!! Uses ROS Bool messages. !!!
-    localization_score: "/localization_score"       # Messages containing the vehicle's localization score.                 !!! Uses ROS Float64 messages. !!!
-    agvPosition: "/agvPosition"                     # Robot's pose on the map                                               !!! Uses ROS Pose messages. !!!
-    agvVelocity: "/agvVelocity"                     # Robot's velocity                                                      !!! Uses ROS Twist messages. !!!
-    loads: "/loads"                                 # Loads carried by the robot
-    paused: "/paused"                               # Boolean if the robot is paused                                        !!! Uses ROS Bool messages. !!!
-    newBaseRequest: "/newBaseRequest"               # Boolean if the robot is running out of base nodes and 
-                                                    # requires an order update                                              !!! Uses ROS Bool messages. !!!
-    distanceSinceLastNode: "/distanceSinceLastNode" # Distance traversed by the robot since the last node.
-    batteryState: "/batteryState"                   # Battery state of the robot                                            !!! Uses ROS Battery messages. !!!
-    operatingMode: "/operatingMode"                 # Robot's operating mode                                                !!! Uses ROS String messages. !!!
-    errors: "/errors"                               # Errors that occurred on the robot
-    information: "/information"                     # Information messages from the robot
-    safetyState: "/safetyState"                     # Robot's safety state
+    order_from_mc: "/order_from_mc"                         # Raw order coming from the cloud.
+    ia_from_mc: "/ia_from_mc"                               # Raw instant action message from the cloud.
+    zone_set_id: "/zone_set_id"                             # ID of the current zone set used by the robot.                         !!! Uses ROS String messages. !!!
+    order_state: "/order_state"                             # Current state of the running order. Contains the following fields :
+                                                            # - orderId.
+                                                            # - orderUpdateId
+                                                            # - lastNodeId
+                                                            # - lastNodeSequenceId
+                                                            # - nodeStates
+                                                            # - edgeStates
+                                                            # - actionStates
+    map_id: "/map_id"                                       # Current map id                                                        !!! Uses ROS String messages. !!!
+    position_initialized: "/position_initialized"           # Boolean if the robot's position is initialized on the map.            !!! Uses ROS Bool messages. !!!
+    localization_score: "/localization_score"               # Messages containing the vehicle's localization score.                 !!! Uses ROS Float64 messages. !!!
+    pose: "/pose"                                           # Robot's pose on the map                                               !!! Uses ROS Pose messages. !!!
+    velocity: "/velocity"                                   # Robot's velocity                                                      !!! Uses ROS Twist messages. !!!
+    loads: "/loads"                                         # Loads carried by the robot
+    paused: "/paused"                                       # Boolean if the robot is paused                                        !!! Uses ROS Bool messages. !!!
+    new_base_request: "/new_base_request"                   # Boolean if the robot is running out of base nodes and 
+                                                            # requires an order update                                              !!! Uses ROS Bool messages. !!!
+    distance_since_last_node: "/distance_since_last_node"   # Distance traversed by the robot since the last node.
+    battery_state: "/battery_state"                         # Battery state of the robot                                            !!! Uses ROS Battery messages. !!!
+    operating_mode: "/operating_mode"                       # Robot's operating mode                                                !!! Uses ROS String messages. !!!
+    errors: "/errors"                                       # Errors that occurred on the robot
+    information: "/information"                             # Information messages from the robot
+    safety_state: "/safety_state"                           # Robot's safety state
