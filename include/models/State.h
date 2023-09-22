@@ -217,10 +217,10 @@ class State {
    * @return false
    */
   inline bool SetOperatingMode(const std::string& operating_mode) {
-    if (operating_mode != vda5050_msgs::State::AUTOMATIC ||
-        operating_mode != vda5050_msgs::State::SEMIAUTOMATIC ||
-        operating_mode != vda5050_msgs::State::MANUAL ||
-        operating_mode != vda5050_msgs::State::SERVICE ||
+    if (operating_mode != vda5050_msgs::State::AUTOMATIC &&
+        operating_mode != vda5050_msgs::State::SEMIAUTOMATIC &&
+        operating_mode != vda5050_msgs::State::MANUAL &&
+        operating_mode != vda5050_msgs::State::SERVICE &&
         operating_mode != vda5050_msgs::State::TEACHIN) {
       return false;
     }
