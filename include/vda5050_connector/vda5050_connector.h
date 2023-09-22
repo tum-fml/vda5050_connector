@@ -68,12 +68,6 @@ class VDA5050Connector : public VDA5050Node {
    * communication.
    */
 
-  ros::Publisher orderActionPub; /**< Ordinary order actions from order_node to action_node. */
-
-  ros::Publisher orderCancelPub; /**< Response to cancel request. */
-
-  ros::Publisher orderTriggerPub; /**< Triggers actions when AGV arrives at edge or node. */
-
   ros::Publisher orderPublisher; /**< Order message publisher. */
 
   ros::Publisher iaPublisher; /**< InstantAction message publisher. */
