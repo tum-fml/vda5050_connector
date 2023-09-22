@@ -9,28 +9,11 @@
 
 #include "vda5050_connector/vda5050_connector.h"
 
-using namespace std;
 using namespace connector_utils;
 
 constexpr char VERSION_PARAM[] = "/header/version";
 constexpr char MANUFACTURER_PARAM[] = "/header/manufacturer";
-constexpr char SN_PARAM[] = "/header/serialNumber";
-
-/**
- * TODO: publish to topicPub, if following requirements are met:
- * - received order
- * - received order update
- * - change of load status Done in Callback
- * - error
- * Done in Callback
- * - driving over an node
- * - change in operationMode									Done
- * in Callback
- * - change in "driving" field of the state						Done in
- * Callback
- * - change in nodeStates, edgeStates or actionStates
- * - every 30 seconds if nothing changed
- *  */
+constexpr char SN_PARAM[] = "/header/serial_number";
 
 /*-------------------------------------VDA5050Connector--------------------------------------------*/
 
@@ -99,58 +82,58 @@ void VDA5050Connector::LinkSubscriptionTopics(ros::NodeHandle* nh) {
       GetTopicList(ros::this_node::getName() + "/subscribe_topics");
   for (const auto& elem : topic_list) {
     if (CheckParamIncludes(elem.first, "order_from_mc"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderCallback, this)));
     else if (CheckParamIncludes(elem.first, "ia_from_mc"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::InstantActionCallback, this)));
     else if (CheckParamIncludes(elem.first, "order_state"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OrderStateCallback, this)));
-    else if (CheckParamIncludes(elem.first, "zoneSetId"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "zone_set_id"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::ZoneSetIdCallback, this)));
-    else if (CheckParamIncludes(elem.first, "agvPosition"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "pose"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionCallback, this)));
     else if (CheckParamIncludes(elem.first, "localization_score"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::LocScoreCallback, this)));
-    else if (CheckParamIncludes(elem.first, "mapId"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "map_id"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVPositionMapIdCallback, this)));
-    else if (CheckParamIncludes(elem.first, "positionInitialized"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(nh->subscribe(
+    else if (CheckParamIncludes(elem.first, "position_initialized"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(nh->subscribe(
           elem.second, 1000, &VDA5050Connector::AGVPositionInitializedCallback, this)));
-    else if (CheckParamIncludes(elem.first, "agvVelocity"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "velocity"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::AGVVelocityCallback, this)));
     else if (CheckParamIncludes(elem.first, "loads"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::LoadsCallback, this)));
     else if (CheckParamIncludes(elem.first, "paused"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::PausedCallback, this)));
-    else if (CheckParamIncludes(elem.first, "newBaseRequest"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "new_base_request"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::NewBaseRequestCallback, this)));
-    else if (CheckParamIncludes(elem.first, "distanceSinceLastNode"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(nh->subscribe(
+    else if (CheckParamIncludes(elem.first, "distance_since_last_node"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(nh->subscribe(
           elem.second, 1000, &VDA5050Connector::DistanceSinceLastNodeCallback, this)));
-    else if (CheckParamIncludes(elem.first, "batteryState"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "battery_state"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::BatteryStateCallback, this)));
-    else if (CheckParamIncludes(elem.first, "operatingMode"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "operating_mode"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::OperatingModeCallback, this)));
     else if (CheckParamIncludes(elem.first, "errors"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::ErrorsCallback, this)));
     else if (CheckParamIncludes(elem.first, "information"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::InformationCallback, this)));
-    else if (CheckParamIncludes(elem.first, "safetyState"))
-      this->subscribers.push_back(make_shared<ros::Subscriber>(
+    else if (CheckParamIncludes(elem.first, "safety_state"))
+      this->subscribers.push_back(std::make_shared<ros::Subscriber>(
           nh->subscribe(elem.second, 1000, &VDA5050Connector::SafetyStateCallback, this)));
   }
 }
@@ -171,7 +154,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     // Add error and corresponding references to the state.
     auto error = CreateWarningError("orderValidation", e.what(),
         {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
-    state.AppendError(error);
+    AddInternalError(error);
 
     return;
   } catch (const std::exception& e) {
@@ -179,7 +162,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 
     auto error = CreateWarningError(
         "orderCreation", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
-    state.AppendError(error);
+    AddInternalError(error);
 
     return;
   }
@@ -196,7 +179,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
           {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
               {static_cast<std::string>("orderUpdateId"),
                   std::to_string(new_order.GetOrderUpdateId())}});
-      state.AppendError(error);
+      AddInternalError(error);
 
       return;
 
@@ -291,7 +274,8 @@ void VDA5050Connector::UpdateExistingOrder(const Order& order_update) {
 }
 
 void VDA5050Connector::MonitorOrder() {
-  // TODO : Monitor the state of the order during execution.
+  // TODO (A-Jammoul): Monitor the state of the order during execution.
+  // TODO (A-Jammoul): Add checks to automatically request for new base.
 }
 
 // State related callbacks
@@ -364,12 +348,27 @@ void VDA5050Connector::BatteryStateCallback(const sensor_msgs::BatteryState::Con
 }
 
 void VDA5050Connector::OperatingModeCallback(const std_msgs::String::ConstPtr& msg) {
-  state.SetOperatingMode(msg->data);
+  if (!state.SetOperatingMode(msg->data)) {
+    // Add error and corresponding references to the state.
+    std::pair<std::string, std::string> error_ref{"operating_mode", msg->data};
+    auto error =
+        CreateWarningError("Operating Mode", "Invalid operating mode provided.", {error_ref});
+    AddInternalError(error);
+  }
   newPublishTrigger = true;
 }
 
 void VDA5050Connector::ErrorsCallback(const vda5050_msgs::Errors::ConstPtr& msg) {
-  state.SetErrors(msg->errors);
+  // Remove errors received from the 3rd party.
+  state.ClearAllErrors();
+
+  for (const auto& error_stamped : internal_errors_stamped) {
+    state.AppendError(error_stamped.error);
+  }
+
+  for (const auto& error : msg->errors) {
+    state.AppendError(error);
+  }
   newPublishTrigger = true;
 }
 
@@ -396,9 +395,9 @@ void VDA5050Connector::PublishState() {
 }
 
 void VDA5050Connector::PublishVisualization() {
-  // Set current timestamp of message.
-
   auto vis = state.CreateVisualizationMsg();
+
+  // Set the header fields.
   vis.timeStamp = connector_utils::GetISOCurrentTimestamp();
   vis.headerId = visHeaderId;
 
@@ -442,6 +441,44 @@ void VDA5050Connector::PublishStateOnTrigger() {
   newPublishTrigger = false;
 }
 
+void VDA5050Connector::AddInternalError(const vda5050_msgs::Error& error) {
+  // If the error already exists, then reset its time.
+  auto it = std::find_if(internal_errors_stamped.begin(), internal_errors_stamped.end(),
+      [&](const ErrorStamped& e) { return e.error.errorType == error.errorType; });
+
+  if (it != internal_errors_stamped.end()) {
+    it->timestamp = std::chrono::system_clock::now();
+  } else {
+    // Add error to the list of internal errors with the timestamp.
+    this->internal_errors_stamped.push_back({error, std::chrono::system_clock::now()});
+  }
+
+  // Add error to the state message.
+  this->state.AppendError(error);
+}
+
+void VDA5050Connector::ClearExpiredInternalErrors() {
+  // Get current time.
+  auto now = std::chrono::system_clock::now();
+
+  // Check if each error has exceeded the allowed time in the state message.
+  for (const auto& error_stamped : internal_errors_stamped) {
+    std::chrono::duration<double> elapsed_time = now - error_stamped.timestamp;
+
+    // Clear error after 10 seconds.
+    if (elapsed_time.count() > 10) state.ClearErrorWithType(error_stamped.error.errorType);
+  }
+
+  // Remove the errors from the internal errors.
+  auto it = std::remove_if(
+      internal_errors_stamped.begin(), internal_errors_stamped.end(), [&](const ErrorStamped& e) {
+        std::chrono::duration<double> elapsed_time = now - e.timestamp;
+        return elapsed_time.count() > 10;
+      });
+
+  internal_errors_stamped.erase(it, internal_errors_stamped.end());
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "vda5050_connector");
 
@@ -451,6 +488,8 @@ int main(int argc, char** argv) {
 
   while (ros::ok()) {
     VDA5050Connector.MonitorOrder();
+
+    VDA5050Connector.ClearExpiredInternalErrors();
 
     VDA5050Connector.PublishStateOnTrigger();
 

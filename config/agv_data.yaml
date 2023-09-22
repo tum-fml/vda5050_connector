@@ -1,5 +1,3 @@
-interfaceName: "uagv"
-majorVersion: "v2"
-version: "Test-Version"
+version: "VDA 2.0"
 manufacturer: "Test-Manufacturer"
-serialNumber: "Test-AGV"
+serial_number: "Test-AGV"

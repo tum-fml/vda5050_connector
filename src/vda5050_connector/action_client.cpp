@@ -91,22 +91,6 @@ void ActionClient::LinkSubscriptionTopics(ros::NodeHandle* nh) {
   }
 }
 
-void ActionClient::OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr& msg) {
-  for (const auto& action : msg->orderActions) {
-    // Add action to active actions list
-    string actionStatus = "WAITING";
-    ActionClient::AddActionToList(&action, msg->orderId, actionStatus);
-
-    // Create and publish action state msg
-    vda5050_msgs::ActionState action_state_msg;
-    action_state_msg.actionId = action.actionId;
-    action_state_msg.actionType = action.actionType;
-    action_state_msg.actionStatus = actionStatus;
-    action_state_msg.resultDescription = "";
-    actionStatesPub.publish(action_state_msg);
-  }
-}
-
 void ActionClient::OrderTriggerCallback(const std_msgs::String& msg) {
   shared_ptr<ActionElement> activeAction = FindAction(msg.data);
 
@@ -125,7 +109,7 @@ void ActionClient::OrderCancelCallback(const std_msgs::String& msg) {
   ordersSucCancelled.push_back(msg.data);
 }
 
-void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg) {
+void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantAction::ConstPtr& msg) {
   // Iterate over all actions in the instantActions msg
   for (auto& iaction : msg->instantActions) {
     // Add action to active actions list

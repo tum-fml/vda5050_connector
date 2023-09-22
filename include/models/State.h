@@ -62,11 +62,26 @@ class State {
   boost::optional<vda5050_msgs::NodeState> GetLastNodeInBase();
 
   /**
-   * @brief Appends the provided error to the list of errors in the state message.
+   * @brief Appends the provided error to the list of errors in the state message. If an error type
+   * already exists, it is replaced with the provided error.
    *
    * @param error
    */
-  inline void AppendError(const vda5050_msgs::Error& error) { state.errors.push_back(error); };
+  void AppendError(const vda5050_msgs::Error& error);
+
+  /**
+   * @brief Removes errors from the errors list based on their error type.
+   *
+   * @param error
+   */
+  void ClearErrorWithType(const std::string& error_type);
+
+  /**
+   * @brief Removes all errors from the state message.
+   *
+   * @param error
+   */
+  inline void ClearAllErrors() { state.errors.clear(); };
 
   /**
    * @brief Create a Visualization message from the current state message.
@@ -217,10 +232,10 @@ class State {
    * @return false
    */
   inline bool SetOperatingMode(const std::string& operating_mode) {
-    if (operating_mode != vda5050_msgs::State::AUTOMATIC ||
-        operating_mode != vda5050_msgs::State::SEMIAUTOMATIC ||
-        operating_mode != vda5050_msgs::State::MANUAL ||
-        operating_mode != vda5050_msgs::State::SERVICE ||
+    if (operating_mode != vda5050_msgs::State::AUTOMATIC &&
+        operating_mode != vda5050_msgs::State::SEMIAUTOMATIC &&
+        operating_mode != vda5050_msgs::State::MANUAL &&
+        operating_mode != vda5050_msgs::State::SERVICE &&
         operating_mode != vda5050_msgs::State::TEACHIN) {
       return false;
     }

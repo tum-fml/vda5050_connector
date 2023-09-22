@@ -20,8 +20,7 @@
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
-#include "vda5050_msgs/InstantActions.h"
-#include "vda5050_msgs/OrderActions.h"
+#include "vda5050_msgs/InstantAction.h"
 #include "vda5050node.h"
 
 using namespace std;
@@ -169,16 +168,6 @@ class ActionClient : public VDA5050Node {
   void LinkSubscriptionTopics(ros::NodeHandle* nh);
 
   /**
-   * Callback for order actions topic from order_daemon. This callback is
-   * called when a new message arrives at the /orderAction topic. Actions are
-   * queued into a FIFO queue. The first element of that queue is sent to the
-   * AGV for execution.
-   *
-   * @param msg  Message including the incoming order action.
-   */
-  void OrderActionsCallback(const vda5050_msgs::OrderActions::ConstPtr& msg);
-
-  /**
    * Callback for order trigger topic from order daemon. This callback is
    * called when a new message arrives at the /orderTrigger topic. A trigger
    * contains the ID of an action and triggers adding the corresponding action
@@ -208,7 +197,7 @@ class ActionClient : public VDA5050Node {
    *
    * @param msg  Message including the incoming instant action.
    */
-  void InstantActionsCallback(const vda5050_msgs::InstantActions::ConstPtr& msg);
+  void InstantActionsCallback(const vda5050_msgs::InstantAction::ConstPtr& msg);
 
   /**
    * Callback for agvActionState topic from AGV. This callback runs when a new
