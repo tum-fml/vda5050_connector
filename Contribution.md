@@ -19,11 +19,9 @@ We use Doxygen for generating the code documentation. Please refer to the docume
 * Variables are documented in the following line(s). The documentation starts with an additional tab followed by the sequence `/**<`:
 
 ```C++
-    ros::Subscriber orderCancelSub;
-        /**< ordinary order actions from order_daemon to action_daemon */
+  Order order; /**< Current order being executed. */
 
-    ros::Publisher orderActionPub;
-        /**< cancelled actions from action_daemon to order_daemon */
+  State state; /**< State of the vehicle. */
 ```
 
 * Methods are documented in the above line(s). See the following example for the standards on the level of details as well as the indentations:
