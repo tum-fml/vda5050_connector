@@ -37,8 +37,6 @@
 #include "vda5050_msgs/NodeState.h"
 #include "vda5050_msgs/NodeStates.h"
 #include "vda5050_msgs/Order.h"
-#include "vda5050_msgs/OrderActions.h"
-#include "vda5050_msgs/OrderMotion.h"
 #include "vda5050_msgs/State.h"
 #include "vda5050_msgs/Visualization.h"
 #include "vda5050node.h"
