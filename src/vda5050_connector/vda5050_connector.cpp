@@ -274,7 +274,8 @@ void VDA5050Connector::UpdateExistingOrder(const Order& order_update) {
 }
 
 void VDA5050Connector::MonitorOrder() {
-  // TODO : Monitor the state of the order during execution.
+  // TODO (A-Jammoul): Monitor the state of the order during execution.
+  // TODO (A-Jammoul): Add checks to automatically request for new base.
 }
 
 // State related callbacks
@@ -394,9 +395,9 @@ void VDA5050Connector::PublishState() {
 }
 
 void VDA5050Connector::PublishVisualization() {
-  // Set current timestamp of message.
-
   auto vis = state.CreateVisualizationMsg();
+
+  // Set the header fields.
   vis.timeStamp = connector_utils::GetISOCurrentTimestamp();
   vis.headerId = visHeaderId;
 
