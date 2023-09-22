@@ -155,16 +155,45 @@ void publishRandomLocScore(const ros::Publisher& publisher) {
   publisher.publish(loc_score_msg);
 }
 
+/**
+ * @brief Publishes a random operating mode from the list.
+ *
+ */
+void publishRandomOperatingMode(const ros::Publisher& publisher) {
+  const std::vector<string> operating_modes{vda5050_msgs::State::AUTOMATIC,
+      vda5050_msgs::State::SEMIAUTOMATIC, vda5050_msgs::State::MANUAL, vda5050_msgs::State::SERVICE,
+      vda5050_msgs::State::TEACHIN};
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_int_distribution<int> linear_dist(0.0, operating_modes.size() - 1);
+
+  int index = linear_dist(gen);
+
+  auto mode = operating_modes.at(index);
+
+  // Create the message.
+  std_msgs::String op_mode_msg;
+  op_mode_msg.data = mode;
+
+  // Publish the msg.
+  publisher.publish(op_mode_msg);
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "state_msg_mockup");
   ros::NodeHandle nh;
   ros::Rate loop_rate(1);
-  ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/agvPosition", 1000);
-  ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/agvVelocity", 1000);
-  ros::Publisher battery_publisher = nh.advertise<sensor_msgs::BatteryState>("/batteryState", 1000);
-  ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/mapId", 1000);
-  ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/positionInitialized", 1000);
+  ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/pose", 1000);
+  ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/velocity", 1000);
+  ros::Publisher battery_publisher =
+      nh.advertise<sensor_msgs::BatteryState>("/battery_state", 1000);
+  ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/map_id", 1000);
+  ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/position_initialized", 1000);
   ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localization_score", 1000);
+  ros::Publisher op_mode_publisher = nh.advertise<std_msgs::String>("/operating_mode", 1000);
 
   while (ros::ok()) {
     // Publish messages.
@@ -174,6 +203,7 @@ int main(int argc, char** argv) {
     publishRandomMapId(map_id_publisher);
     publishRandomPosInit(pos_init_publisher);
     publishRandomLocScore(loc_score_publisher);
+    publishRandomOperatingMode(op_mode_publisher);
 
     ros::spinOnce();
     loop_rate.sleep();
