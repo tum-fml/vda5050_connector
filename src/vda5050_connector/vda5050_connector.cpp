@@ -341,7 +341,7 @@ void VDA5050Connector::DistanceSinceLastNodeCallback(const std_msgs::Float64::Co
 }
 
 void VDA5050Connector::BatteryStateCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
-  if (!isnan(msg->percentage)) state.SetBatteryCharge(msg->percentage * 100.0);
+  if (!std::isnan(msg->percentage)) state.SetBatteryCharge(msg->percentage * 100.0);
   state.SetBatteryVoltage(msg->voltage);
   state.SetBatteryCharging(
       msg->power_supply_status == sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING);
