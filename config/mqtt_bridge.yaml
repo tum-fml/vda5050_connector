@@ -44,6 +44,11 @@ bridge:
     topic_to: /order_from_mc
 
   - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:MapUpdate
+    topic_from: qa/<device_client_id>/map
+    topic_to: /map
+
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
     msg_type: vda5050_msgs.msg:ZoneUpdate
     topic_from: qa/<device_client_id>/zones
     topic_to: /zones
