@@ -25,10 +25,27 @@
 #include <string>
 #include "ros/ros.h"
 #include "vda5050_msgs/AGVPosition.h"
+#include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/State.h"
 #include "vda5050_msgs/Visualization.h"
 
 using namespace std;
+
+/**
+ * @brief Create a Random uuid string.
+ *
+ * @return string
+ */
+string createRandomUUID() {
+  // Create a random string UUID.
+  boost::uuids::uuid uuid = boost::uuids::random_generator()();
+
+  // Build the string message.
+  string uuid_string;
+  uuid_string = boost::uuids::to_string(uuid);
+
+  return uuid_string;
+}
 
 /**
  * @brief Publishes a random agv position.
@@ -106,12 +123,9 @@ void publishRandomAGVBattery(const ros::Publisher& publisher) {
  *
  */
 void publishRandomMapId(const ros::Publisher& publisher) {
-  // Create a random string UUID.
-  boost::uuids::uuid uuid = boost::uuids::random_generator()();
-
-  // Build the string message.
+  // Build the string message with a random UUID.
   std_msgs::String map_id_msg;
-  map_id_msg.data = boost::uuids::to_string(uuid);
+  map_id_msg.data = createRandomUUID();
 
   // Publish the msg.
   publisher.publish(map_id_msg);
@@ -168,7 +182,7 @@ void publishRandomOperatingMode(const ros::Publisher& publisher) {
   std::mt19937 gen(rd());
 
   // Define the range of the random values
-  std::uniform_int_distribution<int> linear_dist(0.0, operating_modes.size() - 1);
+  std::uniform_int_distribution<int> linear_dist(0, operating_modes.size() - 1);
 
   int index = linear_dist(gen);
 
@@ -182,18 +196,45 @@ void publishRandomOperatingMode(const ros::Publisher& publisher) {
   publisher.publish(op_mode_msg);
 }
 
+/**
+ * @brief Publishes a random operating mode from the list.
+ *
+ */
+void publishRandomInteractionZoneState(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_int_distribution<int> size_dist(0, 5);
+  std::uniform_int_distribution<int> zone_state_dist(0, 1);
+
+  int size = size_dist(gen);
+  vda5050_msgs::InteractionZoneStates interaction_zones;
+
+  for (int i = 0; i < size; i++) {
+    vda5050_msgs::InteractionZoneState zone_state;
+    zone_state.zoneId = createRandomUUID();
+    zone_state.zoneStatus = zone_state_dist(gen);
+    interaction_zones.interactionZones.push_back(zone_state);
+  }
+
+  // Publish the msg.
+  publisher.publish(interaction_zones);
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "state_msg_mockup");
   ros::NodeHandle nh;
   ros::Rate loop_rate(1);
-  ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/pose", 1000);
-  ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/velocity", 1000);
-  ros::Publisher battery_publisher =
-      nh.advertise<sensor_msgs::BatteryState>("/battery_state", 1000);
-  ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/map_id", 1000);
-  ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/position_initialized", 1000);
-  ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localization_score", 1000);
-  ros::Publisher op_mode_publisher = nh.advertise<std_msgs::String>("/operating_mode", 1000);
+  ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/pose", 100);
+  ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/velocity", 100);
+  ros::Publisher battery_publisher = nh.advertise<sensor_msgs::BatteryState>("/battery_state", 100);
+  ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/map_id", 100);
+  ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/position_initialized", 100);
+  ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localization_score", 100);
+  ros::Publisher op_mode_publisher = nh.advertise<std_msgs::String>("/operating_mode", 100);
+  ros::Publisher interaction_zone_publisher =
+      nh.advertise<vda5050_msgs::InteractionZoneStates>("/interaction_zones", 100);
 
   while (ros::ok()) {
     // Publish messages.
@@ -204,6 +245,7 @@ int main(int argc, char** argv) {
     publishRandomPosInit(pos_init_publisher);
     publishRandomLocScore(loc_score_publisher);
     publishRandomOperatingMode(op_mode_publisher);
+    publishRandomInteractionZoneState(interaction_zone_publisher);
 
     ros::spinOnce();
     loop_rate.sleep();

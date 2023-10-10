@@ -3,6 +3,7 @@
 
 #include <boost/optional.hpp>
 #include "models/Order.h"
+#include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/State.h"
 #include "vda5050_msgs/Visualization.h"
@@ -364,8 +365,25 @@ class State {
    *
    * @param safety_state
    */
-  inline void SetSafetyState(const vda5050_msgs::SafetyState safety_state) {
+  inline void SetSafetyState(const vda5050_msgs::SafetyState& safety_state) {
     state.safetyState = safety_state;
+  }
+
+  /**
+   * @brief Set the safety state of the vehicle.
+   *
+   * If the provided zoneStatus is different than 0, then it's forced to 1 to be understood by MC.
+   *
+   * @param safety_state
+   */
+  inline void SetInteractionZones(const vda5050_msgs::InteractionZoneStates& interaction_zones) {
+    auto zones = interaction_zones;
+
+    for (auto& zone : zones.interactionZones) {
+      if (zone.zoneStatus != 0) zone.zoneStatus = 1;
+    }
+
+    state.interactionZones = zones.interactionZones;
   }
 
   /**

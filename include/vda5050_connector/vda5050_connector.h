@@ -32,6 +32,7 @@
 #include "vda5050_msgs/Errors.h"
 #include "vda5050_msgs/Information.h"
 #include "vda5050_msgs/InstantAction.h"
+#include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/Loads.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/NodeState.h"
@@ -358,6 +359,13 @@ class VDA5050Connector : public VDA5050Node {
    * @param msg  Incoming message.
    */
   void SafetyStateCallback(const vda5050_msgs::SafetyState::ConstPtr& msg);
+
+  /**
+   * Callback function for the state of the interaction zones.
+   *
+   * @param msg  Incoming message.
+   */
+  void InteractionZoneCallback(const vda5050_msgs::InteractionZoneStates::ConstPtr& msg);
 };
 
 #endif

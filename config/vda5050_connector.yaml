@@ -31,3 +31,4 @@ subscribe_topics:
     errors: "/errors"                                       # Errors that occurred on the robot
     information: "/information"                             # Information messages from the robot
     safety_state: "/safety_state"                           # Robot's safety state
+    interaction_zones: "/interaction_zones"                 # State of the interaction zones.
