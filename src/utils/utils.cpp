@@ -15,7 +15,10 @@ bool CheckParamIncludes(std::string full_param_name, std::string string_to_find)
 std::string GetISOCurrentTimestamp() {
   boost::posix_time::ptime posixTime = ros::Time::now().toBoost();
   std::string isoTimeStr = boost::posix_time::to_iso_extended_string(posixTime);
-  return (isoTimeStr);
+
+  // Get first 23 characters to have a timestamp with 3 millisecond digits.
+  // Append Z to match the ISO 8601 format.
+  return isoTimeStr.substr(0, 23).append("Z");
 }
 
 vda5050_msgs::Error CreateVDAError(const std::string& error_type, const std::string& error_desc,
