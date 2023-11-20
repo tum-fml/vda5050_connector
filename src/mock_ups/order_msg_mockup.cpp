@@ -120,7 +120,6 @@ vda5050_msgs::ControlPoint createControlPoint() {
   vda5050_msgs::ControlPoint controlPoint;
   controlPoint.x = 4.2;
   controlPoint.y = 643.45;
-  controlPoint.orientation = -1.243;
   controlPoint.weight = 63.3;
   return (controlPoint);
 }
@@ -160,13 +159,12 @@ vda5050_msgs::Edge createEdge() {
 vda5050_msgs::Order createMessage() {
   vda5050_msgs::Order orderMsg;
   orderMsg.headerId = 1;
-  orderMsg.timestamp = getTimestamp();
+  orderMsg.timeStamp = getTimestamp();
   orderMsg.version = "1.1";
   orderMsg.manufacturer = "fml Enterprise";
   orderMsg.serialNumber = "ajf894ajc";
   orderMsg.orderId = "pass nr 3.5";
   orderMsg.orderUpdateId = 876324;
-  orderMsg.replace = false;
   vda5050_msgs::Node node;
   orderMsg.nodes.push_back(createNode());
   orderMsg.edges.push_back(createEdge());

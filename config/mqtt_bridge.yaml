@@ -1,0 +1,54 @@
+mqtt:
+  # TLS parameters.
+  tls:
+    ca_certs: <path_to_root_certificate>
+    certfile: <path_to_device_certificate>
+    keyfile: <path_to_private_key>
+
+  # Connection parameters.
+  connection:
+    host: <hostname>
+    port: 8883
+    keepalive: 60
+
+  # MQTT parameters.
+  client:
+    client_id: <device_client_id>
+
+bridge:
+  # Bridge from ROS to MQTT.
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:State
+    topic_from: /state
+    topic_to: qa/<device_client_id>/state
+
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:Visualization
+    topic_from: /visualization
+    topic_to: qa/<device_client_id>/visualization
+
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:Connection
+    topic_from: /connection
+    topic_to: qa/<device_client_id>/connection
+
+  # Bridge from MQTT to ROS.
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:InstantAction
+    topic_from: qa/<device_client_id>/instantAction
+    topic_to: /ia_from_mc
+
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:Order
+    topic_from: qa/<device_client_id>/order
+    topic_to: /order_from_mc
+
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:MapUpdate
+    topic_from: qa/<device_client_id>/map
+    topic_to: /map
+
+  - factory: mqtt_bridge.bridge:MqttToRosBridge
+    msg_type: vda5050_msgs.msg:ZoneUpdate
+    topic_from: qa/<device_client_id>/zones
+    topic_to: /zones

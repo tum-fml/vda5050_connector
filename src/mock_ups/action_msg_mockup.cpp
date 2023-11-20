@@ -18,8 +18,7 @@
 #include "std_msgs/String.h"
 #include "vda5050_msgs/Action.h"
 #include "vda5050_msgs/ActionState.h"
-#include "vda5050_msgs/InstantActions.h"
-#include "vda5050_msgs/OrderActions.h"
+#include "vda5050_msgs/InstantAction.h"
 
 using namespace std;
 
@@ -57,39 +56,8 @@ std::string generate_uuid_v4() {
 }
 }  // namespace uuid
 
-void send_order_action(ros::Publisher* pub, string ID) {
-  vda5050_msgs::OrderActions msg;
-  vda5050_msgs::Action action;
-  vda5050_msgs::ActionParameter param;
-
-  msg.orderId = "ABC";
-
-  std::string actionID;
-
-  if (ID == "0")
-    actionID = uuid::generate_uuid_v4();
-  else
-    actionID = ID;
-  std::string actionType = "Hebe Gabel";
-  std::string blockingType = "HARD";
-  std::string actionDescription = "Hebe die Gabel der Weisheit";
-
-  action.actionId = actionID;
-  action.actionType = "Hebe Gabel";
-  action.blockingType = "HARD";
-  action.actionDescription = "Hebe die Gabel der Weisheit";
-  msg.orderActions.push_back(action);
-
-  param.key = "Hoehe";
-  param.value = "50";
-  msg.orderActions.front().actionParameters.push_back(param);
-
-  pub->publish(msg);
-  ROS_INFO_STREAM("New order action sent!");
-}
-
 void send_instant_action(ros::Publisher* pub) {
-  vda5050_msgs::InstantActions instAction;
+  vda5050_msgs::InstantAction instAction;
   vda5050_msgs::Action msg1;
   vda5050_msgs::Action msg2;
   vda5050_msgs::ActionParameter param1;
@@ -97,8 +65,8 @@ void send_instant_action(ros::Publisher* pub) {
 
   instAction.headerId = 123456;
   instAction.manufacturer = "AGV";
-  instAction.serialNumber = "1234567489";
-  instAction.timestamp = "asdas1sad3";
+  instAction.serialNumber = "";
+  instAction.timeStamp = "";
   instAction.version = "v1.0";
 
   msg1.actionId = uuid::generate_uuid_v4();
@@ -130,20 +98,13 @@ int main(int argc, char** argv) {
 
   ros::NodeHandle nh;
 
-  ros::Publisher actionPub = nh.advertise<vda5050_msgs::OrderActions>("orderAction", 1000);
-
-  ros::Publisher instActionPub = nh.advertise<vda5050_msgs::InstantActions>("instantAction", 1000);
+  ros::Publisher instActionPub = nh.advertise<vda5050_msgs::InstantAction>("instantAction", 1000);
 
   ros::Publisher triggerPub = nh.advertise<std_msgs::String>("orderTrigger", 1000);
 
   int triggertrigger = -1;
 
   while (ros::ok()) {
-    if (triggertrigger == 0)
-      send_order_action(&actionPub, "79301da1-846d-44b0-b988-33957d157bd8");
-    else
-      send_order_action(&actionPub, "0");
-
     if (triggertrigger == 3) send_instant_action(&instActionPub);
 
     if (triggertrigger == 5) {

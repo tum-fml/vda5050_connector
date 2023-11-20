@@ -7,81 +7,248 @@
  * If not, please write to {kontakt.fml@ed.tum.de}.
  */
 
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
 #include <math.h>
+#include <sensor_msgs/BatteryState.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <ctime>
 #include <iostream>
+#include <random>
 #include <string>
 #include "ros/ros.h"
 #include "vda5050_msgs/AGVPosition.h"
+#include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/State.h"
+#include "vda5050_msgs/Visualization.h"
 
 using namespace std;
 
-string getTimestamp() {
-  time_t now;
-  time(&now);
-  char buf[sizeof "2011-10-08T07:07:09Z"];
-  strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
-  return (buf);
-}
-
-/*
- * This is a simple example program to send a state mockup file to anyfleet
+/**
+ * @brief Create a Random uuid string.
+ *
+ * @return string
  */
+string createRandomUUID() {
+  // Create a random string UUID.
+  boost::uuids::uuid uuid = boost::uuids::random_generator()();
 
-// creates the order msg
-vda5050_msgs::State createMessage() {
-  vda5050_msgs::State msg;
-  msg.header.headerId = 1;
-  msg.header.timestamp = getTimestamp();
-  msg.header.version = "1.1";
-  msg.header.manufacturer = "fml Enterprise";
-  msg.header.serialNumber = "ajf894ajc";
-  //	msg.orderId="pass nr 3.5";
-  //	msg.orderUpdateId=876324;
-  //	msg.zoneSetId="fml hall of fame";
-  msg.agvPosition.x = 25.07;
-  msg.agvPosition.y = 17.44;
-  msg.agvPosition.theta = 0;
-  msg.agvPosition.positionInitialized = true;
-  msg.agvPosition.mapId = "c01bf928-27b4-4018-9df0-cb37b96bf710";
-  msg.batteryState.batteryCharge = 70.0;
-  //	msg.driving=true;
+  // Build the string message.
+  string uuid_string;
+  uuid_string = boost::uuids::to_string(uuid);
 
-  return (msg);
+  return uuid_string;
 }
 
-vda5050_msgs::State updateMessage(
-    vda5050_msgs::State msg, float angle, float r, float mx, float my) {
-  msg.agvPosition.x = r * cos(angle) + mx;
-  msg.agvPosition.y = r * sin(angle) + my;
-  msg.agvPosition.theta = angle;
-  return (msg);
+/**
+ * @brief Publishes a random agv position.
+ *
+ */
+void publishRandomAGVPosition(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> pose_dist(0.0, 400.0);
+  std::uniform_real_distribution<double> rotation_dist(-M_PI, M_PI);
+
+  // Set random position on the map.
+  geometry_msgs::Pose pose;
+  pose.position.x = pose_dist(gen);
+  pose.position.y = pose_dist(gen);
+
+  // Set random angle for the robot.
+  tf2::Quaternion quat;
+  quat.setRPY(0.0, 0, rotation_dist(gen));
+  pose.orientation = tf2::toMsg(quat);
+
+  // Publish the msg.
+  publisher.publish(pose);
+}
+
+/**
+ * @brief Publishes a random agv speed.
+ *
+ */
+void publishRandomAGVTwist(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> linear_dist(0.0, 2.5);
+  std::uniform_real_distribution<double> angular_dist(-2, 2);
+
+  // Set random speed for the robot.
+  geometry_msgs::Twist twist;
+  twist.linear.x = linear_dist(gen);
+  twist.linear.y = linear_dist(gen);
+  twist.angular.z = angular_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(twist);
+}
+
+/**
+ * @brief Publishes a random agv position.
+ *
+ */
+void publishRandomAGVBattery(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> percentage_dist(0.0, 1.0);
+  std::uniform_real_distribution<double> voltage_dist(30, 50);
+  std::uniform_int_distribution<int> power_supply_dist(0, 4);
+
+  // Set random battery for the robot.
+  sensor_msgs::BatteryState battery_state;
+  battery_state.percentage = percentage_dist(gen);
+  battery_state.voltage = voltage_dist(gen);
+  battery_state.power_supply_status = power_supply_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(battery_state);
+}
+
+/**
+ * @brief Publishes a random map id.
+ *
+ */
+void publishRandomMapId(const ros::Publisher& publisher) {
+  // Build the string message with a random UUID.
+  std_msgs::String map_id_msg;
+  map_id_msg.data = createRandomUUID();
+
+  // Publish the msg.
+  publisher.publish(map_id_msg);
+}
+
+/**
+ * @brief Publishes a random position initialized value.
+ *
+ */
+void publishRandomPosInit(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_int_distribution<int> pos_init_dist(0, 1);
+
+  // Create the bool message.
+  std_msgs::Bool pos_init_msg;
+  pos_init_msg.data = pos_init_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(pos_init_msg);
+}
+
+/**
+ * @brief Publishes a random localization score value.
+ *
+ */
+void publishRandomLocScore(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_real_distribution<double> linear_dist(0.0, 1.0);
+
+  // Create the message.
+  std_msgs::Float64 loc_score_msg;
+  loc_score_msg.data = linear_dist(gen);
+
+  // Publish the msg.
+  publisher.publish(loc_score_msg);
+}
+
+/**
+ * @brief Publishes a random operating mode from the list.
+ *
+ */
+void publishRandomOperatingMode(const ros::Publisher& publisher) {
+  const std::vector<string> operating_modes{vda5050_msgs::State::AUTOMATIC,
+      vda5050_msgs::State::SEMIAUTOMATIC, vda5050_msgs::State::MANUAL, vda5050_msgs::State::SERVICE,
+      vda5050_msgs::State::TEACHIN};
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_int_distribution<int> linear_dist(0, operating_modes.size() - 1);
+
+  int index = linear_dist(gen);
+
+  auto mode = operating_modes.at(index);
+
+  // Create the message.
+  std_msgs::String op_mode_msg;
+  op_mode_msg.data = mode;
+
+  // Publish the msg.
+  publisher.publish(op_mode_msg);
+}
+
+/**
+ * @brief Publishes a random operating mode from the list.
+ *
+ */
+void publishRandomInteractionZoneState(const ros::Publisher& publisher) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Define the range of the random values
+  std::uniform_int_distribution<int> size_dist(0, 5);
+  std::uniform_int_distribution<int> zone_state_dist(0, 1);
+
+  int size = size_dist(gen);
+  vda5050_msgs::InteractionZoneStates interaction_zones;
+
+  for (int i = 0; i < size; i++) {
+    vda5050_msgs::InteractionZoneState zone_state;
+    zone_state.zoneId = createRandomUUID();
+    zone_state.zoneStatus = zone_state_dist(gen);
+    interaction_zones.interactionZones.push_back(zone_state);
+  }
+
+  // Publish the msg.
+  publisher.publish(interaction_zones);
 }
 
 int main(int argc, char** argv) {
-  string topicPublish = "state";
-  string topicViz = "viz";
-  if (argc > 1) topicPublish = argv[1];
   ros::init(argc, argv, "state_msg_mockup");
   ros::NodeHandle nh;
-  ros::Rate loop_rate(10);
-  ros::Publisher publisherState = nh.advertise<vda5050_msgs::State>(topicPublish, 1000);
-  vda5050_msgs::State msg = createMessage();
-  float mx = 30;
-  float my = 30;
-  float r = 10;
-  cout << topicPublish << "\n";
-  float angle = -M_PI;
+  ros::Rate loop_rate(1);
+  ros::Publisher pos_publisher = nh.advertise<geometry_msgs::Pose>("/pose", 100);
+  ros::Publisher speed_publisher = nh.advertise<geometry_msgs::Twist>("/velocity", 100);
+  ros::Publisher battery_publisher = nh.advertise<sensor_msgs::BatteryState>("/battery_state", 100);
+  ros::Publisher map_id_publisher = nh.advertise<std_msgs::String>("/map_id", 100);
+  ros::Publisher pos_init_publisher = nh.advertise<std_msgs::Bool>("/position_initialized", 100);
+  ros::Publisher loc_score_publisher = nh.advertise<std_msgs::Float64>("/localization_score", 100);
+  ros::Publisher op_mode_publisher = nh.advertise<std_msgs::String>("/operating_mode", 100);
+  ros::Publisher interaction_zone_publisher =
+      nh.advertise<vda5050_msgs::InteractionZoneStates>("/interaction_zones", 100);
+
   while (ros::ok()) {
-    publisherState.publish(msg);
+    // Publish messages.
+    publishRandomAGVPosition(pos_publisher);
+    publishRandomAGVTwist(speed_publisher);
+    publishRandomAGVBattery(battery_publisher);
+    publishRandomMapId(map_id_publisher);
+    publishRandomPosInit(pos_init_publisher);
+    publishRandomLocScore(loc_score_publisher);
+    publishRandomOperatingMode(op_mode_publisher);
+    publishRandomInteractionZoneState(interaction_zone_publisher);
+
     ros::spinOnce();
     loop_rate.sleep();
-    msg.header.headerId += 1;
-    //		msg=updateMessage(msg,angle,r,mx,my);
-    //		angle+=0.05;
-    //			if (angle >= M_PI)
-    //		angle=-M_PI;
   }
   return (0);
 };

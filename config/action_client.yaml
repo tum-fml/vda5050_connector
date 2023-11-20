@@ -1,0 +1,9 @@
+publish_topics:
+    actionToAgv: /action_to_agv
+    agvActionCancel: /agvActionCancel
+    prActions: /prActions
+    prDriving: /prDriving
+subscribe_topics:
+    instantAction: /instantAction
+    agvActionState: /agvActionState
+    driving: /driving

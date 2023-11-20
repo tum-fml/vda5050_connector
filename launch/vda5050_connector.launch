@@ -1,9 +1,16 @@
 <launch>
-  <rosparam command="load" file="$(find vda5050_connector)/config/daemons_params.yaml" />
-  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${time}] [${node}]: ${message}"/>
-  <node name="action_daemon" pkg="vda5050_connector" type="action_daemon" output="screen" >  </node>
-  <node name="state_daemon" pkg="vda5050_connector" type="state_daemon" output="screen">  </node>
-  <node name="connection_daemon" pkg="vda5050_connector" type="connection_daemon" output="screen">  </node>
-  <node name="visualization_daemon" pkg="vda5050_connector" type="visualization_daemon" output="screen">  </node>
-  <node name="order_daemon" pkg="vda5050_connector" type="order_daemon" output="screen">  </node>
+  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${time}] [${node}]: ${message}" />
+  <arg name="bridge_params" />
+  <node name="mqtt_bridge" pkg="mqtt_bridge" type="mqtt_bridge_node.py" output="screen" respawn="true">
+    <rosparam command="load" file="$(find vda5050_connector)/config/mqtt_bridge.yaml" />
+  </node>
+  <node name="action_client" pkg="vda5050_connector" type="action_client" clear_params="true"
+    output="screen">
+    <rosparam command="load" file="$(find vda5050_connector)/config/action_client.yaml" />
+  </node>
+  <node name="vda5050_connector" pkg="vda5050_connector" type="vda5050_connector" clear_params="true"
+    output="screen">
+    <rosparam command="load" file="$(find vda5050_connector)/config/vda5050_connector.yaml" />
+  </node>
+  <rosparam command="load" ns="header" file="$(find vda5050_connector)/config/agv_data.yaml" />
 </launch>

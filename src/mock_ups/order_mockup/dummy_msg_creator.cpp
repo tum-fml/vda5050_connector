@@ -94,7 +94,7 @@ void OrderMsg::create_edges(int node_num, int node_released_num) {
     subedge.rotationAllowed = false;
     subedge.maxRotationSpeed = 0.0;
     subedge.trajectory.degree = 0.0;
-    subedge.trajectory.knotVector = std::vector<_Float64>{};
+    subedge.trajectory.knotVector = std::vector<double>{};
     subedge.trajectory.controlPoints = std::vector<vda5050_msgs::ControlPoint>{};
     subedge.length = 0.0;
     subedge.actions = std::vector<vda5050_msgs::Action>{};
@@ -128,7 +128,7 @@ void OrderMsg::create_example_order(int new_headerId, std::string new_orderId, i
     int node_num, int node_released_num) {
   // header
   this->_msg.headerId = new_headerId;
-  this->_msg.timestamp = "10/6/2022 10:16:37 AM";
+  this->_msg.timeStamp = "10/6/2022 10:16:37 AM";
   this->_msg.version = "v1";
   this->_msg.manufacturer;
   this->_msg.serialNumber;
@@ -137,7 +137,6 @@ void OrderMsg::create_example_order(int new_headerId, std::string new_orderId, i
   // msg.orderId = "f879f35e-a11f-4835-b13a-866c1bbc292a";
   this->_msg.orderId = new_orderId;
   this->_msg.orderUpdateId = new_oderUpdateId;
-  this->_msg.replace;
   this->_msg.zoneSetId = " ";
 
   // nodes
