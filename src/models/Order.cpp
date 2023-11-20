@@ -7,6 +7,11 @@ void Order::Validate() {
   // TODO: Add validation based on AGV's capabilities (e.g. track planning etc.). Using FactSheet
   // messages
 
+  // At least one node
+  if (this->order.nodes.empty()) {
+    throw std::runtime_error("Nodes list empty!");
+  }
+
   if (this->order.edges.size() != this->order.nodes.size() - 1) {
     throw std::runtime_error("Number of edges not equal to number of nodes - 1!");
   }
