@@ -1,12 +1,16 @@
 publish_topics:
+    # to mc
     state: "/state"                                         # Vehicle State message.
     visualization: "/visualization"                         # Visualization message to the Master Control.
     connection: "/connection"                               # Connection State message.
+    # to agv
     order: "/order"                                         # Processed order.
     instant_action: "/instant_action"                       # Processed instant action message.
 subscribe_topics:
+    # from mc
     order_from_mc: "/order_from_mc"                         # Raw order coming from the cloud.
     ia_from_mc: "/ia_from_mc"                               # Raw instant action message from the cloud.
+    # from agv
     zone_set_id: "/zone_set_id"                             # ID of the current zone set used by the robot.                         !!! Uses ROS String messages. !!!
     order_state: "/order_state"                             # Current state of the running order. Contains the following fields :
                                                             # - orderId.
