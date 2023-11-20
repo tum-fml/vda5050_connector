@@ -2,7 +2,9 @@
 #define STATE_H
 
 #include <boost/optional.hpp>
+
 #include "models/Order.h"
+#include "vda5050_msgs/Connection.h"
 #include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/State.h"
@@ -90,6 +92,13 @@ class State {
    * @return vda5050_msgs::Visualization
    */
   vda5050_msgs::Visualization CreateVisualizationMsg();
+
+  /**
+   * @brief Create a Connection message from the current state message.
+   *
+   * @return vda5050_msgs::Connection
+   */
+  vda5050_msgs::Connection CreateConnectionMsg();
 
   /**
    * @brief Tests if the robot's position is within the deviation range of the provided node.

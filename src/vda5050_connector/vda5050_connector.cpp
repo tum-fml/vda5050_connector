@@ -417,20 +417,17 @@ void VDA5050Connector::PublishVisualization() {
 
 void VDA5050Connector::PublishConnection(const bool connected) {
   // Create new connection state message.
-  vda5050_msgs::Connection connection;
+  auto con = state.CreateConnectionMsg();
 
   // Set the header fields.
-  connection.headerId = connHeaderId;
-  connection.timeStamp = connector_utils::GetISOCurrentTimestamp();
-  connection.version = state.GetVersion();
-  connection.manufacturer = state.GetManufacturer();
-  connection.serialNumber = state.GetSerialNumber();
+  con.headerId = connHeaderId;
+  con.timeStamp = connector_utils::GetISOCurrentTimestamp();
 
   // Set the connection state.
-  connection.connectionState =
+  con.connectionState =
       connected ? vda5050_msgs::Connection::ONLINE : vda5050_msgs::Connection::OFFLINE;
 
-  connectionPublisher.publish(connection);
+  connectionPublisher.publish(con);
 
   // Increase header count after each publish.
   connHeaderId++;

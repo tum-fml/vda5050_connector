@@ -89,6 +89,16 @@ vda5050_msgs::Visualization State::CreateVisualizationMsg() {
   return vis;
 }
 
+vda5050_msgs::Connection State::CreateConnectionMsg() {
+  vda5050_msgs::Connection con;
+
+  con.version = state.version;
+  con.serialNumber = state.serialNumber;
+  con.manufacturer = state.manufacturer;
+
+  return con;
+}
+
 boost::optional<vda5050_msgs::NodeState> State::GetLastNodeInBase() {
   // find last element which is released to find end of base.
   auto it = find_if(state.nodeStates.rbegin(), state.nodeStates.rend(),
