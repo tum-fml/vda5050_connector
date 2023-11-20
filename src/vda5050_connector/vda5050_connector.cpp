@@ -155,7 +155,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     ROS_ERROR("Validation error occurred : %s", e.what());
 
     // Add error and corresponding references to the state.
-    auto error = CreateWarningError("orderValidation", e.what(),
+    auto error = CreateWarningError("validationError", e.what(),
         {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
     AddInternalError(error);
 
@@ -164,7 +164,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     ROS_ERROR("Error occurred : %s", e.what());
 
     auto error = CreateWarningError(
-        "orderCreation", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
+        "internalError", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
     AddInternalError(error);
 
     return;
@@ -177,8 +177,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       std::string error_msg = "Received order update with a lower order update ID";
       ROS_ERROR("Error has occurred : %s", error_msg.c_str());
 
-      // Create error and add error to list of references.
-      auto error = CreateWarningError("orderCreation", error_msg,
+      auto error = CreateWarningError("orderUpdateError", error_msg,
           {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
               {static_cast<std::string>("orderUpdateId"),
                   std::to_string(new_order.GetOrderUpdateId())}});
@@ -198,7 +197,11 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       } catch (const std::runtime_error& e) {
         ROS_ERROR("Update base validation failed. %s", e.what());
 
-        // Add error to the state message.
+        auto error = CreateWarningError("orderUpdateError", e.what(),
+            {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
+                {static_cast<std::string>("orderUpdateId"),
+                    std::to_string(new_order.GetOrderUpdateId())}});
+        AddInternalError(error);
 
         return;
       }
@@ -216,9 +219,14 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     // If no order is active, and the robot is in the deviation range of the first node, the order
     // can be started.
     if (state.HasActiveOrder(order)) {
-      ROS_ERROR("Vehicle received a new order while executing an order!");
+      std::string error_msg = "Vehicle received a new order while executing an order!";
+      ROS_ERROR("Error has occurred : %s", error_msg.c_str());
 
-      // Create an error and add it to the state message.
+      auto error = CreateWarningError("orderUpdateError", error_msg,
+          {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
+              {static_cast<std::string>("orderUpdateId"),
+                  std::to_string(new_order.GetOrderUpdateId())}});
+      AddInternalError(error);
 
       return;
     }
@@ -233,8 +241,14 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       orderPublisher.publish(msg);
 
     } else {
-      // Create error, and add error to the state.
-      ROS_ERROR("Vehicle not inside the deviation range of the first node in the order.");
+      std::string error_msg =
+          "Vehicle not inside the deviation range of the first node in the order.";
+      ROS_ERROR("Error has occurred : %s", error_msg.c_str());
+
+      auto error = CreateWarningError("noRouteError", error_msg,
+          {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
+              {static_cast<std::string>("nodeId"), new_order.GetNodes().front().nodeId}});
+      AddInternalError(error);
       return;
     }
   }
