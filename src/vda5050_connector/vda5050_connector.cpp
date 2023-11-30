@@ -420,7 +420,7 @@ void VDA5050Connector::PublishVisualization() {
   auto vis = state.CreateVisualizationMsg();
 
   // Set the header fields.
-  vis.timeStamp = connector_utils::GetISOCurrentTimestamp();
+  vis.timestamp = connector_utils::GetISOCurrentTimestamp();
   vis.headerId = visHeaderId;
 
   visPublisher.publish(vis);
@@ -435,7 +435,7 @@ void VDA5050Connector::PublishConnection(const bool connected) {
 
   // Set the header fields.
   con.headerId = connHeaderId;
-  con.timeStamp = connector_utils::GetISOCurrentTimestamp();
+  con.timestamp = connector_utils::GetISOCurrentTimestamp();
 
   // Set the connection state.
   con.connectionState =

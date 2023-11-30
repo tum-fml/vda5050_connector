@@ -66,7 +66,7 @@ void send_instant_action(ros::Publisher* pub) {
   instAction.headerId = 123456;
   instAction.manufacturer = "AGV";
   instAction.serialNumber = "";
-  instAction.timeStamp = "";
+  instAction.timestamp = "";
   instAction.version = "v1.0";
 
   msg1.actionId = uuid::generate_uuid_v4();

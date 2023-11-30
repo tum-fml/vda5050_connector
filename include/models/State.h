@@ -131,7 +131,7 @@ class State {
    *
    * @param timestamp
    */
-  inline void SetTimestamp(const std::string& timestamp) { state.timeStamp = timestamp; }
+  inline void SetTimestamp(const std::string& timestamp) { state.timestamp = timestamp; }
 
   /**
    * @brief Set the Manufacturer field in the message header.

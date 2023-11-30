@@ -159,7 +159,7 @@ vda5050_msgs::Edge createEdge() {
 vda5050_msgs::Order createMessage() {
   vda5050_msgs::Order orderMsg;
   orderMsg.headerId = 1;
-  orderMsg.timeStamp = getTimestamp();
+  orderMsg.timestamp = getTimestamp();
   orderMsg.version = "1.1";
   orderMsg.manufacturer = "fml Enterprise";
   orderMsg.serialNumber = "ajf894ajc";
