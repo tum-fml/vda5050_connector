@@ -149,7 +149,7 @@ void State::AcceptNewOrder(const Order& new_order) {
 void State::ValidateUpdateBase(const Order& order_update) {
   // Check if the first node of the update matches the last release base node.
 
-  auto last_base_node = find_if(state.nodeStates.rend(), state.nodeStates.rbegin(),
+  auto last_base_node = find_if(state.nodeStates.rbegin(), state.nodeStates.rend(),
       [](const vda5050_msgs::NodeState ns) { return ns.released; });
 
   const auto& update_first_node = order_update.GetNodes().front();
@@ -180,9 +180,11 @@ void State::ValidateUpdateBase(const Order& order_update) {
 void State::UpdateOrder(const Order& current_order, const Order& order_update) {
   // Clear horizon.
   state.edgeStates.erase(remove_if(state.edgeStates.begin(), state.edgeStates.end(),
-      [](vda5050_msgs::EdgeState es) { return !es.released; }));
+                             [](vda5050_msgs::EdgeState es) { return !es.released; }),
+      state.edgeStates.end());
   state.nodeStates.erase(remove_if(state.nodeStates.begin(), state.nodeStates.end(),
-      [](vda5050_msgs::NodeState ns) { return !ns.released; }));
+                             [](vda5050_msgs::NodeState ns) { return !ns.released; }),
+      state.nodeStates.end());
 
   auto updated_nodes = order_update.GetNodes();
 
