@@ -173,7 +173,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
   // TODO : Check if the state has an active order, not the new_order.
   if (state.GetOrderId() == new_order.GetOrderId()) {
     // Check if the received order message is an update.
-    if (state.GetOrderUpdateId() < new_order.GetOrderUpdateId()) {
+    if (state.GetOrderUpdateId() > new_order.GetOrderUpdateId()) {
       std::string error_msg = "Received order update with a lower order update ID";
       ROS_ERROR("Error has occurred : %s", error_msg.c_str());
 

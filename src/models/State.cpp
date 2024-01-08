@@ -139,7 +139,7 @@ void State::AcceptNewOrder(const Order& new_order) {
 void State::ValidateUpdateBase(const Order& order_update) {
   // Check if the first node of the update matches the last release base node.
 
-  auto last_base_node = find_if(state.nodeStates.rend(), state.nodeStates.rbegin(),
+  auto last_base_node = find_if(state.nodeStates.rbegin(), state.nodeStates.rend(),
       [](const vda5050_msgs::NodeState ns) { return ns.released; });
 
   const auto& update_first_node = order_update.GetNodes().front();
