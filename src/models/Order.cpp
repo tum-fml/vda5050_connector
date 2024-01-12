@@ -7,8 +7,11 @@ void Order::Validate() {
   // TODO: Add validation based on AGV's capabilities (e.g. track planning etc.). Using FactSheet
   // messages
 
-  if (this->order.edges.size() != this->order.nodes.size() - 1) {
-    throw std::runtime_error("Number of edges not equal to number of nodes - 1!");
+  if (this->order.nodes.size() != 0)
+  {
+    if (this->order.edges.size() != this->order.nodes.size() - 1) {
+      throw std::runtime_error("Number of edges not equal to number of nodes - 1!");
+    }
   }
 
   // Loop over the edges, and validate that the order has a good sequence.

@@ -193,18 +193,25 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       return;
     } else {
       // Compare the information of the last order with the newly received order update.
-      try {
-        state.ValidateUpdateBase(new_order);
-      } catch (const std::runtime_error& e) {
-        ROS_ERROR("Update base validation failed. %s", e.what());
-
-        // Add error to the state message.
-
-        return;
+      if (new_order.GetNodes().size() == 0 && new_order.GetEdges().size() == 0)
+      {
+        ROS_WARN("Order update has no nodes and no edges");
       }
+      else
+      {
+        try {
+          state.ValidateUpdateBase(new_order);
+        } catch (const std::runtime_error& e) {
+          ROS_ERROR("Update base validation failed. %s", e.what());
 
-      // Accept the order update by updating the state and the order message.
-      UpdateExistingOrder(new_order);
+          // Add error to the state message.
+
+          return;
+        }
+
+        // Accept the order update by updating the state and the order message.
+        UpdateExistingOrder(new_order);
+      }
 
       ROS_INFO("Sending order update");
 
