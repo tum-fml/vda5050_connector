@@ -11,9 +11,9 @@
 
 using namespace connector_utils;
 
-constexpr char VERSION_PARAM[] = "/header/version";
-constexpr char MANUFACTURER_PARAM[] = "/header/manufacturer";
-constexpr char SN_PARAM[] = "/header/serial_number";
+constexpr char VERSION_PARAM[] = "header/version";
+constexpr char MANUFACTURER_PARAM[] = "header/manufacturer";
+constexpr char SN_PARAM[] = "header/serial_number";
 
 /*-------------------------------------VDA5050Connector--------------------------------------------*/
 
@@ -234,6 +234,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     if (state.InDeviationRange(new_order.GetNodes().front())) {
       // TODO (A-Jammoul) : Accept the new order by updating the state message and the order.
       // AcceptNewOrder(new_order);
+      AcceptNewOrder(new_order);
 
       ROS_INFO("Sending new order");
 
@@ -273,9 +274,7 @@ void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& m
 
 void VDA5050Connector::AcceptNewOrder(const Order& new_order) {
   // Set the nodes, edges and actions in the order and the state messages.
-
   state.AcceptNewOrder(new_order);
-
   order.AcceptNewOrder(new_order);
 }
 
@@ -285,8 +284,7 @@ void VDA5050Connector::UpdateExistingOrder(const Order& order_update) {
   // TODO (A-Jammoul) : Update the state before the order, because the state needs the old order to
   // clear actions from the old horizon.
 
-  // state.UpdateOrder(order, order_update);
-
+  state.UpdateOrder(order, order_update);
   order.UpdateOrder(order_update);
 }
 

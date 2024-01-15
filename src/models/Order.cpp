@@ -12,6 +12,16 @@ void Order::Validate() {
     throw std::runtime_error("Nodes list empty!");
   }
 
+  // First node must be a base node
+  if (!this->order.nodes.begin()->released) {
+    throw std::runtime_error("First node is not released");
+  }
+
+  // First node of a new order must be the sequenceId 0
+  if (this->order.orderUpdateId == 0 && this->order.nodes.begin()->sequenceId != 0) {
+    throw std::runtime_error("First node sequenceId is not zero");
+  }
+
   if (this->order.edges.size() != this->order.nodes.size() - 1) {
     throw std::runtime_error("Number of edges not equal to number of nodes - 1!");
   }

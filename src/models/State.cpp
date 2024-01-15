@@ -155,6 +155,7 @@ void State::ValidateUpdateBase(const Order& order_update) {
   const auto& update_first_node = order_update.GetNodes().front();
   // No more base nodes in the state.
   if (last_base_node == state.nodeStates.rend()) {
+    // If no active order, compare lastNodeId and lastNodeSequenceId.
     if (update_first_node.nodeId != state.lastNodeId) {
       throw std::runtime_error(
           "The ID of the first node of the update does not match the last node ID in the state.");
@@ -165,6 +166,7 @@ void State::ValidateUpdateBase(const Order& order_update) {
           "ID in the state.");
     }
   } else {
+    // If active order, compare last nodeStates.
     if (update_first_node.nodeId != last_base_node->nodeId) {
       throw std::runtime_error(
           "The ID of the first node of the update does not match the last node ID in the state.");
