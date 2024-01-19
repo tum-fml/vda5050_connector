@@ -50,12 +50,90 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
     ROS_ERROR("%s not found in the configuration!", SN_PARAM);
   }
 
+  setFactsheet();
+
   stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&VDA5050Connector::PublishState, this));
   visTimer =
       nh.createTimer(ros::Duration(1.0), std::bind(&VDA5050Connector::PublishVisualization, this));
   connTimer = nh.createTimer(
       ros::Duration(15.0), std::bind(&VDA5050Connector::PublishConnection, this, true));
   newPublishTrigger = true;
+}
+
+void VDA5050Connector::setFactsheet() {
+  vda5050_msgs::Factsheet fsh_msg;
+
+  // Elementary parameters
+
+  // typeSpecification
+  std::string aux_string;
+  double aux_double;
+  if (GetParamROS("typeSpecification/seriesName", &aux_string))
+    fsh_msg.typeSpecification.seriesName = aux_string;
+  if (GetParamROS("typeSpecification/agvKinematic", &aux_string))
+    fsh_msg.typeSpecification.agvKinematic = aux_string;
+  if (GetParamROS("typeSpecification/agvClass", &aux_string))
+    fsh_msg.typeSpecification.agvClass = aux_string;
+  if (GetParamROS("typeSpecification/maxLoadMass", &aux_double))
+    fsh_msg.typeSpecification.maxLoadMass = aux_double;
+  std::vector<std::string> lt;
+  if (GetParamROS("typeSpecification/localizationTypes", &lt))
+    fsh_msg.typeSpecification.localizationTypes = lt;
+  std::vector<std::string> nt;
+  if (GetParamROS("typeSpecification/navigationTypes", &nt))
+    fsh_msg.typeSpecification.navigationTypes = nt;
+
+  // physicalParameters
+  if (GetParamROS("physicalParameters/speedMin", &aux_double))
+    fsh_msg.physicalParameters.speedMin = aux_double;
+  if (GetParamROS("physicalParameters/speedMax", &aux_double))
+    fsh_msg.physicalParameters.speedMax = aux_double;
+  if (GetParamROS("physicalParameters/accelerationMax", &aux_double))
+    fsh_msg.physicalParameters.accelerationMax = aux_double;
+  if (GetParamROS("physicalParameters/decelerationMax", &aux_double))
+    fsh_msg.physicalParameters.decelerationMax = aux_double;
+  if (GetParamROS("physicalParameters/heightMin", &aux_double))
+    fsh_msg.physicalParameters.heightMin = aux_double;
+  if (GetParamROS("physicalParameters/heightMax", &aux_double))
+    fsh_msg.physicalParameters.heightMax = aux_double;
+  if (GetParamROS("physicalParameters/width", &aux_double))
+    fsh_msg.physicalParameters.width = aux_double;
+  if (GetParamROS("physicalParameters/length", &aux_double))
+    fsh_msg.physicalParameters.length = aux_double;
+
+  // protocolLimits
+  if (GetParamROS("protocolLimits/minOrderInterval", &aux_double))
+    fsh_msg.protocolLimits.timing.minOrderInterval = aux_double;
+  if (GetParamROS("protocolLimits/minStateInterval", &aux_double))
+    fsh_msg.protocolLimits.timing.minStateInterval = aux_double;
+
+  // protocolFeatures
+  XmlRpc::XmlRpcValue ops;
+  if (GetParamROS("protocolFeatures/optionalParameters", &ops)) {
+    for (int i = 0; i < ops.size(); i++) {
+      vda5050_msgs::OptionalParameter op;
+      op.parameter = static_cast<std::string>(ops[i]["parameter"]);
+      op.support = static_cast<std::string>(ops[i]["support"]);
+      fsh_msg.protocolFeatures.optionalParameters.push_back(op);
+    }
+  }
+  XmlRpc::XmlRpcValue aas;
+  if (GetParamROS("protocolFeatures/agvActions", &aas)) {
+    for (int i = 0; i < aas.size(); i++) {
+      vda5050_msgs::AgvAction aa;
+      aa.actionType = static_cast<std::string>(aas[i]["actionType"]);
+      aa.actionDescription = static_cast<std::string>(aas[i]["actionDescription"]);
+      for (int j = 0; j < aas[i]["actionScopes"].size(); j++)
+        aa.actionScopes.push_back(static_cast<std::string>(aas[i]["actionScopes"][j]));
+      fsh_msg.protocolFeatures.agvActions.push_back(aa);
+    }
+  }
+
+  // agvGeometry
+
+  // loadSpecification
+
+  state.SetFactsheet(fsh_msg);
 }
 
 void VDA5050Connector::LinkPublishTopics(ros::NodeHandle* nh) {
@@ -73,6 +151,8 @@ void VDA5050Connector::LinkPublishTopics(ros::NodeHandle* nh) {
       visPublisher = nh->advertise<vda5050_msgs::Visualization>(elem.second, 100);
     } else if (CheckParamIncludes(elem.first, "connection")) {
       connectionPublisher = nh->advertise<vda5050_msgs::Connection>(elem.second, 100);
+    } else if (CheckParamIncludes(elem.first, "factsheet")) {
+      factsheetPublisher = nh->advertise<vda5050_msgs::Factsheet>(elem.second, 100);
     }
   }
 }
@@ -267,7 +347,10 @@ void VDA5050Connector::InstantActionCallback(const vda5050_msgs::InstantAction::
 
 void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& msg) {
   // Read required order state information from the prefilled state message.
-  state.SetOrderState(*msg);
+  bool send_fsh = false;
+  state.SetOrderState(*msg, &send_fsh);
+
+  if (send_fsh) PublishFactsheet();
 
   newPublishTrigger = true;
 }
@@ -443,6 +526,20 @@ void VDA5050Connector::PublishConnection(const bool connected) {
 
   // Increase header count after each publish.
   connHeaderId++;
+}
+
+void VDA5050Connector::PublishFactsheet() {
+  // Create new connection state message.
+  auto fsh = state.GetFactsheet();
+
+  // Set the header fields.
+  fsh.headerId = fshHeaderId;
+  fsh.timestamp = connector_utils::GetISOCurrentTimestamp();
+
+  factsheetPublisher.publish(fsh);
+
+  // Increase header count after each publish.
+  fshHeaderId++;
 }
 
 void VDA5050Connector::PublishStateOnTrigger() {

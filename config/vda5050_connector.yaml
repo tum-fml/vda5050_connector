@@ -6,6 +6,7 @@ publish_topics:
     # to agv
     order: "/order"                                         # Processed order.
     instant_action: "/instant_action"                       # Processed instant action message.
+    factsheet: "/factsheet"                                 # Setup of AGV in master control.
 subscribe_topics:
     # from mc
     order_from_mc: "/order_from_mc"                         # Raw order coming from the cloud.

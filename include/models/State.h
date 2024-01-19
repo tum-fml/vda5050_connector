@@ -5,6 +5,7 @@
 
 #include "models/Order.h"
 #include "vda5050_msgs/Connection.h"
+#include "vda5050_msgs/Factsheet.h"
 #include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/State.h"
@@ -116,6 +117,13 @@ class State {
    * @return vda5050_msgs::State
    */
   inline vda5050_msgs::State GetState() { return state; }
+
+  /**
+   * @brief Get the Factsheet object
+   *
+   * @return vda5050_msgs::Factsheet
+   */
+  inline vda5050_msgs::Factsheet GetFactsheet() { return factsheet; }
 
   // Header information.
 
@@ -400,7 +408,7 @@ class State {
    * order.
    *
    */
-  inline void SetOrderState(const vda5050_msgs::State order_state) {
+  inline void SetOrderState(const vda5050_msgs::State order_state, bool* send_fsh) {
     state.orderId = order_state.orderId;
     state.orderUpdateId = order_state.orderUpdateId;
     state.lastNodeId = order_state.lastNodeId;
@@ -408,10 +416,28 @@ class State {
     state.actionStates = order_state.actionStates;
     state.nodeStates = order_state.nodeStates;
     state.edgeStates = order_state.edgeStates;
+
+    // If order_state contains factSheetRequest as an actionState: publish factsheet
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [](const vda5050_msgs::ActionState& as) { return as.actionType == "factsheetRequest"; });
+
+    if (it != state.actionStates.end()) {
+      *send_fsh = true;
+      it->actionStatus = "FINISHED";
+    }
+  }
+
+  inline void SetFactsheet(const vda5050_msgs::Factsheet factsheet_msg) {
+    factsheet = factsheet_msg;
+    factsheet.version = state.version;
+    factsheet.manufacturer = state.manufacturer;
+    factsheet.serialNumber = state.serialNumber;
   }
 
  private:
   vda5050_msgs::State state; /**< State message */
+
+  vda5050_msgs::Factsheet factsheet; /**< Factsheet message */
 
   /**
    * @brief Transform a VDA Node to a Node state object.

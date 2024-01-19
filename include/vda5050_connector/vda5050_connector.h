@@ -30,6 +30,7 @@
 #include "vda5050_msgs/EdgeState.h"
 #include "vda5050_msgs/EdgeStates.h"
 #include "vda5050_msgs/Errors.h"
+#include "vda5050_msgs/Factsheet.h"
 #include "vda5050_msgs/Information.h"
 #include "vda5050_msgs/InstantAction.h"
 #include "vda5050_msgs/InteractionZoneStates.h"
@@ -78,6 +79,7 @@ class VDA5050Connector : public VDA5050Node {
   ros::Publisher
       visPublisher; /**< Publisher object for visualization messages to the fleet controller. */
   ros::Publisher connectionPublisher; /**< Publisher for connection messages. */
+  ros::Publisher factsheetPublisher;  /**< Publisher for factsheet messages. */
 
   ros::Timer stateTimer; /**< Timer used to publish state messages regularly. */
   ros::Timer visTimer;   /**< Timer used to publish visualization messages regularly. */
@@ -86,6 +88,7 @@ class VDA5050Connector : public VDA5050Node {
   int stateHeaderId{0}; /**< Header Id used for state messages. */
   int visHeaderId{0};   /**< Header Id used for visualization messages. */
   int connHeaderId{0};  /**< Header Id used for connection state messages. */
+  int fshHeaderId{0};   /**< Header Id used for factsheet messages. */
 
   std::vector<std::shared_ptr<ros::Subscriber>>
       subscribers; /**< List of subsribers used by the StateAggregator to build the robot state. */
@@ -101,6 +104,29 @@ class VDA5050Connector : public VDA5050Node {
    * topics.
    */
   VDA5050Connector();
+
+  /**
+   * Gets all the factsheet parameters and adds them to the factsheet msg.
+   */
+  void setFactsheet();
+
+  /**
+   * Gets params by name.
+   *
+   * @param name  Parameter name.
+   * @param param  Parameter value.
+   */
+  template <typename T>
+  bool GetParamROS(const char* name, T* param) {
+    ROS_INFO("%s", name);
+    if (ros::param::has(name)) {
+      ros::param::get(name, *param);
+      return true;
+    } else {
+      ROS_WARN("%s not found in the configuration!", name);
+      return false;
+    }
+  };
 
   /**
    * Links all external publishing topics.
@@ -184,6 +210,12 @@ class VDA5050Connector : public VDA5050Node {
    * @param connected State of the connection.
    */
   void PublishConnection(const bool connected);
+
+  /**
+   * Sets the header timestamp and publishes the factsheet message. Updates the headerId after
+   * publishing.
+   */
+  void PublishFactsheet();
 
   /**
    * Checks all the logic within the state daemon. For example, it checks
