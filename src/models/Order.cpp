@@ -68,11 +68,9 @@ void Order::AcceptNewOrder(const Order& new_order) {
 void Order::UpdateOrder(const Order& order_update) {
   // Clear horizon.
   order.edges.erase(remove_if(order.edges.begin(), order.edges.end(),
-                        [](vda5050_msgs::Edge edge) { return !edge.released; }),
-      order.edges.end());
+      [](vda5050_msgs::Edge edge) { return !edge.released; }), order.edges.end());
   order.nodes.erase(remove_if(order.nodes.begin(), order.nodes.end(),
-                        [](vda5050_msgs::Node node) { return !node.released; }),
-      order.nodes.end());
+      [](vda5050_msgs::Node node) { return !node.released; }), order.nodes.end());
 
   auto updated_nodes = order_update.GetNodes();
 
