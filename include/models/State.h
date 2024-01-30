@@ -1,11 +1,14 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <ros/ros.h>
+
 #include <boost/optional.hpp>
 
 #include "models/Order.h"
 #include "vda5050_msgs/Connection.h"
 #include "vda5050_msgs/Factsheet.h"
+#include "vda5050_msgs/InstantAction.h"
 #include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/State.h"
@@ -32,6 +35,12 @@ class State {
    * @param new_order
    */
   void AcceptNewOrder(const Order& new_order);
+
+  /**
+   * @brief Accepts action states from pre-filled list.
+   *
+   */
+  void AddInstantActionStates(const vda5050_msgs::InstantAction& action);
 
   /**
    * @brief Checks if the state has an order that is currently being executed.
@@ -408,25 +417,78 @@ class State {
    * order.
    *
    */
-  inline void SetOrderState(const vda5050_msgs::State order_state, bool* send_fsh) {
-    state.orderId = order_state.orderId;
-    state.orderUpdateId = order_state.orderUpdateId;
-    state.lastNodeId = order_state.lastNodeId;
-    state.lastNodeSequenceId = order_state.lastNodeSequenceId;
-    state.actionStates = order_state.actionStates;
-    state.nodeStates = order_state.nodeStates;
-    state.edgeStates = order_state.edgeStates;
-
-    // If order_state contains factSheetRequest as an actionState: publish factsheet
-    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
-        [](const vda5050_msgs::ActionState& as) { return as.actionType == "factsheetRequest"; });
-
-    if (it != state.actionStates.end()) {
-      *send_fsh = true;
-      it->actionStatus = "FINISHED";
+  inline void SetOrderState(const vda5050_msgs::State order_state) {
+    // Check orderId and orderUpdateId
+    if (state.orderId != order_state.orderId)
+      ROS_ERROR_STREAM("Received order state for id " << order_state.orderId
+                                                      << " but current order is " << state.orderId);
+    else if (state.orderUpdateId != order_state.orderUpdateId)
+      ROS_ERROR_STREAM("Received order state for update id "
+                       << order_state.orderId << " but current update is " << state.orderId);
+    else {
+      // If last node has changed: remove the old ones
+      if (order_state.lastNodeId != state.lastNodeId ||
+          order_state.lastNodeSequenceId != state.lastNodeSequenceId) {
+        if (state.nodeStates[0].sequenceId == order_state.lastNodeSequenceId) {
+          state.nodeStates.erase(state.nodeStates.begin());
+          state.edgeStates.erase(state.edgeStates.begin());
+        } else {
+          auto it_n = find_if(state.nodeStates.begin(), state.nodeStates.end(),
+              [&](const vda5050_msgs::NodeState& ns) {
+                return ns.sequenceId == state.lastNodeSequenceId;
+              });
+          auto it_e = find_if(state.edgeStates.begin(), state.edgeStates.end(),
+              [&](const vda5050_msgs::EdgeState& es) {
+                return es.sequenceId == state.lastNodeSequenceId + 1;
+              });
+          if (it_n != state.nodeStates.end() && it_e != state.edgeStates.end()) {
+            state.nodeStates.erase(state.nodeStates.begin(), it_n);
+            state.edgeStates.erase(state.edgeStates.begin(), it_e);
+            state.lastNodeId = order_state.lastNodeId;
+            state.lastNodeSequenceId = order_state.lastNodeSequenceId;
+          } else
+            ROS_ERROR_STREAM("ERROR: last node or edge not found");
+        }
+      }
+      for (int a = 0; a < state.actionStates.size(); a++) SetActionState(state.actionStates[a]);
     }
   }
 
+  /**
+   * @brief Fill action states from pre-filled list.
+   *
+   */
+  inline void SetActionState(const vda5050_msgs::ActionState updated_as) {
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) { return updated_as.actionId == as.actionId; });
+
+    if (it != state.actionStates.end()) {
+      it->actionStatus = updated_as.actionStatus;
+      it->resultDescription = updated_as.resultDescription;
+    } else
+      ROS_ERROR_STREAM(
+          "Action state with id " << updated_as.actionId << " not found in state message");
+  }
+
+  /**
+   * @brief Fill action states from pre-filled list.
+   *
+   */
+  inline void SetActionState(
+      std::string action_id, std::string action_status, std::string result_description = "") {
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) { return action_id == as.actionId; });
+
+    if (it != state.actionStates.end()) {
+      it->actionStatus = action_status;
+      it->resultDescription = result_description;
+    } else
+      ROS_ERROR_STREAM("Action state with id " << action_id << " not found in state message");
+  }
+
+  /**
+   * @brief Set factsheet message.
+   */
   inline void SetFactsheet(const vda5050_msgs::Factsheet factsheet_msg) {
     factsheet = factsheet_msg;
     factsheet.version = state.version;

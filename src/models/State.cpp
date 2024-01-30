@@ -144,6 +144,20 @@ void State::AcceptNewOrder(const Order& new_order) {
       }
     }
   }
+
+void State::AddInstantActionStates(const vda5050_msgs::InstantAction& instant_action) {
+  for (int i = 0; i < instant_action.instantActions.size(); i++) {
+    // Check that actionId does not exists
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) {
+          return as.actionId == instant_action.instantActions[i].actionId;
+        });
+    if (it != state.actionStates.end())
+      ROS_ERROR_STREAM("ERROR: instant action actionId "
+                       << instant_action.instantActions[i].actionId << " is not unique!");
+    // Add to action states
+    state.actionStates.push_back(ActionToActionState(instant_action.instantActions[i]));
+  }
 }
 
 void State::ValidateUpdateBase(const Order& order_update) {

@@ -339,18 +339,30 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 }
 
 void VDA5050Connector::InstantActionCallback(const vda5050_msgs::InstantAction::ConstPtr& msg) {
-  // Forward instant action message to the vehicle.
+  // Add instant action to state
+  vda5050_msgs::InstantAction instant_action = *msg;
+  state.AddInstantActionStates(instant_action);
 
-  ROS_INFO("Sending instant action message");
-  iaPublisher.publish(msg);
+  // Search for factsheet request
+  // If instant_action contains factSheetRequest: publish factsheet
+  auto it = find_if(instant_action.instantActions.begin(), instant_action.instantActions.end(),
+      [](const vda5050_msgs::Action& ia) { return ia.actionType == "factsheetRequest"; });
+  if (it != instant_action.instantActions.end()) {
+    PublishFactsheet();
+    state.SetActionState(it->actionId, "FINISHED");
+    instant_action.instantActions.erase(it);
+  }
+
+  // Forward instant action message to the vehicle.
+  if (!instant_action.instantActions.empty()) {
+    ROS_INFO("Sending instant action message");
+    iaPublisher.publish(instant_action);
+  }
 }
 
 void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& msg) {
   // Read required order state information from the prefilled state message.
-  bool send_fsh = false;
-  state.SetOrderState(*msg, &send_fsh);
-
-  if (send_fsh) PublishFactsheet();
+  state.SetOrderState(*msg);
 
   newPublishTrigger = true;
 }
