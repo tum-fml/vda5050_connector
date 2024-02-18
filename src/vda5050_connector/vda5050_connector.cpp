@@ -50,11 +50,18 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
     ROS_ERROR("%s not found in the configuration!", SN_PARAM);
   }
 
-  stateTimer = nh.createTimer(ros::Duration(0.8), std::bind(&VDA5050Connector::PublishState, this));
-  visTimer =
-      nh.createTimer(ros::Duration(0.3), std::bind(&VDA5050Connector::PublishVisualization, this));
+  ros::NodeHandle private_nh("~");
+  double stateMsgPeriod, visMsgPeriod, connMsgPeriod;
+  private_nh.param<double>("publish_periods/state_msg", stateMsgPeriod, 0.8);
+  private_nh.param<double>("publish_periods/visualization_msg", visMsgPeriod, 0.3);
+  private_nh.param<double>("publish_periods/conn_msg", connMsgPeriod, 15.0);
+
+  stateTimer = nh.createTimer(
+      ros::Duration(stateMsgPeriod), std::bind(&VDA5050Connector::PublishState, this));
+  visTimer = nh.createTimer(
+      ros::Duration(visMsgPeriod), std::bind(&VDA5050Connector::PublishVisualization, this));
   connTimer = nh.createTimer(
-      ros::Duration(15.0), std::bind(&VDA5050Connector::PublishConnection, this, true));
+      ros::Duration(connMsgPeriod), std::bind(&VDA5050Connector::PublishConnection, this, true));
   newPublishTrigger = true;
 }
 
