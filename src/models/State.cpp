@@ -1,6 +1,10 @@
 #include "models/State.h"
 
-State::State() { this->state = vda5050_msgs::State(); }
+State::State() {
+  this->state = vda5050_msgs::State();
+  this->state.operatingMode = vda5050_msgs::State::MANUAL;
+  this->state.safetyState.eStop = vda5050_msgs::SafetyState::NONE;
+}
 
 vda5050_msgs::NodeState State::NodeToNodeState(const vda5050_msgs::Node& n) {
   vda5050_msgs::NodeState ns;
