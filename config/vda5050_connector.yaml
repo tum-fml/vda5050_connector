@@ -32,3 +32,8 @@ subscribe_topics:
     information: "/information"                             # Information messages from the robot
     safety_state: "/safety_state"                           # Robot's safety state
     interaction_zones: "/interaction_zones"                 # State of the interaction zones.
+
+publish_periods:
+    state_msg: 0.8                                          # Period on which to send state message if no new triggers
+    visualization_msg: 0.3                                  # Period on which to send visualization message
+    conn_msg: 15.0                                          # Period on which to send connection message
