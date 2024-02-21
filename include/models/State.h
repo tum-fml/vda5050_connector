@@ -428,6 +428,8 @@ class State {
           state.nodeStates.begin()->sequenceId != order_state.nodeStates.begin()->sequenceId) {
         if (state.nodeStates.begin()->sequenceId == order_state.lastNodeSequenceId) {
           state.nodeStates.erase(state.nodeStates.begin());
+          state.lastNodeId = order_state.lastNodeId;
+          state.lastNodeSequenceId = order_state.lastNodeSequenceId;
         } else {
           auto it = find_if(state.nodeStates.begin(), state.nodeStates.end(),
               [&](const vda5050_msgs::NodeState& ns) {
@@ -441,16 +443,20 @@ class State {
             ROS_ERROR_STREAM("ERROR: last node not found");
         }
       }
-      if (!state.edgeStates.empty() && !order_state.edgeStates.empty()) {
-        if (state.edgeStates.begin()->sequenceId != order_state.edgeStates.begin()->sequenceId) {
-          auto it = find_if(state.edgeStates.begin(), state.edgeStates.end(),
-              [&](const vda5050_msgs::EdgeState& es) {
-                return es.sequenceId == order_state.edgeStates.begin()->sequenceId;
-              });
-          if (it != state.edgeStates.end()) {
-            state.edgeStates.erase(state.edgeStates.begin(), it);
-          } else
-            ROS_ERROR_STREAM("ERROR: last edge not found");
+      if (!state.edgeStates.empty()) {
+        if (!order_state.edgeStates.empty()) {
+          if (state.edgeStates.begin()->sequenceId != order_state.edgeStates.begin()->sequenceId) {
+            auto it = find_if(state.edgeStates.begin(), state.edgeStates.end(),
+                [&](const vda5050_msgs::EdgeState& es) {
+                  return es.sequenceId == order_state.edgeStates.begin()->sequenceId;
+                });
+            if (it != state.edgeStates.end()) {
+              state.edgeStates.erase(state.edgeStates.begin(), it);
+            } else
+              ROS_ERROR_STREAM("ERROR: last edge not found");
+          }
+        } else {
+          state.edgeStates.clear();
         }
       }
       for (int a = 0; a < order_state.actionStates.size(); a++)
