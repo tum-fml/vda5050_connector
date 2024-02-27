@@ -553,9 +553,12 @@ int main(int argc, char** argv) {
 
   ActionClient ActionClient;
 
+  ros::Rate rate(0.05);
+
   while (ros::ok()) {
     ActionClient.UpdateActions();
     ros::spinOnce();
+    rate.sleep();
   }
   return 0;
 }
