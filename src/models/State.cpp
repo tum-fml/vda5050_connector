@@ -145,18 +145,20 @@ void State::AcceptNewOrder(const Order& new_order) {
     }
   }
 
-void State::AddInstantActionStates(const vda5050_msgs::InstantAction& instant_action) {
-  for (int i = 0; i < instant_action.instantActions.size(); i++) {
+
+void State::AddInstantActionStates(vda5050_msgs::InstantAction& instant_action) {
+  for (auto it_ia = instant_action.actions.begin(); it_ia != instant_action.actions.end();) {
     // Check that actionId does not exists
     auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
-        [&](const vda5050_msgs::ActionState& as) {
-          return as.actionId == instant_action.instantActions[i].actionId;
-        });
-    if (it != state.actionStates.end())
-      ROS_ERROR_STREAM("ERROR: instant action actionId "
-                       << instant_action.instantActions[i].actionId << " is not unique!");
+        [&](const vda5050_msgs::ActionState& as) { return as.actionId == it_ia->actionId; });
     // Add to action states
-    state.actionStates.push_back(ActionToActionState(instant_action.instantActions[i]));
+    if (it != state.actionStates.end()) {
+      ROS_ERROR_STREAM("ERROR: instant action actionId " << it_ia->actionId << " is not unique!");
+      instant_action.actions.erase(it_ia);
+    } else {
+      state.actionStates.push_back(ActionToActionState(*it_ia));
+      ++it_ia;
+    }
   }
 }
 

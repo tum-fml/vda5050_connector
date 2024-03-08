@@ -86,8 +86,8 @@ void send_instant_action(ros::Publisher* pub) {
   msg1.actionParameters.push_back(param1);
   msg2.actionParameters.push_back(param2);
 
-  instAction.instantActions.push_back(msg1);
-  instAction.instantActions.push_back(msg2);
+  instAction.actions.push_back(msg1);
+  instAction.actions.push_back(msg2);
 
   pub->publish(instAction);
   ROS_INFO_STREAM("New instant action sent!");

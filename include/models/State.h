@@ -40,7 +40,7 @@ class State {
    * @brief Accepts action states from pre-filled list.
    *
    */
-  void AddInstantActionStates(const vda5050_msgs::InstantAction& action);
+  void AddInstantActionStates(vda5050_msgs::InstantAction& action);
 
   /**
    * @brief Checks if the state has an order that is currently being executed.

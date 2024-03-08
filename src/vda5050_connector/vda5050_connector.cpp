@@ -345,16 +345,16 @@ void VDA5050Connector::InstantActionCallback(const vda5050_msgs::InstantAction::
 
   // Search for factsheet request
   // If instant_action contains factSheetRequest: publish factsheet
-  auto it = find_if(instant_action.instantActions.begin(), instant_action.instantActions.end(),
+  auto it = find_if(instant_action.actions.begin(), instant_action.actions.end(),
       [](const vda5050_msgs::Action& ia) { return ia.actionType == "factsheetRequest"; });
-  if (it != instant_action.instantActions.end()) {
+  if (it != instant_action.actions.end()) {
     PublishFactsheet();
     state.SetActionState(it->actionId, "FINISHED");
-    instant_action.instantActions.erase(it);
+    instant_action.actions.erase(it);
   }
 
   // Forward instant action message to the vehicle.
-  if (!instant_action.instantActions.empty()) {
+  if (!instant_action.actions.empty()) {
     ROS_INFO("Sending instant action message");
     iaPublisher.publish(instant_action);
   }
