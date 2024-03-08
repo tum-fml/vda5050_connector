@@ -423,26 +423,34 @@ class State {
       ROS_ERROR_STREAM("Received order state for id " << order_state.orderId
                                                       << " but current order is " << state.orderId);
     else {
-      // If last node has changed: remove the old ones
-      if (order_state.lastNodeSequenceId != state.lastNodeSequenceId ||
-          state.nodeStates.begin()->sequenceId != order_state.nodeStates.begin()->sequenceId) {
-        if (state.nodeStates.begin()->sequenceId == order_state.lastNodeSequenceId) {
-          state.nodeStates.erase(state.nodeStates.begin());
-          state.lastNodeId = order_state.lastNodeId;
-          state.lastNodeSequenceId = order_state.lastNodeSequenceId;
-        } else {
-          auto it = find_if(state.nodeStates.begin(), state.nodeStates.end(),
-              [&](const vda5050_msgs::NodeState& ns) {
-                return ns.sequenceId == state.lastNodeSequenceId;
-              });
-          if (it != state.nodeStates.end()) {
-            state.nodeStates.erase(state.nodeStates.begin(), it);
+      if (!order_state.nodeStates.empty()) {
+        // If last node has changed: remove the old ones
+        if (order_state.lastNodeSequenceId != state.lastNodeSequenceId ||
+            state.nodeStates.begin()->sequenceId != order_state.nodeStates.begin()->sequenceId) {
+          if (state.nodeStates.begin()->sequenceId == order_state.lastNodeSequenceId) {
+            state.nodeStates.erase(state.nodeStates.begin());
             state.lastNodeId = order_state.lastNodeId;
             state.lastNodeSequenceId = order_state.lastNodeSequenceId;
-          } else
-            ROS_ERROR_STREAM("ERROR: last node not found");
+          } else {
+            auto it = find_if(state.nodeStates.begin(), state.nodeStates.end(),
+                [&](const vda5050_msgs::NodeState& ns) {
+                  return ns.sequenceId == state.lastNodeSequenceId;
+                });
+            if (it != state.nodeStates.end()) {
+              state.nodeStates.erase(state.nodeStates.begin(), it);
+              state.lastNodeId = order_state.lastNodeId;
+              state.lastNodeSequenceId = order_state.lastNodeSequenceId;
+            } else
+              ROS_ERROR_STREAM("ERROR: last node not found");
+          }
         }
+      } else {
+        state.lastNodeId = order_state.lastNodeId;
+        state.lastNodeSequenceId = order_state.lastNodeSequenceId;
+        state.nodeStates.clear();
       }
+
+      // Edges
       if (!state.edgeStates.empty()) {
         if (!order_state.edgeStates.empty()) {
           if (state.edgeStates.begin()->sequenceId != order_state.edgeStates.begin()->sequenceId) {

@@ -541,7 +541,7 @@ void VDA5050Connector::PublishConnection(const bool connected) {
 }
 
 void VDA5050Connector::PublishFactsheet() {
-  // Create new connection state message.
+  // Create new factsheet state message.
   auto fsh = state.GetFactsheet();
 
   // Set the header fields.
@@ -568,7 +568,7 @@ void VDA5050Connector::PublishStateOnTrigger() {
 }
 
 void VDA5050Connector::AddInternalError(const vda5050_msgs::Error& error) {
-  // If the error already exists, then reset its time.
+  // If the error already exists, then reset its time and update (references, description...).
   auto it = std::find_if(internal_errors_stamped.begin(), internal_errors_stamped.end(),
       [&](const ErrorStamped& e) { return e.error.errorType == error.errorType; });
 
