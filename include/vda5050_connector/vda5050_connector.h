@@ -88,7 +88,7 @@ class VDA5050Connector : public VDA5050Node {
   int stateHeaderId{0}; /**< Header Id used for state messages. */
   int visHeaderId{0};   /**< Header Id used for visualization messages. */
   int connHeaderId{0};  /**< Header Id used for connection state messages. */
-  int fshHeaderId{0};   /**< Header Id used for factsheet messages. */
+  int fshHeaderId{-1};  /**< Header Id used for factsheet messages. */
 
   std::vector<std::shared_ptr<ros::Subscriber>>
       subscribers; /**< List of subsribers used by the StateAggregator to build the robot state. */
@@ -211,6 +211,7 @@ class VDA5050Connector : public VDA5050Node {
    */
   void PublishConnection(const bool connected);
 
+  bool sent_factsheet_;
   /**
    * Sets the header timestamp and publishes the factsheet message. Updates the headerId after
    * publishing.

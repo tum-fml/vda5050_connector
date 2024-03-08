@@ -49,7 +49,7 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
   } else {
     ROS_ERROR("%s not found in the configuration!", SN_PARAM);
   }
-
+  sent_factsheet_ = false;
   setFactsheet();
 
   stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&VDA5050Connector::PublishState, this));
@@ -557,6 +557,10 @@ void VDA5050Connector::PublishFactsheet() {
 void VDA5050Connector::PublishStateOnTrigger() {
   if (!newPublishTrigger) return;
 
+  if (!sent_factsheet_) {
+    sent_factsheet_ = true;
+    PublishFactsheet();
+  }
   PublishState();
 
   // Reset the timer.
@@ -610,7 +614,8 @@ int main(int argc, char** argv) {
 
   VDA5050Connector VDA5050Connector;
 
-  ros::Rate rate(1.0);
+  ros::Duration(2.0).sleep();
+  ros::Rate rate(0.5);
 
   while (ros::ok()) {
     VDA5050Connector.MonitorOrder();
