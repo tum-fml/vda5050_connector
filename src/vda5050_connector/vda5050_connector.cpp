@@ -129,10 +129,6 @@ void VDA5050Connector::setFactsheet() {
     }
   }
 
-  // agvGeometry
-
-  // loadSpecification
-
   state.SetFactsheet(fsh_msg);
 }
 

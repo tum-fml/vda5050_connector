@@ -409,7 +409,7 @@ class State {
       if (zone.zoneStatus != 0) zone.zoneStatus = 1;
     }
 
-    state.interactionZones = zones.interactionZones;
+    // state.interactionZones = zones.interactionZones;
   }
 
   /**
