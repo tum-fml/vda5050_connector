@@ -1,8 +1,14 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <ros/ros.h>
+
 #include <boost/optional.hpp>
+
 #include "models/Order.h"
+#include "vda5050_msgs/Connection.h"
+#include "vda5050_msgs/Factsheet.h"
+#include "vda5050_msgs/InstantAction.h"
 #include "vda5050_msgs/InteractionZoneStates.h"
 #include "vda5050_msgs/Node.h"
 #include "vda5050_msgs/State.h"
@@ -29,6 +35,12 @@ class State {
    * @param new_order
    */
   void AcceptNewOrder(const Order& new_order);
+
+  /**
+   * @brief Accepts action states from pre-filled list.
+   *
+   */
+  void AddInstantActionStates(vda5050_msgs::InstantAction& action);
 
   /**
    * @brief Checks if the state has an order that is currently being executed.
@@ -92,6 +104,13 @@ class State {
   vda5050_msgs::Visualization CreateVisualizationMsg();
 
   /**
+   * @brief Create a Connection message from the current state message.
+   *
+   * @return vda5050_msgs::Connection
+   */
+  vda5050_msgs::Connection CreateConnectionMsg();
+
+  /**
    * @brief Tests if the robot's position is within the deviation range of the provided node.
    *
    * @return true
@@ -108,6 +127,13 @@ class State {
    */
   inline vda5050_msgs::State GetState() { return state; }
 
+  /**
+   * @brief Get the Factsheet object
+   *
+   * @return vda5050_msgs::Factsheet
+   */
+  inline vda5050_msgs::Factsheet GetFactsheet() { return factsheet; }
+
   // Header information.
 
   /**
@@ -122,7 +148,7 @@ class State {
    *
    * @param timestamp
    */
-  inline void SetTimestamp(const std::string& timestamp) { state.timeStamp = timestamp; }
+  inline void SetTimestamp(const std::string& timestamp) { state.timestamp = timestamp; }
 
   /**
    * @brief Set the Manufacturer field in the message header.
@@ -383,7 +409,7 @@ class State {
       if (zone.zoneStatus != 0) zone.zoneStatus = 1;
     }
 
-    state.interactionZones = zones.interactionZones;
+    // state.interactionZones = zones.interactionZones;
   }
 
   /**
@@ -392,17 +418,106 @@ class State {
    *
    */
   inline void SetOrderState(const vda5050_msgs::State order_state) {
-    state.orderId = order_state.orderId;
-    state.orderUpdateId = order_state.orderUpdateId;
-    state.lastNodeId = order_state.lastNodeId;
-    state.lastNodeSequenceId = order_state.lastNodeSequenceId;
-    state.actionStates = order_state.actionStates;
-    state.nodeStates = order_state.nodeStates;
-    state.edgeStates = order_state.edgeStates;
+    // Check orderId and orderUpdateId
+    if (state.orderId != order_state.orderId)
+      ROS_ERROR_STREAM("Received order state for id " << order_state.orderId
+                                                      << " but current order is " << state.orderId);
+    else {
+      if (!order_state.nodeStates.empty()) {
+        // If last node has changed: remove the old ones
+        if (order_state.lastNodeSequenceId != state.lastNodeSequenceId ||
+            state.nodeStates.begin()->sequenceId != order_state.nodeStates.begin()->sequenceId) {
+          if (state.nodeStates.begin()->sequenceId == order_state.lastNodeSequenceId) {
+            state.nodeStates.erase(state.nodeStates.begin());
+            state.lastNodeId = order_state.lastNodeId;
+            state.lastNodeSequenceId = order_state.lastNodeSequenceId;
+          } else {
+            auto it = find_if(state.nodeStates.begin(), state.nodeStates.end(),
+                [&](const vda5050_msgs::NodeState& ns) {
+                  return ns.sequenceId == state.lastNodeSequenceId;
+                });
+            if (it != state.nodeStates.end()) {
+              state.nodeStates.erase(state.nodeStates.begin(), it);
+              state.lastNodeId = order_state.lastNodeId;
+              state.lastNodeSequenceId = order_state.lastNodeSequenceId;
+            } else
+              ROS_ERROR_STREAM("ERROR: last node not found");
+          }
+        }
+      } else {
+        state.lastNodeId = order_state.lastNodeId;
+        state.lastNodeSequenceId = order_state.lastNodeSequenceId;
+        state.nodeStates.clear();
+      }
+
+      // Edges
+      if (!state.edgeStates.empty()) {
+        if (!order_state.edgeStates.empty()) {
+          if (state.edgeStates.begin()->sequenceId != order_state.edgeStates.begin()->sequenceId) {
+            auto it = find_if(state.edgeStates.begin(), state.edgeStates.end(),
+                [&](const vda5050_msgs::EdgeState& es) {
+                  return es.sequenceId == order_state.edgeStates.begin()->sequenceId;
+                });
+            if (it != state.edgeStates.end()) {
+              state.edgeStates.erase(state.edgeStates.begin(), it);
+            } else
+              ROS_ERROR_STREAM("ERROR: last edge not found");
+          }
+        } else {
+          state.edgeStates.clear();
+        }
+      }
+      for (int a = 0; a < order_state.actionStates.size(); a++)
+        SetActionState(order_state.actionStates[a]);
+    }
+  }
+
+  /**
+   * @brief Fill action states from pre-filled list.
+   *
+   */
+  inline void SetActionState(const vda5050_msgs::ActionState updated_as) {
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) { return updated_as.actionId == as.actionId; });
+
+    if (it != state.actionStates.end()) {
+      it->actionStatus = updated_as.actionStatus;
+      it->resultDescription = updated_as.resultDescription;
+    } else
+      ROS_ERROR_STREAM(
+          "Action state with id " << updated_as.actionId << " not found in state message");
+  }
+
+  /**
+   * @brief Fill action states from pre-filled list.
+   *
+   */
+  inline void SetActionState(
+      std::string action_id, std::string action_status, std::string result_description = "") {
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) { return action_id == as.actionId; });
+
+    if (it != state.actionStates.end()) {
+      it->actionStatus = action_status;
+      it->resultDescription = result_description;
+    } else
+      ROS_ERROR_STREAM("Action state with id " << action_id << " not found in state message");
+  }
+
+  /**
+   * @brief Set factsheet message.
+   */
+  inline void SetFactsheet(const vda5050_msgs::Factsheet factsheet_msg) {
+    factsheet = factsheet_msg;
+    factsheet.version = state.version;
+    factsheet.manufacturer = state.manufacturer;
+    factsheet.serialNumber = state.serialNumber;
   }
 
  private:
   vda5050_msgs::State state; /**< State message */
+
+  vda5050_msgs::Factsheet factsheet; /**< Factsheet message */
 
   /**
    * @brief Transform a VDA Node to a Node state object.

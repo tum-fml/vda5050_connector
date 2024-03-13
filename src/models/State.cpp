@@ -93,6 +93,16 @@ vda5050_msgs::Visualization State::CreateVisualizationMsg() {
   return vis;
 }
 
+vda5050_msgs::Connection State::CreateConnectionMsg() {
+  vda5050_msgs::Connection con;
+
+  con.version = state.version;
+  con.serialNumber = state.serialNumber;
+  con.manufacturer = state.manufacturer;
+
+  return con;
+}
+
 boost::optional<vda5050_msgs::NodeState> State::GetLastNodeInBase() {
   // find last element which is released to find end of base.
   auto it = find_if(state.nodeStates.rbegin(), state.nodeStates.rend(),
@@ -138,6 +148,23 @@ void State::AcceptNewOrder(const Order& new_order) {
       }
     }
   }
+
+}
+
+void State::AddInstantActionStates(vda5050_msgs::InstantAction& instant_action) {
+  for (auto it_ia = instant_action.actions.begin(); it_ia != instant_action.actions.end();) {
+    // Check that actionId does not exists
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) { return as.actionId == it_ia->actionId; });
+    // Add to action states
+    if (it != state.actionStates.end()) {
+      ROS_ERROR_STREAM("ERROR: instant action actionId " << it_ia->actionId << " is not unique!");
+      instant_action.actions.erase(it_ia);
+    } else {
+      state.actionStates.push_back(ActionToActionState(*it_ia));
+      ++it_ia;
+    }
+  }
 }
 
 void State::ValidateUpdateBase(const Order& order_update) {
@@ -149,6 +176,7 @@ void State::ValidateUpdateBase(const Order& order_update) {
   const auto& update_first_node = order_update.GetNodes().front();
   // No more base nodes in the state.
   if (last_base_node == state.nodeStates.rend()) {
+    // If no active order, compare lastNodeId and lastNodeSequenceId.
     if (update_first_node.nodeId != state.lastNodeId) {
       throw std::runtime_error(
           "The ID of the first node of the update does not match the last node ID in the state.");
@@ -159,6 +187,7 @@ void State::ValidateUpdateBase(const Order& order_update) {
           "ID in the state.");
     }
   } else {
+    // If active order, compare last nodeStates.
     if (update_first_node.nodeId != last_base_node->nodeId) {
       throw std::runtime_error(
           "The ID of the first node of the update does not match the last node ID in the state.");
@@ -174,9 +203,11 @@ void State::ValidateUpdateBase(const Order& order_update) {
 void State::UpdateOrder(const Order& current_order, const Order& order_update) {
   // Clear horizon.
   state.edgeStates.erase(remove_if(state.edgeStates.begin(), state.edgeStates.end(),
-      [](vda5050_msgs::EdgeState es) { return !es.released; }));
+                             [](vda5050_msgs::EdgeState es) { return !es.released; }),
+      state.edgeStates.end());
   state.nodeStates.erase(remove_if(state.nodeStates.begin(), state.nodeStates.end(),
-      [](vda5050_msgs::NodeState ns) { return !ns.released; }));
+                             [](vda5050_msgs::NodeState ns) { return !ns.released; }),
+      state.nodeStates.end());
 
   auto updated_nodes = order_update.GetNodes();
 

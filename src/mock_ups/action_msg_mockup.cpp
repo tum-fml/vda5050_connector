@@ -66,7 +66,7 @@ void send_instant_action(ros::Publisher* pub) {
   instAction.headerId = 123456;
   instAction.manufacturer = "AGV";
   instAction.serialNumber = "";
-  instAction.timeStamp = "";
+  instAction.timestamp = "";
   instAction.version = "v1.0";
 
   msg1.actionId = uuid::generate_uuid_v4();
@@ -86,8 +86,8 @@ void send_instant_action(ros::Publisher* pub) {
   msg1.actionParameters.push_back(param1);
   msg2.actionParameters.push_back(param2);
 
-  instAction.instantActions.push_back(msg1);
-  instAction.instantActions.push_back(msg2);
+  instAction.actions.push_back(msg1);
+  instAction.actions.push_back(msg2);
 
   pub->publish(instAction);
   ROS_INFO_STREAM("New instant action sent!");

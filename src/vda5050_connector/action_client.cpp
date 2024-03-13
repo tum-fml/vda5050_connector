@@ -111,7 +111,7 @@ void ActionClient::OrderCancelCallback(const std_msgs::String& msg) {
 
 void ActionClient::InstantActionsCallback(const vda5050_msgs::InstantAction::ConstPtr& msg) {
   // Iterate over all actions in the instantActions msg
-  for (auto& iaction : msg->instantActions) {
+  for (auto& iaction : msg->actions) {
     // Add action to active actions list
     ActionClient::AddActionToList(&iaction, "Instant", "WAITING");
     // Initialize order ID variable
