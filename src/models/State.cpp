@@ -145,6 +145,7 @@ void State::AcceptNewOrder(const Order& new_order) {
     }
   }
 
+}
 
 void State::AddInstantActionStates(vda5050_msgs::InstantAction& instant_action) {
   for (auto it_ia = instant_action.actions.begin(); it_ia != instant_action.actions.end();) {
