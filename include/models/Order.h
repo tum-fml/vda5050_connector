@@ -78,6 +78,13 @@ class Order {
    */
   inline const std::vector<vda5050_msgs::Edge>& GetEdges() const { return order.edges; }
 
+  /**
+   * @brief Get order.
+   *
+   * @return vda5050_msgs::Order
+   */
+  inline vda5050_msgs::Order getOrder() const { return order; }
+
  private:
   vda5050_msgs::Order order; /**< Order message */
 };

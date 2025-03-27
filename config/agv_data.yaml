@@ -1,3 +1,37 @@
-version: "VDA 2.0"
-manufacturer: "Test-Manufacturer"
-serial_number: "Test-AGV"
+header:
+  version: "VDA 2.0"
+  manufacturer: "Test-Manufacturer"
+  serial_number: "Test-AGV"
+
+typeSpecification:
+  seriesName: ""
+  agvKinematic: ""
+  agvClass: ""
+  maxLoadMass: 0
+  localizationTypes:
+    - ""
+  navigationTypes:
+    - ""
+
+physicalParameters:
+  speedMin: 0
+  speedMax: 0
+  accelerationMax: 0
+  decelerationMax: 0
+  heightMin: 0
+  heightMax: 0
+  width: 0
+  length: 0
+
+protocolLimits:
+  minOrderInterval: 0
+  minStateInterval: 0
+
+protocolFeatures:
+  optionalParameters:
+    - parameter: ""
+      support: ""
+  agvActions: #example
+    - actionType: "initPosition"
+      actionDescription: "Requests the AGV to send a new state report"
+      actionScopes: "INSTANT","EDGE"

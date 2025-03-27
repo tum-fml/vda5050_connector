@@ -13,7 +13,7 @@ bool CheckParamIncludes(std::string full_param_name, std::string string_to_find)
 }
 
 std::string GetISOCurrentTimestamp() {
-  boost::posix_time::ptime posixTime = ros::Time::now().toBoost();
+  boost::posix_time::ptime posixTime = boost::posix_time::microsec_clock::universal_time(); //ros::Time::now().toBoost();
   std::string isoTimeStr = boost::posix_time::to_iso_extended_string(posixTime);
 
   // Get first 23 characters to have a timestamp with 3 millisecond digits.

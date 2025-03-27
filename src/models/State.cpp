@@ -93,6 +93,16 @@ vda5050_msgs::Visualization State::CreateVisualizationMsg() {
   return vis;
 }
 
+vda5050_msgs::Connection State::CreateConnectionMsg() {
+  vda5050_msgs::Connection con;
+
+  con.version = state.version;
+  con.serialNumber = state.serialNumber;
+  con.manufacturer = state.manufacturer;
+
+  return con;
+}
+
 boost::optional<vda5050_msgs::NodeState> State::GetLastNodeInBase() {
   // find last element which is released to find end of base.
   auto it = find_if(state.nodeStates.rbegin(), state.nodeStates.rend(),
@@ -108,9 +118,41 @@ bool State::InDeviationRange(vda5050_msgs::Node node) {
   auto vehicle_to_node_dist = sqrt(pow(state.agvPosition.x - node.nodePosition.x, 2) +
                                    pow(state.agvPosition.y - node.nodePosition.y, 2));
 
-  return (vehicle_to_node_dist <= node.nodePosition.allowedDeviationXY) &&
-         (abs(state.agvPosition.theta - node.nodePosition.theta) <=
-             node.nodePosition.allowedDeviationTheta);
+  bool in_dev;
+
+  // If allowed deviations are set, use them; if not, use default
+
+  auto it = find_if(factsheet.protocolFeatures.optionalParameters.begin(),
+      factsheet.protocolFeatures.optionalParameters.end(),
+      [&](const vda5050_msgs::OptionalParameter& op) {
+        return op.parameter == opt_param_allowed_dev;
+      });
+
+  if (it != factsheet.protocolFeatures.optionalParameters.end()) {
+    in_dev = (vehicle_to_node_dist <= node.nodePosition.allowedDeviationXY);
+  } else {
+    // TODO: default by parameter
+    in_dev = (vehicle_to_node_dist <= 2.2);
+  }
+
+  it = find_if(factsheet.protocolFeatures.optionalParameters.begin(),
+      factsheet.protocolFeatures.optionalParameters.end(),
+      [&](const vda5050_msgs::OptionalParameter& op) {
+        return op.parameter == opt_param_allowed_dev_th;
+      });
+
+  if (it != factsheet.protocolFeatures.optionalParameters.end()) {
+    in_dev = in_dev && (abs(state.agvPosition.theta - node.nodePosition.theta) <=
+                           node.nodePosition.allowedDeviationTheta);
+  } else {
+    in_dev = in_dev && true;
+  }
+
+  if (!in_dev)
+    ROS_WARN("Distance to node: %f, theta error: %f", vehicle_to_node_dist,
+        abs(state.agvPosition.theta - node.nodePosition.theta));
+
+  return in_dev;
 }
 
 void State::AcceptNewOrder(const Order& new_order) {
@@ -138,6 +180,26 @@ void State::AcceptNewOrder(const Order& new_order) {
       }
     }
   }
+
+  // Errors management
+  ClearErrorWithType("validationError");
+  ClearErrorWithType("orderError");
+}
+
+void State::AddInstantActionStates(vda5050_msgs::InstantAction& instant_action) {
+  for (auto it_ia = instant_action.actions.begin(); it_ia != instant_action.actions.end();) {
+    // Check that actionId does not exists
+    auto it = find_if(state.actionStates.begin(), state.actionStates.end(),
+        [&](const vda5050_msgs::ActionState& as) { return as.actionId == it_ia->actionId; });
+    // Add to action states
+    if (it != state.actionStates.end()) {
+      ROS_ERROR_STREAM("ERROR: instant action actionId " << it_ia->actionId << " is not unique!");
+      instant_action.actions.erase(it_ia);
+    } else {
+      state.actionStates.push_back(ActionToActionState(*it_ia));
+      ++it_ia;
+    }
+  }
 }
 
 void State::ValidateUpdateBase(const Order& order_update) {
@@ -149,6 +211,7 @@ void State::ValidateUpdateBase(const Order& order_update) {
   const auto& update_first_node = order_update.GetNodes().front();
   // No more base nodes in the state.
   if (last_base_node == state.nodeStates.rend()) {
+    // If no active order, compare lastNodeId and lastNodeSequenceId.
     if (update_first_node.nodeId != state.lastNodeId) {
       throw std::runtime_error(
           "The ID of the first node of the update does not match the last node ID in the state.");
@@ -159,6 +222,7 @@ void State::ValidateUpdateBase(const Order& order_update) {
           "ID in the state.");
     }
   } else {
+    // If active order, compare last nodeStates.
     if (update_first_node.nodeId != last_base_node->nodeId) {
       throw std::runtime_error(
           "The ID of the first node of the update does not match the last node ID in the state.");
@@ -174,9 +238,11 @@ void State::ValidateUpdateBase(const Order& order_update) {
 void State::UpdateOrder(const Order& current_order, const Order& order_update) {
   // Clear horizon.
   state.edgeStates.erase(remove_if(state.edgeStates.begin(), state.edgeStates.end(),
-      [](vda5050_msgs::EdgeState es) { return !es.released; }));
+                             [](vda5050_msgs::EdgeState es) { return !es.released; }),
+      state.edgeStates.end());
   state.nodeStates.erase(remove_if(state.nodeStates.begin(), state.nodeStates.end(),
-      [](vda5050_msgs::NodeState ns) { return !ns.released; }));
+                             [](vda5050_msgs::NodeState ns) { return !ns.released; }),
+      state.nodeStates.end());
 
   auto updated_nodes = order_update.GetNodes();
 
@@ -224,4 +290,8 @@ void State::UpdateOrder(const Order& current_order, const Order& order_update) {
   }
 
   state.orderUpdateId = order_update.GetOrderUpdateId();
+
+  // Errors management
+  ClearErrorWithType("validationError");
+  ClearErrorWithType("orderError");
 }

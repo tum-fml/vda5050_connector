@@ -11,9 +11,9 @@
 
 using namespace connector_utils;
 
-constexpr char VERSION_PARAM[] = "/header/version";
-constexpr char MANUFACTURER_PARAM[] = "/header/manufacturer";
-constexpr char SN_PARAM[] = "/header/serial_number";
+constexpr char VERSION_PARAM[] = "header/version";
+constexpr char MANUFACTURER_PARAM[] = "header/manufacturer";
+constexpr char SN_PARAM[] = "header/serial_number";
 
 /*-------------------------------------VDA5050Connector--------------------------------------------*/
 
@@ -49,6 +49,8 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
   } else {
     ROS_ERROR("%s not found in the configuration!", SN_PARAM);
   }
+  sent_factsheet_ = false;
+  setFactsheet();
 
   ros::NodeHandle private_nh("~");
   double stateMsgPeriod, visMsgPeriod, connMsgPeriod;
@@ -63,6 +65,78 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
   connTimer = nh.createTimer(
       ros::Duration(connMsgPeriod), std::bind(&VDA5050Connector::PublishConnection, this, true));
   newPublishTrigger = true;
+}
+
+void VDA5050Connector::setFactsheet() {
+  vda5050_msgs::Factsheet fsh_msg;
+
+  // Elementary parameters
+
+  // typeSpecification
+  std::string aux_string;
+  double aux_double;
+  if (GetParamROS("typeSpecification/seriesName", &aux_string))
+    fsh_msg.typeSpecification.seriesName = aux_string;
+  if (GetParamROS("typeSpecification/agvKinematic", &aux_string))
+    fsh_msg.typeSpecification.agvKinematic = aux_string;
+  if (GetParamROS("typeSpecification/agvClass", &aux_string))
+    fsh_msg.typeSpecification.agvClass = aux_string;
+  if (GetParamROS("typeSpecification/maxLoadMass", &aux_double))
+    fsh_msg.typeSpecification.maxLoadMass = aux_double;
+  std::vector<std::string> lt;
+  if (GetParamROS("typeSpecification/localizationTypes", &lt))
+    fsh_msg.typeSpecification.localizationTypes = lt;
+  std::vector<std::string> nt;
+  if (GetParamROS("typeSpecification/navigationTypes", &nt))
+    fsh_msg.typeSpecification.navigationTypes = nt;
+
+  // physicalParameters
+  if (GetParamROS("physicalParameters/speedMin", &aux_double))
+    fsh_msg.physicalParameters.speedMin = aux_double;
+  if (GetParamROS("physicalParameters/speedMax", &aux_double))
+    fsh_msg.physicalParameters.speedMax = aux_double;
+  if (GetParamROS("physicalParameters/accelerationMax", &aux_double))
+    fsh_msg.physicalParameters.accelerationMax = aux_double;
+  if (GetParamROS("physicalParameters/decelerationMax", &aux_double))
+    fsh_msg.physicalParameters.decelerationMax = aux_double;
+  if (GetParamROS("physicalParameters/heightMin", &aux_double))
+    fsh_msg.physicalParameters.heightMin = aux_double;
+  if (GetParamROS("physicalParameters/heightMax", &aux_double))
+    fsh_msg.physicalParameters.heightMax = aux_double;
+  if (GetParamROS("physicalParameters/width", &aux_double))
+    fsh_msg.physicalParameters.width = aux_double;
+  if (GetParamROS("physicalParameters/length", &aux_double))
+    fsh_msg.physicalParameters.length = aux_double;
+
+  // protocolLimits
+  if (GetParamROS("protocolLimits/minOrderInterval", &aux_double))
+    fsh_msg.protocolLimits.timing.minOrderInterval = aux_double;
+  if (GetParamROS("protocolLimits/minStateInterval", &aux_double))
+    fsh_msg.protocolLimits.timing.minStateInterval = aux_double;
+
+  // protocolFeatures
+  XmlRpc::XmlRpcValue ops;
+  if (GetParamROS("protocolFeatures/optionalParameters", &ops)) {
+    for (int i = 0; i < ops.size(); i++) {
+      vda5050_msgs::OptionalParameter op;
+      op.parameter = static_cast<std::string>(ops[i]["parameter"]);
+      op.support = static_cast<std::string>(ops[i]["support"]);
+      fsh_msg.protocolFeatures.optionalParameters.push_back(op);
+    }
+  }
+  XmlRpc::XmlRpcValue aas;
+  if (GetParamROS("protocolFeatures/agvActions", &aas)) {
+    for (int i = 0; i < aas.size(); i++) {
+      vda5050_msgs::AgvAction aa;
+      aa.actionType = static_cast<std::string>(aas[i]["actionType"]);
+      aa.actionDescription = static_cast<std::string>(aas[i]["actionDescription"]);
+      for (int j = 0; j < aas[i]["actionScopes"].size(); j++)
+        aa.actionScopes.push_back(static_cast<std::string>(aas[i]["actionScopes"][j]));
+      fsh_msg.protocolFeatures.agvActions.push_back(aa);
+    }
+  }
+
+  state.SetFactsheet(fsh_msg);
 }
 
 void VDA5050Connector::LinkPublishTopics(ros::NodeHandle* nh) {
@@ -80,6 +154,8 @@ void VDA5050Connector::LinkPublishTopics(ros::NodeHandle* nh) {
       visPublisher = nh->advertise<vda5050_msgs::Visualization>(elem.second, 100);
     } else if (CheckParamIncludes(elem.first, "connection")) {
       connectionPublisher = nh->advertise<vda5050_msgs::Connection>(elem.second, 100);
+    } else if (CheckParamIncludes(elem.first, "factsheet")) {
+      factsheetPublisher = nh->advertise<vda5050_msgs::Factsheet>(elem.second, 100);
     }
   }
 }
@@ -162,7 +238,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     ROS_ERROR("Validation error occurred : %s", e.what());
 
     // Add error and corresponding references to the state.
-    auto error = CreateWarningError("orderValidation", e.what(),
+    auto error = CreateWarningError("validationError", e.what(),
         {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
     AddInternalError(error);
 
@@ -171,7 +247,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
     ROS_ERROR("Error occurred : %s", e.what());
 
     auto error = CreateWarningError(
-        "orderCreation", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
+        "internalError", e.what(), {{static_cast<std::string>("orderId"), new_order.GetOrderId()}});
     AddInternalError(error);
 
     return;
@@ -184,8 +260,7 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       std::string error_msg = "Received order update with a lower order update ID";
       ROS_ERROR("Error has occurred : %s", error_msg.c_str());
 
-      // Create error and add error to list of references.
-      auto error = CreateWarningError("orderCreation", error_msg,
+      auto error = CreateWarningError("orderUpdateError", error_msg,
           {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
               {static_cast<std::string>("orderUpdateId"),
                   std::to_string(new_order.GetOrderUpdateId())}});
@@ -205,7 +280,11 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       } catch (const std::runtime_error& e) {
         ROS_ERROR("Update base validation failed. %s", e.what());
 
-        // Add error to the state message.
+        auto error = CreateWarningError("orderUpdateError", e.what(),
+            {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
+                {static_cast<std::string>("orderUpdateId"),
+                    std::to_string(new_order.GetOrderUpdateId())}});
+        AddInternalError(error);
 
         return;
       }
@@ -216,32 +295,42 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
       ROS_INFO("Sending order update");
 
       // Send the order update.
-      orderPublisher.publish(msg);
+      orderPublisher.publish(new_order.getOrder());
     }
 
   } else {
     // If no order is active, and the robot is in the deviation range of the first node, the order
     // can be started.
     if (state.HasActiveOrder(order)) {
-      ROS_ERROR("Vehicle received a new order while executing an order!");
+      std::string error_msg = "Vehicle received a new order while executing an order!";
+      ROS_ERROR("Error has occurred : %s", error_msg.c_str());
 
-      // Create an error and add it to the state message.
+      auto error = CreateWarningError("orderUpdateError", error_msg,
+          {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
+              {static_cast<std::string>("orderUpdateId"),
+                  std::to_string(new_order.GetOrderUpdateId())}});
+      AddInternalError(error);
 
       return;
     }
 
     if (state.InDeviationRange(new_order.GetNodes().front())) {
-      // TODO (A-Jammoul) : Accept the new order by updating the state message and the order.
-      // AcceptNewOrder(new_order);
+      AcceptNewOrder(new_order);
 
       ROS_INFO("Sending new order");
 
       // Send the new order.
-      orderPublisher.publish(msg);
+      orderPublisher.publish(new_order.getOrder());
 
     } else {
-      // Create error, and add error to the state.
-      ROS_ERROR("Vehicle not inside the deviation range of the first node in the order.");
+      std::string error_msg =
+          "Vehicle not inside the deviation range of the first node in the order.";
+      ROS_ERROR("Error has occurred : %s", error_msg.c_str());
+
+      auto error = CreateWarningError("noRouteError", error_msg,
+          {{static_cast<std::string>("orderId"), new_order.GetOrderId()},
+              {static_cast<std::string>("nodeId"), new_order.GetNodes().front().nodeId}});
+      AddInternalError(error);
       return;
     }
   }
@@ -251,10 +340,35 @@ void VDA5050Connector::OrderCallback(const vda5050_msgs::Order::ConstPtr& msg) {
 }
 
 void VDA5050Connector::InstantActionCallback(const vda5050_msgs::InstantAction::ConstPtr& msg) {
-  // Forward instant action message to the vehicle.
+  // Add instant action to state
+  vda5050_msgs::InstantAction instant_action = *msg;
+  state.AddInstantActionStates(instant_action);
 
-  ROS_INFO("Sending instant action message");
-  iaPublisher.publish(msg);
+  // Search for factsheet request
+  // If instant_action contains factSheetRequest: publish factsheet
+  auto it = find_if(instant_action.actions.begin(), instant_action.actions.end(),
+      [](const vda5050_msgs::Action& ia) { return ia.actionType == "factsheetRequest"; });
+  if (it != instant_action.actions.end()) {
+    PublishFactsheet();
+    state.SetActionState(it->actionId, "FINISHED");
+    instant_action.actions.erase(it);
+  }
+
+  // Search for state request
+  // If instant_action contains stateRequest: publish state
+  it = find_if(instant_action.actions.begin(), instant_action.actions.end(),
+      [](const vda5050_msgs::Action& ia) { return ia.actionType == "stateRequest"; });
+  if (it != instant_action.actions.end()) {
+    newPublishTrigger = true;
+    state.SetActionState(it->actionId, "FINISHED");
+    instant_action.actions.erase(it);
+  }
+
+  // Forward instant action message to the vehicle.
+  if (!instant_action.actions.empty()) {
+    ROS_INFO("Sending instant action message");
+    iaPublisher.publish(instant_action);
+  }
 }
 
 void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& msg) {
@@ -266,20 +380,13 @@ void VDA5050Connector::OrderStateCallback(const vda5050_msgs::State::ConstPtr& m
 
 void VDA5050Connector::AcceptNewOrder(const Order& new_order) {
   // Set the nodes, edges and actions in the order and the state messages.
-
   state.AcceptNewOrder(new_order);
-
   order.AcceptNewOrder(new_order);
 }
 
 void VDA5050Connector::UpdateExistingOrder(const Order& order_update) {
   // Update the order with added nodes, edges, new order id and update id.
-
-  // TODO (A-Jammoul) : Update the state before the order, because the state needs the old order to
-  // clear actions from the old horizon.
-
-  // state.UpdateOrder(order, order_update);
-
+  state.UpdateOrder(order, order_update);
   order.UpdateOrder(order_update);
 }
 
@@ -325,7 +432,7 @@ void VDA5050Connector::AGVVelocityCallback(const geometry_msgs::Twist& msg) {
   state.SetVelocity(vel);
 
   // Set the driving field based on driving velocity.
-  bool is_driving = (msg.linear.x > 0.01 || msg.linear.y > 0.01 || msg.angular.z > 0.01);
+  bool is_driving = (msg.linear.x > 0.005 || msg.linear.y > 0.005 || msg.angular.z > 0.01);
 
   // Trigger a state message publish.
   if (state.GetDriving() != is_driving) newPublishTrigger = true;
@@ -424,7 +531,7 @@ void VDA5050Connector::PublishVisualization() {
 
 void VDA5050Connector::PublishConnection(const bool connected) {
   // Create new connection state message.
-  vda5050_msgs::Connection connection;
+  auto connection = state.CreateConnectionMsg();
 
   // Set the header fields.
   connection.headerId = connHeaderId;
@@ -443,9 +550,27 @@ void VDA5050Connector::PublishConnection(const bool connected) {
   connHeaderId++;
 }
 
+void VDA5050Connector::PublishFactsheet() {
+  // Create new factsheet state message.
+  auto fsh = state.GetFactsheet();
+
+  // Set the header fields.
+  fsh.headerId = fshHeaderId;
+  fsh.timestamp = connector_utils::GetISOCurrentTimestamp();
+
+  factsheetPublisher.publish(fsh);
+
+  // Increase header count after each publish.
+  fshHeaderId++;
+}
+
 void VDA5050Connector::PublishStateOnTrigger() {
   if (!newPublishTrigger) return;
 
+  if (!sent_factsheet_) {
+    sent_factsheet_ = true;
+    PublishFactsheet();
+  }
   PublishState();
 
   // Reset the timer.
@@ -457,12 +582,13 @@ void VDA5050Connector::PublishStateOnTrigger() {
 }
 
 void VDA5050Connector::AddInternalError(const vda5050_msgs::Error& error) {
-  // If the error already exists, then reset its time.
+  // If the error already exists, then reset its time and update (references, description...).
   auto it = std::find_if(internal_errors_stamped.begin(), internal_errors_stamped.end(),
       [&](const ErrorStamped& e) { return e.error.errorType == error.errorType; });
 
   if (it != internal_errors_stamped.end()) {
     it->timestamp = std::chrono::system_clock::now();
+    it->error = error;
   } else {
     // Add error to the list of internal errors with the timestamp.
     this->internal_errors_stamped.push_back({error, std::chrono::system_clock::now()});
@@ -499,7 +625,8 @@ int main(int argc, char** argv) {
 
   VDA5050Connector VDA5050Connector;
 
-  ros::Rate rate(1.0);
+  ros::Duration(2.0).sleep();
+  ros::Rate rate(10);
 
   while (ros::ok()) {
     VDA5050Connector.MonitorOrder();

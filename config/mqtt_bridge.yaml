@@ -32,6 +32,11 @@ bridge:
     topic_from: /connection
     topic_to: qa/<device_client_id>/connection
 
+  - factory: mqtt_bridge.bridge:RosToMqttBridge
+    msg_type: vda5050_msgs.msg:Factsheet
+    topic_from: /factsheet
+    topic_to: qa/<device_client_id>/factsheet
+
   # Bridge from MQTT to ROS.
   - factory: mqtt_bridge.bridge:MqttToRosBridge
     msg_type: vda5050_msgs.msg:InstantAction
